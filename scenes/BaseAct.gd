@@ -46,6 +46,14 @@ func _connect_player_to_hud() -> void:
 	var vic := get_node_or_null("Victory")
 	if vic and not GameManager.game_won.is_connected(vic.show_victory):
 		GameManager.game_won.connect(vic.show_victory)
+	# Resurrection revival — show dramatic HUD message
+	if hud and not GameManager.player_revived.is_connected(_on_player_revived):
+		GameManager.player_revived.connect(_on_player_revived)
+
+func _on_player_revived() -> void:
+	var hud := _get_hud()
+	if hud and hud.has_method("show_hint"):
+		hud.show_hint("✝️ Brother Thoma's blessing — you live!", 4.0)
 
 func _get_player() -> Node:
 	return get_node_or_null("Player")

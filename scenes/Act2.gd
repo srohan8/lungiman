@@ -27,6 +27,7 @@ func _ready() -> void:
 	_spawn_fire_hazards()
 	_spawn_carnival_bell()
 	_spawn_monkey_swarm()
+	_spawn_clone_decoy_zone()
 	_spawn_kuttichathan()
 	_spawn_powerups()
 	_spawn_npcs()
@@ -191,6 +192,70 @@ func _spawn_monkey_swarm() -> void:
 		m.patrol_right = 3200.0
 		$Enemies.add_child(m)
 	_queue_hint("🙈 MONKEY SWARM — kill one, the rest get faster!", 10.0, 5.5)
+
+## 3 pre-fight Kuttichathan decoys at x=3200–4800.
+## Real one flickers fast; fakes flash slowly. Wrong hit = 15 dmg explosion.
+func _spawn_clone_decoy_zone() -> void:
+	var real_idx := randi() % 3
+	var positions := [3200.0, 4000.0, 4800.0]
+	for i: int in positions.size():
+		var px: float = positions[i]
+		var is_real   := (i == real_idx)
+		_spawn_one_decoy(px, is_real)
+	_queue_hint("👻 Clone zone — the REAL one flickers fast!", 18.0, 5.0)
+
+func _spawn_one_decoy(px: float, is_real: bool) -> void:
+	var decoy := Area2D.new()
+	decoy.collision_layer = 0
+	decoy.collision_mask  = 0   # coconuts hit via area_entered with coconut group check
+	var col   := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(28.0, 52.0)
+	col.shape  = shape
+	decoy.add_child(col)
+	decoy.position = Vector2(px, GROUND_Y - 26.0)
+
+	# Visual body — small fiery Kuttichathan silhouette
+	var body := ColorRect.new()
+	body.color    = Color(0.85, 0.18, 0.05, 0.90)
+	body.size     = Vector2(28.0, 52.0)
+	body.position = Vector2(-14.0, -26.0)
+	decoy.add_child(body)
+
+	# Eye marker
+	var eye := Label.new()
+	eye.text     = "👁️"
+	eye.position = Vector2(-10.0, -44.0)
+	decoy.add_child(eye)
+
+	# Flicker tween — real = fast (0.08s), fake = slow (0.45s)
+	var tw := create_tween()
+	tw.set_loops()
+	var spd := 0.08 if is_real else 0.45
+	tw.tween_property(body, "modulate:a", 0.2, spd)
+	tw.tween_property(body, "modulate:a", 1.0, spd)
+
+	# Hit detection via sword (Z key player hitbox) or coconut
+	# We use a simple body_entered with player group + sword phase check
+	decoy.collision_mask = 2   # player layer
+	var already_hit := false
+	decoy.body_entered.connect(func(body_node: Node) -> void:
+		if already_hit or not body_node.is_in_group("player"): return
+		# Only triggers on sword swing (sword_phase > 0)
+		if not (body_node.get("sword_phase") > 0): return
+		already_hit = true
+		if is_real:
+			_get_hud().show_hint("✅ Real Kuttichathan! Keep going!", 2.5)
+			GameManager.score += 30
+			decoy.queue_free()
+		else:
+			# Wrong clone — explode
+			body.color = Color(1.0, 0.6, 0.0, 1.0)
+			body_node.take_damage(15)
+			_get_hud().show_hint("💥 Wrong clone! −15 HP", 2.5)
+			get_tree().create_timer(0.3).timeout.connect(decoy.queue_free)
+	)
+	add_child(decoy)
 
 func _spawn_kuttichathan() -> void:
 	var boss: Node2D = preload("res://scenes/Kuttichathan.tscn").instantiate()

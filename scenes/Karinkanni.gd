@@ -112,6 +112,8 @@ func take_damage(dmg: int) -> void:
 
 func _die() -> void:
 	GameManager.clear_boss()
+	GameManager.score += 300
+	GameManager.show_score_popup(position - Vector2(0, 40), 300, Color(0.60, 0.30, 1.0))
 	_drop_powerup()
 	queue_free()
 

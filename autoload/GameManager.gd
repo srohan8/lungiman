@@ -105,12 +105,24 @@ func consume_climb_press() -> bool:
 		return true
 	return false
 
+signal player_revived   # emitted when resurrection token saves the player
+
 func take_damage(amount: int) -> void:
 	hp -= amount
 	hp_changed.emit(hp)
 	if hp <= 0:
-		hp = 0
-		player_died.emit()
+		if has_resurrection:
+			# Thoma's blessing kicks in — survive at 40 HP
+			has_resurrection = false
+			hp = 40
+			hp_changed.emit(hp)
+			Engine.time_scale = 1.0   # reset slow-mo if active
+			slow_mo_active = false
+			player_revived.emit()
+		else:
+			hp = 0
+			Engine.time_scale = 1.0
+			player_died.emit()
 
 func activate_hypnosis(duration: float = 8.0) -> void:
 	hypnosis_active = true
