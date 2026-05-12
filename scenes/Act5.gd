@@ -12,15 +12,69 @@ const ZONE_X_TO    := 7650.0
 const ZONE_H       := 260.0   # massive ancient trees
 
 func _ready() -> void:
-	# No _next_scene — Pey Komban death emits game_won instead
 	_trigger_x   = ACT_TRIGGER_X
-	_unlocks_act = 0   # finale — no further act to unlock
+	_unlocks_act = 0
 	_spawn_trees()
+	_spawn_trail_stumps()
+	_spawn_fireflies()
 	_spawn_pey_komban()
 	_spawn_powerups()
 	_spawn_npcs()
 	_connect_player_to_hud()
 	_queue_hint("⚠️ STAY OFF THE GROUND — one charge and you're done!", 1.5, 7.0)
+	_start_footstep_shakes()
+
+## Periodic ground-shake — Pey Komban's distant footsteps felt every 8s.
+func _start_footstep_shakes() -> void:
+	_schedule_shake()
+
+func _schedule_shake() -> void:
+	get_tree().create_timer(8.0).timeout.connect(func() -> void:
+		var player := _get_player()
+		if is_instance_valid(player) and player.has_method("add_trauma"):
+			player.add_trauma(0.35)
+		_schedule_shake()
+	)
+
+## Snapped tree stumps showing Pey Komban's trail of destruction.
+func _spawn_trail_stumps() -> void:
+	for sx: float in [1850.0, 2050.0, 2200.0, 2380.0]:
+		var stump := ColorRect.new()
+		stump.color    = Color(0.22, 0.14, 0.06, 1.0)
+		stump.size     = Vector2(18.0, randf_range(28.0, 55.0))
+		stump.position = Vector2(sx, GROUND_Y - stump.size.y)
+		stump.z_index  = 1
+		add_child(stump)
+		# Jagged splinter on top
+		var splinter := ColorRect.new()
+		splinter.color    = Color(0.30, 0.18, 0.08, 1.0)
+		splinter.size     = Vector2(8.0, 18.0)
+		splinter.position = Vector2(sx + 5.0, GROUND_Y - stump.size.y - 14.0)
+		add_child(splinter)
+	_queue_hint("🌳 Something enormous passed here.", 9.0, 4.0)
+
+## Fireflies — gentle yellow-green dots drifting through the sacred grove.
+func _spawn_fireflies() -> void:
+	for _i: int in 22:
+		var ff := ColorRect.new()
+		ff.color    = Color(0.75, 1.0, 0.35, 0.80)
+		ff.size     = Vector2(4.0, 4.0)
+		ff.position = Vector2(randf_range(500.0, 7500.0), randf_range(80.0, 340.0))
+		ff.z_index  = 5
+		add_child(ff)
+		# Each firefly drifts in a small random oval, loops forever
+		var tw := create_tween()
+		tw.set_loops()
+		var ox := randf_range(-40.0, 40.0)
+		var oy := randf_range(-20.0, 20.0)
+		var dur := randf_range(2.0, 4.5)
+		tw.tween_property(ff, "position", ff.position + Vector2(ox, oy), dur).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(ff, "position", ff.position, dur).set_trans(Tween.TRANS_SINE)
+		# Alpha pulse
+		var ta := create_tween()
+		ta.set_loops()
+		ta.tween_property(ff, "modulate:a", 0.2, randf_range(0.8, 1.8))
+		ta.tween_property(ff, "modulate:a", 1.0, randf_range(0.8, 1.8))
 
 func _spawn_trees() -> void:
 	var tint := Color(0.85, 0.75, 0.3, 1.0)   # ancient gold-green sacred grove
