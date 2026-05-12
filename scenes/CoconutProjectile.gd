@@ -7,7 +7,7 @@ var velocity := Vector2.ZERO
 
 func _ready() -> void:
 	add_to_group("coconut")
-	collision_layer = 0
+	collision_layer = 16  # layer 5 — lets bells/targets detect the coconut
 	collision_mask  = 4   # hits Enemies (layer 3)
 	body_entered.connect(_on_body_entered)
 	# Visual: dark brown coconut with lighter husk ring

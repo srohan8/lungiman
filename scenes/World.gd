@@ -132,10 +132,10 @@ func _spawn_throw_tutorial() -> void:
 	shape.size = Vector2(24.0, 48.0)
 	col.shape  = shape
 	post.add_child(col)
-	# Area2D detects coconut hits
+	# Area2D detects coconut hits — coconut has collision_layer=16 (layer 5)
 	var hit_area := Area2D.new()
 	hit_area.collision_layer = 0
-	hit_area.collision_mask  = 4
+	hit_area.collision_mask  = 16   # layer 5 = coconuts
 	var hcol := CollisionShape2D.new()
 	var hshape := RectangleShape2D.new()
 	hshape.size = Vector2(32.0, 56.0)

@@ -150,8 +150,8 @@ func _spawn_carnival_bell() -> void:
 	# Bell hitbox Area2D — detected by coconut projectiles
 	var bell := Area2D.new()
 	bell.name = "CarnivalBell"
-	bell.collision_layer = 8   # layer 4 = bells / interactables
-	bell.collision_mask  = 0
+	bell.collision_layer = 8    # layer 4 = bells / interactables
+	bell.collision_mask  = 16   # layer 5 = coconut projectiles
 	bell.position        = Vector2(1500.0, 190.0)
 	var bc := CollisionShape2D.new()
 	var bs := CircleShape2D.new()
