@@ -137,16 +137,20 @@ func _queue_hint(text: String, delay: float = 1.5, duration: float = 5.0) -> voi
 ## Call from each act's _ready() to set the sky background colour.
 ## Automatically adds a screen-space vignette overlay on first call.
 func _apply_sky(sky_color: Color) -> void:
-	# Background sky rect (behind all scene nodes, z_index = -100)
-	var bg := ColorRect.new()
-	bg.name     = "SkyBackground"
-	bg.color    = sky_color
-	bg.z_index  = -100
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Size it large enough to cover the scrolling viewport (8192 wide)
-	bg.size     = Vector2(8192, 600)
-	bg.position = Vector2(-200, -100)
-	add_child(bg)
+	# Sky background in a CanvasLayer so it's camera-independent.
+	# Without this, climbing tall trees scrolls the camera above the rect → black screen.
+	if not get_node_or_null("SkyLayer"):
+		var sky_cl := CanvasLayer.new()
+		sky_cl.name  = "SkyLayer"
+		sky_cl.layer = -10   # below everything; HUD is at 100
+		var bg := ColorRect.new()
+		bg.name         = "SkyBackground"
+		bg.color        = sky_color
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		bg.size         = Vector2(820, 460)   # viewport size; anchors expand at runtime
+		sky_cl.add_child(bg)
+		add_child(sky_cl)
 	# Vignette CanvasLayer — persists above game world, below HUD (layer 10)
 	if not get_node_or_null("Vignette"):
 		var cl := CanvasLayer.new()
