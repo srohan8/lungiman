@@ -121,6 +121,14 @@ func _spawn_npcs() -> void:
 	var basheer: Node2D = preload("res://scenes/UstadBasheer.tscn").instantiate()
 	basheer.position = Vector2(400.0, GROUND_Y - 10.0)
 	add_child(basheer)
+	# Kili the Spirit Crow at x=1400 shrine
+	var kili: Node2D = preload("res://scenes/KiliCrow.tscn").instantiate()
+	kili.position = Vector2(1400.0, GROUND_Y - 10.0)
+	add_child(kili)
+	# 3 porotta powerups near Kili so player can feed her
+	_add_powerup($PowerUps, 1500.0, GROUND_Y, "porotta")
+	_add_powerup($PowerUps, 1600.0, GROUND_Y, "porotta")
+	_add_powerup($PowerUps, 1700.0, GROUND_Y, "porotta")
 
 ## Atmospheric fog overlay — dark vignette that deepens as player moves right.
 func _spawn_fog() -> void:

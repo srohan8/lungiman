@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cdklwj8lloom"]
+
+[ext_resource type="Script" uid="uid://c0ym20s52oru7" path="res://scenes/KiliCrow.gd" id="1_m15s1"]
+
+[node name="KiliCrow" type="Node2D" unique_id=761409953]
+script = ExtResource("1_m15s1")

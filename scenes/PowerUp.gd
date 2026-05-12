@@ -25,4 +25,9 @@ func _process(delta: float) -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		GameManager.apply_powerup(type)
+		# Porotta near Kili feeds the crow companion
+		if type == "porotta":
+			var kili := get_tree().get_first_node_in_group("kili")
+			if kili and kili.has_method("feed_rice"):
+				kili.feed_rice()
 		queue_free()
