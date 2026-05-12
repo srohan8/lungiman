@@ -27,12 +27,16 @@ func _ready() -> void:
 	_queue_hint_local("🔔 Find the temple bell...", 1.0, 4.0)
 
 func _build_scene() -> void:
-	# Sky/water background
+	# Sky/water background — CanvasLayer so camera scroll never reveals black void
+	var sky_cl := CanvasLayer.new()
+	sky_cl.layer = -10
 	var bg := ColorRect.new()
-	bg.color    = Color(0.02, 0.04, 0.12)
-	bg.size     = Vector2(820, 460)
-	bg.z_index  = -10
-	add_child(bg)
+	bg.color        = Color(0.02, 0.04, 0.12)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.size         = Vector2(820, 460)
+	sky_cl.add_child(bg)
+	add_child(sky_cl)
 
 	# Moon glow
 	var moon := ColorRect.new()
