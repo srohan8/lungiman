@@ -34,16 +34,17 @@ const ROLL_IFRAMES  := 0.40
 const SHAKE_DECAY := 3.8
 
 # ── Sprite sheet ─────────────────────────────────────────────────────────────
-const FRAME_H    := 60
-const FRAME_W    := 30
+# hero_sheet.png: single horizontal row, FRAME_H tall, variable-width frames.
+# Falls back to solid-colour placeholders if sheet is missing.
+const FRAME_H    := 98
 const FRAME_DATA := {
-	"walk":       {"fps": 10.0, "loop": true,  "frames": [[0,30],[30,30],[60,30]]},
-	"idle":       {"fps":  4.0, "loop": true,  "frames": [[90,30],[120,30]]},
-	"swing_grab": {"fps":  1.0, "loop": false, "frames": [[150,30]]},
-	"swing":      {"fps": 12.0, "loop": true,  "frames": [[180,30],[210,30],[240,30]]},
-	"sword":      {"fps": 16.0, "loop": false, "frames": [[270,30],[300,30],[330,30],[360,30]]},
-	"sword2":     {"fps": 16.0, "loop": false, "frames": [[390,30],[420,30],[450,30]]},
-	"chai":       {"fps":  8.0, "loop": true,  "frames": [[480,30],[510,30],[540,30]]},
+	"walk":       {"fps": 10.0, "loop": true,  "frames": [[0,58],[58,57],[115,58]]},
+	"idle":       {"fps":  4.0, "loop": true,  "frames": [[173,68],[241,70]]},
+	"swing_grab": {"fps":  1.0, "loop": false, "frames": [[311,79]]},
+	"swing":      {"fps": 12.0, "loop": true,  "frames": [[390,65],[455,66],[521,47]]},
+	"sword":      {"fps": 16.0, "loop": false, "frames": [[568,90],[658,90],[748,90],[838,89]]},
+	"sword2":     {"fps": 16.0, "loop": false, "frames": [[927,55],[982,58],[1040,72]]},
+	"chai":       {"fps":  8.0, "loop": true,  "frames": [[1112,96],[1208,109],[1317,46]]},
 }
 const ANIM_COLORS := {
 	"walk":       Color(0.20, 0.55, 1.00),
@@ -80,6 +81,12 @@ var river_dmg_cooldown := 0.0
 var rolling      := false
 var roll_timer   := 0.0
 var iframe_timer := 0.0
+
+# ── Appam Glide (Swing-off Race reward) ────────────────────────────────
+const GLIDE_GRAV_MULT  := 0.18   # gravity fraction during glide
+const GLIDE_MAX_FALL   := 80.0   # max fall speed while gliding
+const GLIDE_DURATION   := 1.5
+var   glide_timer      := 0.0    # > 0 = currently gliding
 
 var _shake_trauma     := 0.0
 var ammo_regen_timer  := 0.0
@@ -136,8 +143,11 @@ func _process(delta: float) -> void:
 		$Camera2D.offset = Vector2.ZERO
 	if tree_state == TreeState.PERCHED and GameManager.ammo < GameManager.max_ammo:
 		ammo_regen_timer -= delta
+		# Chaya Kada reward: 2× faster regen near a SoniyaChechi / tea shop
+		var near_tea := _is_near_tea_shop()
+		var regen_interval := AMMO_REGEN_INTERVAL * (0.5 if near_tea else 1.0)
 		if ammo_regen_timer <= 0.0:
-			ammo_regen_timer = AMMO_REGEN_INTERVAL
+			ammo_regen_timer = regen_interval
 			GameManager.ammo = mini(GameManager.ammo + 1, GameManager.max_ammo)
 
 func _physics_process(delta: float) -> void:
@@ -238,8 +248,19 @@ func _process_perched(_delta: float, do_climb: bool) -> void:
 			climb_tree = null
 
 func _process_flying(delta: float) -> void:
-	velocity.y += GRAVITY * delta
-	if is_on_floor(): tree_state = TreeState.NONE
+	# Appam Glide: hold Jump while FLYING to slow descent (requires quest reward)
+	var has_glide := QuestManager.get_state("swing_off_race") == 2
+	if has_glide and Input.is_action_pressed("jump") and velocity.y > 0.0:
+		if glide_timer <= 0.0 and Input.is_action_just_pressed("jump"):
+			glide_timer = GLIDE_DURATION
+	if glide_timer > 0.0:
+		glide_timer  -= delta
+		velocity.y    = minf(velocity.y + GRAVITY * GLIDE_GRAV_MULT * delta, GLIDE_MAX_FALL)
+	else:
+		velocity.y += GRAVITY * delta
+	if is_on_floor():
+		tree_state  = TreeState.NONE
+		glide_timer = 0.0
 
 func _near_tree_in_facing() -> Node2D:
 	var best: Node2D   = null
@@ -346,6 +367,14 @@ func is_safe_from_charge() -> bool:
 
 func add_trauma(amount: float) -> void:
 	_shake_trauma = minf(1.0, _shake_trauma + amount)
+
+func _is_near_tea_shop() -> bool:
+	if QuestManager.get_state("chaya_kada_showdown") != 2:
+		return false
+	for npc: Node in get_tree().get_nodes_in_group("tea_shop"):
+		if global_position.distance_to(npc.global_position) < 300.0:
+			return true
+	return false
 
 func _update_animation() -> void:
 	var spr := $AnimatedSprite2D

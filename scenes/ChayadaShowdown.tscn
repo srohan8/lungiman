@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d4kbqk6enbexu"]
+
+[ext_resource type="Script" uid="uid://jtsw2p1to1xj" path="res://scenes/ChayadaShowdown.gd" id="1_4pmv8"]
+
+[node name="ChayadaShowdown" type="CanvasLayer" unique_id=934532513]
+script = ExtResource("1_4pmv8")

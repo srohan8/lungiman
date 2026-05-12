@@ -11,11 +11,13 @@ const DIALOGUES := [
 	"...want chai?",
 ]
 
-var _stage:  int  = 0
-var _served: bool = false
+var _stage:          int  = 0
+var _served:         bool = false
+var _showdown_done:  bool = false
 var _spr: AnimatedSprite2D = null
 
 func _ready() -> void:
+	add_to_group("tea_shop")
 	collision_layer = 0
 	collision_mask  = 2
 	body_entered.connect(_on_body_entered)
@@ -54,6 +56,9 @@ func _on_body_entered(body: Node) -> void:
 	if not _served and _stage >= 1:
 		_served = true
 		_drop_chai()
+	# Stage 3 in Act I: Chaya Kada Showdown (drunkards arrive)
+	if _stage == 3:
+		_trigger_showdown()
 
 func _show_stage() -> void:
 	var idx    := mini(_stage, DIALOGUES.size() - 1)
@@ -71,3 +76,15 @@ func _drop_chai() -> void:
 	pu.type     = "chai"
 	pu.position = position + Vector2(35.0, -15.0)
 	get_parent().call_deferred("add_child", pu)
+
+## Triggered on stage 3 visit in Act I — drunkards crash the stall.
+func _trigger_showdown() -> void:
+	if _showdown_done: return
+	if QuestManager.get_state("chaya_kada_showdown") == 2: return
+	_showdown_done = true
+	QuestManager.activate_quest("chaya_kada_showdown")
+	get_tree().create_timer(3.2).timeout.connect(func() -> void:
+		var sd: Node = preload("res://scenes/ChayadaShowdown.tscn").instantiate()
+		get_tree().root.add_child(sd)
+		sd.start()
+	)

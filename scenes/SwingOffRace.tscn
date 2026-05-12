@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://buni7qfaquppt"]
+
+[ext_resource type="Script" uid="uid://d0m50dfrrt7t4" path="res://scenes/SwingOffRace.gd" id="1_dtv2w"]
+
+[node name="SwingOffRace" type="Node2D" unique_id=1109550376]
+script = ExtResource("1_dtv2w")

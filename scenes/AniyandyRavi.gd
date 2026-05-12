@@ -11,8 +11,9 @@ const DIALOGUES := [
 	"I've been here since\nyour grandfather's time, boy.",
 ]
 
-var _stage:  int  = 0
-var _served: bool = false
+var _stage:       int  = 0
+var _served:      bool = false
+var _race_started: bool = false
 var _spr: AnimatedSprite2D = null
 
 func _ready() -> void:
@@ -54,6 +55,10 @@ func _on_body_entered(body: Node) -> void:
 	if not _served and _stage >= 1:
 		_served = true
 		_drop_toddy()
+	# Stage 3 (index 3): race challenge dialogue — trigger race on next visit
+	if _stage == 4 and not _race_started:
+		_race_started = true
+		get_tree().create_timer(3.5).timeout.connect(_launch_race)
 
 func _show_stage() -> void:
 	var idx        := mini(_stage, DIALOGUES.size() - 1)
@@ -71,3 +76,27 @@ func _drop_toddy() -> void:
 	pu.type     = "toddy"
 	pu.position = position + Vector2(35.0, -15.0)
 	get_parent().call_deferred("add_child", pu)
+
+func _launch_race() -> void:
+	# Already completed? Skip.
+	var qm: Node = get_node_or_null("/root/QuestManager")
+	if qm == null: return
+	if qm.get_state("swing_off_race") == 2: return
+	qm.activate_quest("swing_off_race")
+	# Gather the 5 nearest trees to the right of Ravi as race checkpoints
+	var race_trees: Array = []
+	var all_trees: Array = get_tree().get_nodes_in_group("trees")
+	var candidates: Array = []
+	for t: Node in all_trees:
+		if t.global_position.x > global_position.x:
+			candidates.append(t)
+	candidates.sort_custom(func(a, b) -> bool:
+		return a.global_position.x < b.global_position.x
+	)
+	for i: int in mini(5, candidates.size()):
+		race_trees.append(candidates[i])
+	if race_trees.size() < 2:
+		return   # not enough trees to race
+	var race: Node2D = preload("res://scenes/SwingOffRace.tscn").instantiate()
+	get_parent().add_child(race)
+	race.setup(global_position, race_trees)
