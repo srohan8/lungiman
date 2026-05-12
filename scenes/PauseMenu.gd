@@ -12,8 +12,9 @@ func _ready() -> void:
 	$BG/Center/VBox/MenuBtn.pressed.connect(_on_main_menu)
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.is_action_just_pressed("ui_cancel"):
+	if event.is_action_pressed("ui_cancel") and not event.is_echo():
 		_toggle()
+		get_viewport().set_input_as_handled()
 
 func _toggle() -> void:
 	visible = not visible
