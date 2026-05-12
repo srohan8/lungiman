@@ -169,11 +169,11 @@ func _spawn_carnival_bell() -> void:
 	lbl.text     = "🔔"
 	lbl.position = Vector2(-10.0, -36.0)
 	bell.add_child(lbl)
-	var _rung := false
+	var rung_flag := [false]   # array so lambda captures by reference
 	bell.area_entered.connect(func(area: Area2D) -> void:
-		if _rung: return
+		if rung_flag[0]: return
 		if area.is_in_group("coconut"):
-			_rung = true
+			rung_flag[0] = true
 			_add_powerup($PowerUps, 1500.0, 185.0, "nut")
 			_add_powerup($PowerUps, 1540.0, 185.0, "nut")
 			var hud := _get_hud()
@@ -240,12 +240,12 @@ func _spawn_one_decoy(px: float, is_real: bool) -> void:
 	# Hit detection via sword (Z key player hitbox) or coconut
 	# We use a simple body_entered with player group + sword phase check
 	decoy.collision_mask = 2   # player layer
-	var already_hit := false
+	var hit_flag := [false]   # array so lambda captures by reference
 	decoy.body_entered.connect(func(body_node: Node) -> void:
-		if already_hit or not body_node.is_in_group("player"): return
+		if hit_flag[0] or not body_node.is_in_group("player"): return
 		# Only triggers on sword swing (sword_phase > 0)
 		if not (body_node.get("sword_phase") > 0): return
-		already_hit = true
+		hit_flag[0] = true
 		if is_real:
 			_get_hud().show_hint("✅ Real Kuttichathan! Keep going!", 2.5)
 			GameManager.score += 30
