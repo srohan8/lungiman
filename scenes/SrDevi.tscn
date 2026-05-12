@@ -1,0 +1,28 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/SrDevi.gd" id="1_devi"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_devi"]
+size = Vector2(36, 64)
+
+[node name="SrDevi" type="Area2D"]
+script = ExtResource("1_devi")
+
+[node name="Label" type="Label" parent="."]
+offset_left = -100.0
+offset_top = -85.0
+offset_right = 100.0
+offset_bottom = -20.0
+autowrap_mode = 3
+horizontal_alignment = 1
+text = "🔔 The bell..."
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_devi")
+
+[node name="Visual" type="ColorRect" parent="."]
+offset_left = -18.0
+offset_top = -64.0
+offset_right = 18.0
+offset_bottom = 0.0
+color = Color(0.85, 0.85, 0.92, 1)

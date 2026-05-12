@@ -20,6 +20,7 @@ func _ready() -> void:
 	_spawn_karinkanni()
 	_spawn_powerups()
 	_spawn_npcs()
+	_spawn_rising_water()
 	_connect_player_to_hud()
 	# Karinkanni hint fires early so players know BEFORE they waste ammo from ground
 	_queue_hint("🥥 CLIMB a tree — Karinkanni floats too high to hit from the ground!", 1.5, 7.0)
@@ -48,8 +49,36 @@ func _spawn_powerups() -> void:
 
 func _spawn_npcs() -> void:
 	var thoma: Node2D = preload("res://scenes/BrotherThoma.tscn").instantiate()
-	thoma.position = Vector2(350.0, GROUND_Y - 10.0)
+	thoma.position = Vector2(200.0, GROUND_Y - 10.0)
 	add_child(thoma)
 	var soniya: Node2D = preload("res://scenes/SoniyaChechi.tscn").instantiate()
-	soniya.position = Vector2(1200.0, GROUND_Y - 10.0)
+	soniya.position = Vector2(500.0, GROUND_Y - 10.0)
 	add_child(soniya)
+	# Sr. Devi — Bell of Bhadrakali quest giver (Phase 5 quest, NPC present now)
+	var devi: Node2D = preload("res://scenes/SrDevi.tscn").instantiate()
+	devi.position = Vector2(1400.0, GROUND_Y - 10.0)
+	add_child(devi)
+
+## Rising water visual — cosmetic pressure. Water line creeps up over 90 seconds.
+func _spawn_rising_water() -> void:
+	var water := ColorRect.new()
+	water.color    = Color(0.06, 0.18, 0.55, 0.50)
+	water.size     = Vector2(8200.0, 30.0)
+	water.position = Vector2(0.0, GROUND_Y - 5.0)
+	water.z_index  = 2
+	add_child(water)
+	# Slow tween upward — purely visual, creates urgency without instant death
+	var tw := create_tween()
+	tw.tween_property(water, "position:y", GROUND_Y - 80.0, 90.0)
+	# Rain drops visual — thin streaks falling
+	for i: int in 18:
+		var drop := ColorRect.new()
+		drop.color    = Color(0.5, 0.7, 1.0, 0.30)
+		drop.size     = Vector2(2.0, 14.0)
+		drop.position = Vector2(randf_range(0.0, 8200.0), randf_range(0.0, 460.0))
+		drop.z_index  = 3
+		add_child(drop)
+		var dt := create_tween()
+		dt.set_loops()
+		dt.tween_property(drop, "position:y", drop.position.y + 460.0, randf_range(1.2, 2.2))
+		dt.tween_property(drop, "position:y", -14.0, 0.0)

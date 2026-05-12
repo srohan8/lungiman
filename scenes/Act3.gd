@@ -28,6 +28,7 @@ func _ready() -> void:
 	_spawn_tracks()
 	_spawn_powerups()
 	_spawn_npcs()
+	_spawn_fog()
 	_connect_player_to_hud()
 	_queue_hint("⚡ Attack Odiyan ONLY during the transform flash!", 1.5, 6.0)
 
@@ -110,5 +111,24 @@ func _spawn_powerups() -> void:
 
 func _spawn_npcs() -> void:
 	var thoma: Node2D = preload("res://scenes/BrotherThoma.tscn").instantiate()
-	thoma.position = Vector2(350.0, GROUND_Y - 10.0)
+	thoma.position = Vector2(200.0, GROUND_Y - 10.0)
 	add_child(thoma)
+	var basheer: Node2D = preload("res://scenes/UstadBasheer.tscn").instantiate()
+	basheer.position = Vector2(400.0, GROUND_Y - 10.0)
+	add_child(basheer)
+
+## Atmospheric fog overlay — dark vignette that deepens as player moves right.
+func _spawn_fog() -> void:
+	var fog := ColorRect.new()
+	fog.color    = Color(0.03, 0.06, 0.04, 0.0)
+	fog.z_index  = 10
+	# Fill the entire viewport using CanvasLayer would be ideal but
+	# a wide world-space rect covers the visible area effectively
+	fog.size     = Vector2(8200.0, 460.0)
+	fog.position = Vector2(0.0, 0.0)
+	add_child(fog)
+	# Tween fog darker as a one-shot at mid-level
+	get_tree().create_timer(15.0).timeout.connect(func() -> void:
+		var tw := create_tween()
+		tw.tween_property(fog, "color", Color(0.0, 0.02, 0.01, 0.45), 12.0)
+	)
