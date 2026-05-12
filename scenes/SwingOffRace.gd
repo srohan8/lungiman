@@ -80,7 +80,8 @@ func _finish(player_won: bool) -> void:
 	_finished = true
 	if player_won:
 		_show_hud_hint("🏆 You beat Ravi! Appam Glide unlocked!")
-		QuestManager.complete_quest("swing_off_race")
+		var qm := get_node_or_null("/root/QuestManager")
+		if qm != null: qm.complete_quest("swing_off_race")
 		GameManager.score += 150
 		GameManager.show_score_popup(position + Vector2(0, -60), 150, Color(1.0, 0.85, 0.2))
 	else:

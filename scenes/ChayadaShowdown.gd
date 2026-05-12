@@ -99,7 +99,8 @@ func _finish(won: bool) -> void:
 	_active = false
 	if won:
 		_lbl.text = "🎉 You drove them out!"
-		QuestManager.complete_quest("chaya_kada_showdown")
+		var qm := get_node_or_null("/root/QuestManager")
+		if qm != null: qm.complete_quest("chaya_kada_showdown")
 		GameManager.score += 100
 		GameManager.show_score_popup(Vector2(410, 300), 100, Color(1.0, 0.75, 0.2))
 	else:

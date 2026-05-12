@@ -91,6 +91,7 @@ var   glide_timer      := 0.0    # > 0 = currently gliding
 var _shake_trauma     := 0.0
 var ammo_regen_timer  := 0.0
 const AMMO_REGEN_INTERVAL := 6.0
+var _qm: Node = null   # QuestManager resolved at runtime
 
 signal climb_prompt_changed(is_visible: bool)
 
@@ -100,6 +101,7 @@ func _ready() -> void:
 	add_to_group("player")
 	collision_layer = 2
 	collision_mask  = 1
+	_qm = get_node_or_null("/root/QuestManager")
 	_build_sprite_frames()
 
 func _build_sprite_frames() -> void:
@@ -249,7 +251,7 @@ func _process_perched(_delta: float, do_climb: bool) -> void:
 
 func _process_flying(delta: float) -> void:
 	# Appam Glide: hold Jump while FLYING to slow descent (requires quest reward)
-	var has_glide := QuestManager.get_state("swing_off_race") == 2
+	var has_glide := _qm != null and _qm.get_state("swing_off_race") == 2
 	if has_glide and Input.is_action_pressed("jump") and velocity.y > 0.0:
 		if glide_timer <= 0.0 and Input.is_action_just_pressed("jump"):
 			glide_timer = GLIDE_DURATION
@@ -369,7 +371,7 @@ func add_trauma(amount: float) -> void:
 	_shake_trauma = minf(1.0, _shake_trauma + amount)
 
 func _is_near_tea_shop() -> bool:
-	if QuestManager.get_state("chaya_kada_showdown") != 2:
+	if _qm == null or _qm.get_state("chaya_kada_showdown") != 2:
 		return false
 	for npc: Node in get_tree().get_nodes_in_group("tea_shop"):
 		if global_position.distance_to(npc.global_position) < 300.0:

@@ -28,6 +28,7 @@ var boss_max_hp: int = 0
 
 # ── Progress (persists across resets within a session) ────────────────────────
 var acts_unlocked: int = 0   # 0 = prologue only; 1 = Act I unlocked; etc.
+var high_score:    int = 0   # best score ever, never reset
 
 # ── Mobile input ──────────────────────────────────────────────────────────────
 var climb_press_pending: bool = false
@@ -170,6 +171,10 @@ func show_score_popup(world_pos: Vector2, points: int, color: Color = Color(1.0,
 		tree.current_scene.add_child(ft)
 
 func win_game() -> void:
+	if score > high_score:
+		high_score = score
+		var sm := get_node_or_null("/root/SaveManager")
+		if sm != null: sm.save_game()
 	game_won.emit()
 
 func reset() -> void:

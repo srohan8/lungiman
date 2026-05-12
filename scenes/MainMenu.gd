@@ -87,6 +87,15 @@ func _build_main_panel() -> Control:
 	sub.add_theme_font_size_override("font_size", 11)
 	vbox.add_child(sub)
 
+	# High score
+	if GameManager.high_score > 0:
+		var hs := Label.new()
+		hs.text = "🏆 Best: %d" % GameManager.high_score
+		hs.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		hs.add_theme_color_override("font_color", Color(1.0, 0.84, 0.28, 0.75))
+		hs.add_theme_font_size_override("font_size", 11)
+		vbox.add_child(hs)
+
 	# Spacer
 	var sp := Control.new(); sp.custom_minimum_size = Vector2(0, 22)
 	vbox.add_child(sp)
@@ -180,7 +189,7 @@ func _open_level_select() -> void:
 		["🌑  Act V — Pey Komban's Rampage","res://scenes/Act5.tscn",5],
 	]
 
-	var unlocked: int = 99   # DEV: all acts unlocked for testing
+	var unlocked: int = GameManager.acts_unlocked
 
 	for level_data: Array in LEVELS:
 		var label_text: String = level_data[0]

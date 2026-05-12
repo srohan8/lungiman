@@ -8,8 +8,9 @@ const SAVE_PATH := "user://save.json"
 func save_game() -> void:
 	var qm := get_node_or_null("/root/QuestManager")
 	var data := {
-		"version":          2,
+		"version":          3,
 		"score":            GameManager.score,
+		"high_score":       GameManager.high_score,
 		"acts_unlocked":    GameManager.acts_unlocked,
 		"has_resurrection": GameManager.has_resurrection,
 		"quests":           _serialise_quests(qm),
@@ -32,6 +33,7 @@ func load_game() -> void:
 		return
 	var data: Dictionary = result
 	GameManager.score            = data.get("score",            0)
+	GameManager.high_score       = data.get("high_score",       0)
 	GameManager.acts_unlocked    = data.get("acts_unlocked",    0)
 	GameManager.has_resurrection = data.get("has_resurrection", false)
 	var qm := get_node_or_null("/root/QuestManager")
