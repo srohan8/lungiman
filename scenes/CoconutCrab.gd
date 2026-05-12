@@ -40,6 +40,8 @@ func _build_anim() -> void:
 		img.fill(Color(0.90, 0.45, 0.10))
 		sf.add_frame("walk", ImageTexture.create_from_image(img))
 	$AnimatedSprite2D.sprite_frames = sf
+	$AnimatedSprite2D.scale    = Vector2(28.0 / CRAB_FRAME_H, 28.0 / CRAB_FRAME_H)
+	$AnimatedSprite2D.position = Vector2(0, -14)
 	$AnimatedSprite2D.play("walk")
 
 func _physics_process(delta: float) -> void:
