@@ -36,6 +36,9 @@ func _process(delta: float) -> void:
 		elif GameManager.paralysis_active:
 			lbl.text    = "❄️ Paralysed!"
 			lbl.visible = true
+		elif GameManager.fish_fry_active:
+			lbl.text    = "🐟 Fish Fry!"
+			lbl.visible = true
 		else:
 			lbl.visible = false
 

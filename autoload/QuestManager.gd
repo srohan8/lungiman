@@ -36,6 +36,13 @@ const QUEST_DATA := {
 		"total_steps": 1,
 		"reward":      "Totem Revival — a second resurrection token",
 	},
+	"fish_fry_for_gods": {
+		"title":       "Fish Fry for the Gods",
+		"desc":        "Help Biju Ettan prepare a feast for the forest spirits.",
+		"act":         0,
+		"total_steps": 1,
+		"reward":      "Double HP regen for one full act",
+	},
 }
 
 var _states:   Dictionary = {}   # quest_id → QuestState

@@ -19,6 +19,8 @@ var paralysis_active: bool  = false
 var paralysis_timer:  float = 0.0
 var toddy_active:   bool  = false   # dizzy — wobbly controls + camera sway
 var toddy_timer:    float = 0.0
+var fish_fry_active: bool  = false   # Fish Fry quest reward: HP regen 2× per regen tick
+var fish_fry_timer:  float = 0.0
 
 # ── Boss HP ───────────────────────────────────────────────────────────────────
 var boss_hp:     int = 0
@@ -61,11 +63,16 @@ func _process(delta: float) -> void:
 		toddy_timer -= delta
 		if toddy_timer <= 0.0:
 			toddy_active = false
+	if fish_fry_active:
+		fish_fry_timer -= delta
+		if fish_fry_timer <= 0.0:
+			fish_fry_active = false
 
 func apply_powerup(type: String) -> void:
 	match type:
 		"heart":
-			hp = mini(hp + 40, max_hp)
+			var heal := 80 if fish_fry_active else 40
+			hp = mini(hp + heal, max_hp)
 			hp_changed.emit(hp)
 		"nut":
 			ammo = mini(ammo + 4, max_ammo)

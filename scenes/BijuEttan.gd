@@ -8,11 +8,12 @@ const DIALOGUES := [
 	"Kanjiravanam was peaceful\nonce. Before the spirits woke.",
 	"Stay on the trees at night.\nThe ground belongs to them.",
 	"You're still here?\nThe village needs you, machane.",
-	"Come back safely.\nI'll have fish fry waiting. 🐟",
+	"🐟 Fish fry is ready!\nEat — it will strengthen you.",
 ]
 
-var _stage: int = 0
+var _stage:        int  = 0
 var _gave_coconut: bool = false
+var _quest_done:   bool = false
 
 func _ready() -> void:
 	collision_layer = 0
@@ -46,13 +47,24 @@ func _on_body_entered(body: Node) -> void:
 	var spr: AnimatedSprite2D = get_meta("_spr")
 	spr.play("talk")
 	_stage += 1
-	# First meeting: drop a coconut powerup
+	# First meeting: drop a coconut, activate Fish Fry quest
 	if not _gave_coconut and _stage == 1:
 		_gave_coconut = true
 		var pu: Node2D = preload("res://scenes/PowerUp.tscn").instantiate()
 		pu.type     = "nut"
 		pu.position = position + Vector2(40, -10)
 		get_parent().call_deferred("add_child", pu)
+		var qm := get_node_or_null("/root/QuestManager")
+		if qm != null: qm.activate_quest("fish_fry_for_gods")
+	# 5th meeting: fish fry reward — double HP regen flag + complete quest
+	if _stage == 5 and not _quest_done:
+		_quest_done = true
+		var qm := get_node_or_null("/root/QuestManager")
+		if qm != null: qm.complete_quest("fish_fry_for_gods")
+		GameManager.fish_fry_active = true
+		GameManager.fish_fry_timer  = 300.0   # 5 minutes of double regen
+		GameManager.show_score_popup(position + Vector2(0, -50), 50, Color(1.0, 0.7, 0.3))
+		GameManager.score += 50
 	get_tree().create_timer(3.5).timeout.connect(func() -> void:
 		$Label.visible = false
 		spr.play("idle")
