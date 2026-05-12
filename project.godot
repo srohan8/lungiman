@@ -26,6 +26,7 @@ SceneManager="*res://autoload/SceneManager.gd"
 MCPRuntime="*res://addons/godot_mcp/runtime/mcp_runtime.gd"
 QuestManager="*res://autoload/QuestManager.gd"
 AudioManager="*res://autoload/AudioManager.gd"
+SaveManager="*res://autoload/SaveManager.gd"
 
 [display]
 

@@ -148,6 +148,9 @@ func boss_take_damage(amount: int) -> void:
 
 func unlock_act(act_index: int) -> void:
 	acts_unlocked = maxi(acts_unlocked, act_index)
+	# Auto-save whenever a new act is unlocked
+	var sm := get_node_or_null("/root/SaveManager")
+	if sm != null: sm.save_game()
 
 ## Spawn a floating score popup at world_pos.
 func show_score_popup(world_pos: Vector2, points: int, color: Color = Color(1.0, 0.92, 0.25)) -> void:

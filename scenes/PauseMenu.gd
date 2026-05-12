@@ -30,4 +30,6 @@ func _on_settings() -> void:
 func _on_main_menu() -> void:
 	Engine.time_scale  = 1.0
 	get_tree().paused  = false
+	var sm := get_node_or_null("/root/SaveManager")
+	if sm != null: sm.save_game()
 	SceneManager.go_to("res://scenes/MainMenu.tscn")

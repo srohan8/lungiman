@@ -24,6 +24,9 @@ const _QS_DONE   := 2
 
 func _ready() -> void:
 	_qm = get_node_or_null("/root/QuestManager")
+	# Load persistent save data on every MainMenu visit
+	var sm := get_node_or_null("/root/SaveManager")
+	if sm != null: sm.load_game()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_build_background()
 	_main_panel  = _build_main_panel()
@@ -89,12 +92,24 @@ func _build_main_panel() -> Control:
 	vbox.add_child(sp)
 
 	# Buttons
-	var btn_play     := _make_button("▶  New Game")
+	var sm := get_node_or_null("/root/SaveManager")
+	var has_save: bool = sm != null and sm.has_save()
+
+	if has_save:
+		var btn_continue := _make_button("▶  Continue")
+		btn_continue.add_theme_color_override("font_color", Color(0.4, 1.0, 0.6))
+		btn_continue.pressed.connect(func() -> void:
+			SceneManager.go_to("res://scenes/World.tscn")
+		)
+		vbox.add_child(btn_continue)
+
+	var btn_play     := _make_button("🌱  New Game" if has_save else "▶  New Game")
 	var btn_level    := _make_button("🗺  Level Select")
 	var btn_quest    := _make_button("📜  Side Quests")
 	var btn_settings := _make_button("⚙️  Settings")
 
 	btn_play.pressed.connect(func() -> void:
+		if sm != null: sm.delete_save()
 		GameManager.reset()
 		if _qm != null: _qm.reset()
 		SceneManager.go_to("res://scenes/World.tscn")
