@@ -11,7 +11,7 @@ func show_game_over() -> void:
 func _on_retry_pressed() -> void:
 	get_tree().paused = false
 	GameManager.reset()
-	SceneManager.go_to("res://scenes/World.tscn")
+	SceneManager.reload()   # restart the same act, not World
 
 func _on_menu_pressed() -> void:
 	get_tree().paused = false
