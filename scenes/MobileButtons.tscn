@@ -1,0 +1,89 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/MobileButtons.gd" id="1_mob"]
+
+[node name="MobileButtons" type="CanvasLayer"]
+script = ExtResource("1_mob")
+
+[node name="BtnLeft" type="Button" parent="."]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 8.0
+offset_top = 20.0
+offset_right = 64.0
+offset_bottom = 76.0
+text = "◀"
+theme_override_font_sizes/font_size = 22
+
+[node name="BtnRight" type="Button" parent="."]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 72.0
+offset_top = 20.0
+offset_right = 128.0
+offset_bottom = 76.0
+text = "▶"
+theme_override_font_sizes/font_size = 22
+
+[node name="BtnUp" type="Button" parent="."]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 140.0
+offset_top = -40.0
+offset_right = 196.0
+offset_bottom = 16.0
+text = "▲"
+theme_override_font_sizes/font_size = 22
+
+[node name="BtnDown" type="Button" parent="."]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 140.0
+offset_top = 20.0
+offset_right = 196.0
+offset_bottom = 76.0
+text = "▼"
+theme_override_font_sizes/font_size = 22
+
+[node name="BtnSword" type="Button" parent="."]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -196.0
+offset_top = 20.0
+offset_right = -140.0
+offset_bottom = 76.0
+text = "⚔"
+theme_override_font_sizes/font_size = 22
+
+[node name="BtnCoconut" type="Button" parent="."]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -128.0
+offset_top = 20.0
+offset_right = -72.0
+offset_bottom = 76.0
+text = "🥥"
+theme_override_font_sizes/font_size = 22
+
+[node name="BtnClimb" type="Button" parent="."]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = 20.0
+offset_right = -8.0
+offset_bottom = 76.0
+text = "🌴"
+theme_override_font_sizes/font_size = 22

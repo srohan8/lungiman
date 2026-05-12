@@ -1,0 +1,46 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scenes/Act4.gd" id="1_act4"]
+[ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/HUD.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/GameOver.tscn" id="4_go"]
+[ext_resource type="PackedScene" path="res://scenes/Victory.tscn" id="5_vic"]
+[ext_resource type="PackedScene" path="res://scenes/MobileButtons.tscn" id="6_mob"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(8200, 40)
+
+[node name="Act4" type="Node2D"]
+script = ExtResource("1_act4")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(100, 340)
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(4100, 395)
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="GroundVis" type="ColorRect" parent="Ground"]
+offset_left = -4100.0
+offset_top = -20.0
+offset_right = 4100.0
+offset_bottom = 20.0
+color = Color(0.20, 0.25, 0.20, 1)
+
+[node name="Trees" type="Node2D" parent="."]
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="PowerUps" type="Node2D" parent="."]
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="GameOver" parent="." instance=ExtResource("4_go")]
+
+[node name="Victory" parent="." instance=ExtResource("5_vic")]
+
+[node name="MobileButtons" parent="." instance=ExtResource("6_mob")]

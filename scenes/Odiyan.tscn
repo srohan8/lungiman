@@ -1,0 +1,36 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/Odiyan.gd" id="1_odiyan"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_odiyan"]
+radius = 20.0
+height = 48.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_odiyanhit"]
+size = Vector2(56, 68)
+
+[node name="Odiyan" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_odiyan")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+offset_left = -28.0
+offset_top = -68.0
+offset_right = 28.0
+offset_bottom = 0.0
+color = Color(0.75, 0.75, 0.75, 1.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -34)
+shape = SubResource("CapsuleShape2D_odiyan")
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -34)
+shape = SubResource("RectangleShape2D_odiyanhit")
+
+[connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

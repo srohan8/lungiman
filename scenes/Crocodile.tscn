@@ -1,0 +1,34 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/Crocodile.gd" id="1_croc"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_croc"]
+size = Vector2(90, 44)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_crochit"]
+size = Vector2(90, 44)
+
+[node name="Crocodile" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_croc")
+
+[node name="ColorRect" type="TextureRect" parent="."]
+offset_left = -45.0
+offset_top = -44.0
+offset_right = 45.0
+offset_bottom = 0.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -22)
+shape = SubResource("RectangleShape2D_croc")
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(0, -22)
+shape = SubResource("RectangleShape2D_crochit")
+
+[connection signal="body_entered" from="Hitbox" to="." method="_on_hitbox_body_entered"]

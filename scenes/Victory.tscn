@@ -1,0 +1,41 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/Victory.gd" id="1_vic"]
+
+[node name="Victory" type="CanvasLayer"]
+script = ExtResource("1_vic")
+
+[node name="BG" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.02, 0.08, 0.02, 0.82)
+
+[node name="Center" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="VBox" type="VBoxContainer" parent="Center"]
+custom_minimum_size = Vector2(340, 140)
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="Center/VBox"]
+text = "🌴 KANJIRAVANAM SAVED!"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+theme_override_colors/font_color = Color(0.8, 1.0, 0.4, 1)
+
+[node name="ScoreLabel" type="Label" parent="Center/VBox"]
+text = "Final Score: 0"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 20
+
+[node name="Spacer" type="Control" parent="Center/VBox"]
+custom_minimum_size = Vector2(0, 16)
+
+[node name="PlayAgain" type="Button" parent="Center/VBox"]
+text = "Play Again"
+theme_override_font_sizes/font_size = 20
+
+[connection signal="pressed" from="Center/VBox/PlayAgain" to="." method="_on_play_again_pressed"]
