@@ -25,6 +25,8 @@ func _ready() -> void:
 	_unlocks_act = 3
 	_spawn_trees()
 	_spawn_fire_hazards()
+	_spawn_carnival_bell()
+	_spawn_monkey_swarm()
 	_spawn_kuttichathan()
 	_spawn_powerups()
 	_spawn_npcs()
@@ -136,6 +138,59 @@ func _drop_fireball() -> void:
 	tw.tween_callback(fb.queue_free)
 
 	_schedule_fireball()
+
+## Carnival Bell stall at x=1500 — throw coconut from crown to hit it, drops nut.
+func _spawn_carnival_bell() -> void:
+	# Elevated platform for the stall
+	_add_platform(1500.0, 200.0, 80.0, Color(0.45, 0.22, 0.08, 1.0))
+
+	# Bell hitbox Area2D — detected by coconut projectiles
+	var bell := Area2D.new()
+	bell.name = "CarnivalBell"
+	bell.collision_layer = 8   # layer 4 = bells / interactables
+	bell.collision_mask  = 0
+	bell.position        = Vector2(1500.0, 190.0)
+	var bc := CollisionShape2D.new()
+	var bs := CircleShape2D.new()
+	bs.radius = 16.0
+	bc.shape  = bs
+	bell.add_child(bc)
+	# Visual: golden circle
+	var bv := ColorRect.new()
+	bv.color    = Color(1.0, 0.80, 0.10, 1.0)
+	bv.size     = Vector2(28.0, 28.0)
+	bv.position = Vector2(-14.0, -14.0)
+	bell.add_child(bv)
+	# Label
+	var lbl := Label.new()
+	lbl.text     = "🔔"
+	lbl.position = Vector2(-10.0, -36.0)
+	bell.add_child(lbl)
+	var _rung := false
+	bell.area_entered.connect(func(area: Area2D) -> void:
+		if _rung: return
+		if area.is_in_group("coconut"):
+			_rung = true
+			_add_powerup($PowerUps, 1500.0, 185.0, "nut")
+			_add_powerup($PowerUps, 1540.0, 185.0, "nut")
+			var hud := _get_hud()
+			if hud: hud.show_hint("🏆 Carnival Champion!", 3.0)
+			bv.color = Color(0.5, 0.5, 0.5, 1.0)   # greyed out after ring
+	)
+	add_child(bell)
+
+## Monkey Swarm midboss at x=2800 — 5 monkeys, each death speeds survivors.
+func _spawn_monkey_swarm() -> void:
+	const SWARM := "act2_swarm"
+	var positions := [2600.0, 2700.0, 2800.0, 2900.0, 3000.0]
+	for px: float in positions:
+		var m: Node2D = preload("res://scenes/HauntedMonkey.tscn").instantiate()
+		m.position     = Vector2(px, GROUND_Y)
+		m.swarm_id     = SWARM
+		m.patrol_left  = 2400.0
+		m.patrol_right = 3200.0
+		$Enemies.add_child(m)
+	_queue_hint("🙈 MONKEY SWARM — kill one, the rest get faster!", 10.0, 5.5)
 
 func _spawn_kuttichathan() -> void:
 	var boss: Node2D = preload("res://scenes/Kuttichathan.tscn").instantiate()

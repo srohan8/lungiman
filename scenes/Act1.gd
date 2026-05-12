@@ -37,6 +37,8 @@ func _ready() -> void:
 	_spawn_elevated_platforms()
 	_spawn_broken_bridge()
 	_build_river()
+	_spawn_haunted_monkeys()
+	_spawn_mirror_pool()
 	_spawn_yakshi()
 	_spawn_ghosts()
 	_spawn_powerups()
@@ -159,6 +161,37 @@ func _spawn_broken_bridge() -> void:
 
 	# Early hint — fires before the player reaches the gap
 	_queue_hint("🌴 Bridge is out — CLIMB and SWING across!", 1.5, 5.0)
+
+## Haunted Monkeys in the vine zone x=1500–2200 — lone patrol enemies.
+func _spawn_haunted_monkeys() -> void:
+	var xs := [1550.0, 1750.0, 1950.0, 2100.0]
+	for px: float in xs:
+		var m: Node2D = preload("res://scenes/HauntedMonkey.tscn").instantiate()
+		m.position     = Vector2(px, GROUND_Y)
+		m.patrol_left  = 1400.0
+		m.patrol_right = 2200.0
+		$Enemies.add_child(m)
+
+## Mirror Pool visual — reflective water strip below the ghost clone zone.
+func _spawn_mirror_pool() -> void:
+	const POOL_X := 3800.0
+	const POOL_W := 1800.0
+	# Dark reflective water layer
+	var pool := ColorRect.new()
+	pool.color    = Color(0.05, 0.12, 0.38, 0.55)
+	pool.size     = Vector2(POOL_W, 28.0)
+	pool.position = Vector2(POOL_X, GROUND_Y - 28.0)
+	pool.z_index  = -1
+	add_child(pool)
+	# Shimmer line
+	var shimmer := ColorRect.new()
+	shimmer.color    = Color(0.4, 0.7, 1.0, 0.20)
+	shimmer.size     = Vector2(POOL_W, 4.0)
+	shimmer.position = Vector2(POOL_X, GROUND_Y - 32.0)
+	shimmer.z_index  = 0
+	add_child(shimmer)
+	# Mirror hint
+	_queue_hint("🪧 Only the real one carries its shadow.", 22.0, 6.0)
 
 func _spawn_yakshi() -> void:
 	var yakshi: Node2D = preload("res://scenes/Yakshi.tscn").instantiate()

@@ -6,6 +6,7 @@ const DAMAGE  := 25
 var velocity := Vector2.ZERO
 
 func _ready() -> void:
+	add_to_group("coconut")
 	collision_layer = 0
 	collision_mask  = 4   # hits Enemies (layer 3)
 	body_entered.connect(_on_body_entered)
