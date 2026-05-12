@@ -14,6 +14,7 @@ const ZONE_H       := 260.0   # massive ancient trees
 func _ready() -> void:
 	_trigger_x   = ACT_TRIGGER_X
 	_unlocks_act = 0
+	_apply_sky(Color(0.04, 0.05, 0.10))   # near-black sacred grove night
 	_spawn_trees()
 	_spawn_trail_stumps()
 	_spawn_fireflies()

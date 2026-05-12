@@ -28,6 +28,7 @@ func _ready() -> void:
 	_next_scene  = NEXT_SCENE
 	_unlocks_act = 1   # completing prologue unlocks Act I
 	_trigger_x  = ACT_TRIGGER_X
+	_apply_sky(Color(0.98, 0.82, 0.40))   # golden late-afternoon
 	_spawn_trees()
 	_spawn_river()
 	_spawn_crabs()

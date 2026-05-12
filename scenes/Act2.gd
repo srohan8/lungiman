@@ -23,6 +23,7 @@ func _ready() -> void:
 	_next_scene  = NEXT_SCENE
 	_trigger_x   = ACT_TRIGGER_X
 	_unlocks_act = 3
+	_apply_sky(Color(0.18, 0.08, 0.05))   # deep ember-red carnival night
 	_spawn_trees()
 	_spawn_fire_hazards()
 	_spawn_carnival_bell()

@@ -16,6 +16,7 @@ func _ready() -> void:
 	_next_scene  = NEXT_SCENE
 	_trigger_x   = ACT_TRIGGER_X
 	_unlocks_act = 5
+	_apply_sky(Color(0.10, 0.18, 0.30))   # rain-drenched deep blue-grey
 	_spawn_trees()
 	_spawn_karinkanni()
 	_spawn_powerups()

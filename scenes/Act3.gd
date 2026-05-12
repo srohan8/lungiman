@@ -18,13 +18,14 @@ const TRACK_XS     := [700.0, 1800.0, 3200.0, 4000.0]
 var _tracks_found  := 0
 var _odiyan_ref: Node2D = null   # set when boss spawns
 
-func _get_hud() -> Node:
-	return get_tree().get_first_node_in_group("hud")
+func _get_hud() -> CanvasLayer:
+	return get_tree().get_first_node_in_group("hud") as CanvasLayer
 
 func _ready() -> void:
 	_next_scene  = NEXT_SCENE
 	_trigger_x   = ACT_TRIGGER_X
 	_unlocks_act = 4
+	_apply_sky(Color(0.30, 0.38, 0.30))   # foggy grey-green highland
 	var qm := get_node_or_null("/root/QuestManager")
 	if qm != null: qm.activate_quest("odiyan_tracks")
 	_spawn_trees()

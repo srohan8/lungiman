@@ -33,6 +33,7 @@ func _ready() -> void:
 	_next_scene  = NEXT_SCENE
 	_trigger_x   = ACT_TRIGGER_X
 	_unlocks_act = 2   # completing Act I unlocks Act II
+	_apply_sky(Color(0.85, 0.50, 0.18))   # warm dusk orange
 	_spawn_trees()
 	_spawn_elevated_platforms()
 	_spawn_broken_bridge()

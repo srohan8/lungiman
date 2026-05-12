@@ -132,6 +132,36 @@ func _queue_hint(text: String, delay: float = 1.5, duration: float = 5.0) -> voi
 				hud.show_hint(text, duration)
 	)
 
+# ── Atmosphere ───────────────────────────────────────────────────────────────
+
+## Call from each act's _ready() to set the sky background colour.
+## Automatically adds a screen-space vignette overlay on first call.
+func _apply_sky(sky_color: Color) -> void:
+	# Background sky rect (behind all scene nodes, z_index = -100)
+	var bg := ColorRect.new()
+	bg.name     = "SkyBackground"
+	bg.color    = sky_color
+	bg.z_index  = -100
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Size it large enough to cover the scrolling viewport (8192 wide)
+	bg.size     = Vector2(8192, 600)
+	bg.position = Vector2(-200, -100)
+	add_child(bg)
+	# Vignette CanvasLayer — persists above game world, below HUD (layer 10)
+	if not get_node_or_null("Vignette"):
+		var cl := CanvasLayer.new()
+		cl.name  = "Vignette"
+		cl.layer = 10
+		var tex_rect := TextureRect.new()
+		const VIGN_PATH := "res://assets/vignette.png"
+		if ResourceLoader.exists(VIGN_PATH):
+			tex_rect.texture = load(VIGN_PATH)
+		tex_rect.stretch_mode = TextureRect.STRETCH_SCALE
+		tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cl.add_child(tex_rect)
+		add_child(cl)
+
 # ── Utility ──────────────────────────────────────────────────────────────────
 
 func _linspace(from: float, to: float, count: int) -> Array:
