@@ -361,9 +361,15 @@ func _update_animation() -> void:
 		_: target_anim = &"walk" if absf(velocity.x) > 10.0 else &"idle"
 	if spr.animation != target_anim: spr.play(target_anim)
 	spr.flip_h = (face < 0)
-	if in_water:
-		modulate = Color(0.55, 0.78, 1.0, 0.90)
-	elif iframe_timer > 0.0:
-		modulate = Color(1.0, 1.0, 1.0, 0.45)
+	if iframe_timer > 0.0:
+		modulate = Color(1.0, 1.0, 1.0, 0.45)   # hit flash
+	elif in_water:
+		modulate = Color(0.55, 0.78, 1.0, 0.90)  # wade tint
+	elif GameManager.rage_active:
+		# Porotta rage — orange fire glow pulses with time
+		var pulse := 0.85 + sin(Time.get_ticks_msec() * 0.008) * 0.15
+		modulate = Color(1.0, 0.45 * pulse, 0.05, 1.0)
+	elif GameManager.slow_mo_active:
+		modulate = Color(0.70, 0.95, 1.0, 1.0)   # chai slow-mo — cool blue shimmer
 	else:
 		modulate = Color.WHITE

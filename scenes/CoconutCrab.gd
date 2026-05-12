@@ -58,6 +58,7 @@ func take_damage(dmg: int) -> void:
 func _die() -> void:
 	if randf() < 0.55: _drop_powerup()
 	GameManager.score += 10
+	GameManager.show_score_popup(position - Vector2(0, 20), 10)
 	queue_free()
 
 func _on_hitbox_body_entered(body: Node2D) -> void:

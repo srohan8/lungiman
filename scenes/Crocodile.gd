@@ -124,6 +124,7 @@ func take_damage(dmg: int) -> void:
 
 func _die() -> void:
 	GameManager.score += 15
+	GameManager.show_score_popup(position - Vector2(0, 24), 15, Color(0.4, 1.0, 0.5))
 	queue_free()
 
 func _on_hitbox_body_entered(body: Node2D) -> void:

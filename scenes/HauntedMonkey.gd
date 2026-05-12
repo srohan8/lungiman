@@ -73,12 +73,12 @@ func take_damage(dmg: int) -> void:
 	if hp <= 0: _die()
 
 func _die() -> void:
-	# Increment swarm death counter so survivors accelerate
 	if swarm_id != "":
 		_swarm_deaths[swarm_id] = _deaths_for_swarm() + 1
 	if randf() < 0.50:
 		_drop_powerup()
 	GameManager.score += 8
+	GameManager.show_score_popup(position - Vector2(0, 20), 8)
 	queue_free()
 
 func _drop_powerup() -> void:

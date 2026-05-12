@@ -137,6 +137,16 @@ func boss_take_damage(amount: int) -> void:
 func unlock_act(act_index: int) -> void:
 	acts_unlocked = maxi(acts_unlocked, act_index)
 
+## Spawn a floating score popup at world_pos.
+func show_score_popup(world_pos: Vector2, points: int, color: Color = Color(1.0, 0.92, 0.25)) -> void:
+	var ft: Node2D = preload("res://scenes/FloatingText.tscn").instantiate()
+	ft.text     = "+%d" % points
+	ft.color    = color
+	ft.position = world_pos
+	var tree    := Engine.get_main_loop() as SceneTree
+	if tree and tree.current_scene:
+		tree.current_scene.add_child(ft)
+
 func win_game() -> void:
 	game_won.emit()
 
