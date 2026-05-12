@@ -251,7 +251,7 @@ func _process_perched(_delta: float, do_climb: bool) -> void:
 
 func _process_flying(delta: float) -> void:
 	# Appam Glide: hold Jump while FLYING to slow descent (requires quest reward)
-	var has_glide := _qm != null and _qm.get_state("swing_off_race") == 2
+	var has_glide: bool = _qm != null and _qm.get_state("swing_off_race") == 2
 	if has_glide and Input.is_action_pressed("jump") and velocity.y > 0.0:
 		if glide_timer <= 0.0 and Input.is_action_just_pressed("jump"):
 			glide_timer = GLIDE_DURATION

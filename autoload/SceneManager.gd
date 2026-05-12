@@ -14,8 +14,6 @@ func _ready() -> void:
 	_overlay.color        = Color(0, 0, 0, 0)
 	_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	# Explicit size guards against anchors not resolving in CanvasLayer on first frame
-	_overlay.size         = Vector2(820, 460)
 	add_child(_overlay)
 
 func go_to(scene_path: String) -> void:
