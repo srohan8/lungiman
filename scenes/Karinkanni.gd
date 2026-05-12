@@ -97,8 +97,21 @@ func _process(delta: float) -> void:
 			if _spr != null: _spr.play("closed")
 
 func _fire_ray() -> void:
-	if is_instance_valid(_player):
-		GameManager.activate_paralysis(2.0)
+	if not is_instance_valid(_player): return
+	GameManager.activate_paralysis(2.0)
+	# Visual ray beam from eye to player
+	var ray := Line2D.new()
+	ray.width           = 4.0
+	ray.default_color   = Color(0.7, 0.0, 1.0, 0.85)
+	ray.z_index         = 5
+	var target_local := to_local(_player.global_position)
+	ray.add_point(Vector2.ZERO)
+	ray.add_point(target_local)
+	add_child(ray)
+	# Fade and remove beam
+	var tw := create_tween()
+	tw.tween_property(ray, "modulate:a", 0.0, 0.5)
+	tw.chain().tween_callback(ray.queue_free)
 
 func take_damage(dmg: int) -> void:
 	if not _eye_open: return

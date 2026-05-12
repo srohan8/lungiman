@@ -109,7 +109,11 @@ func _physics_process(delta: float) -> void:
 			velocity.x   = spd * dir
 			if _spr != null: _spr.flip_h = (dir < 0)
 			state_timer -= delta
-			if state_timer <= 0.0:
+			# Wall impact shake when charge ends or hits boundary
+			var hit_wall := is_on_wall() or (hp <= 1 and (position.x < 500.0 or position.x > 7400.0))
+			if hit_wall and is_instance_valid(_player):
+				_player.add_trauma(0.85)
+			if state_timer <= 0.0 or is_on_wall():
 				state       = State.RECOVER
 				state_timer = RECOVER_DURATION_P2 if hp <= 3 else RECOVER_DURATION_P1
 				if _spr != null: _spr.play("patrol")
