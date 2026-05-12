@@ -18,11 +18,6 @@ var _unlocks_act   := 0     # set by each Act: completing this act unlocks _unlo
 # ── Auto-transition ──────────────────────────────────────────────────────────
 
 func _process(_delta: float) -> void:
-	# Escape → back to main menu
-	if Input.is_action_just_pressed("ui_cancel"):
-		SceneManager.go_to("res://scenes/MainMenu.tscn")
-		return
-
 	if _act_triggered or _next_scene.is_empty():
 		return
 	var player := _get_player()
@@ -35,6 +30,13 @@ func _process(_delta: float) -> void:
 # ── HUD wiring ───────────────────────────────────────────────────────────────
 
 func _connect_player_to_hud() -> void:
+	# Spawn PauseMenu so Escape works in every act
+	if not get_node_or_null("PauseMenu"):
+		var pm: Node = preload("res://scenes/PauseMenu.tscn").instantiate()
+		pm.name = "PauseMenu"
+		# Must process while paused
+		pm.process_mode = Node.PROCESS_MODE_ALWAYS
+		add_child(pm)
 	var player := _get_player()
 	var hud    := _get_hud()
 	if player and hud:

@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://d2qya4jjp7yyh"]
+
+[ext_resource type="Script" uid="uid://bntdkjorh7ks4" path="res://scenes/PauseMenu.gd" id="1_jvnd5"]
+
+[node name="PauseMenu" type="CanvasLayer" unique_id=2112542842]
+script = ExtResource("1_jvnd5")
+
+[node name="BG" type="ColorRect" parent="." unique_id=486264792]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.72)
+
+[node name="Center" type="CenterContainer" parent="BG" unique_id=1228271487]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="VBox" type="VBoxContainer" parent="BG/Center" unique_id=2123632308]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="Title" type="Label" parent="BG/Center/VBox" unique_id=425035983]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.84, 0.28, 1)
+theme_override_font_sizes/font_size = 28
+text = "⏸ Paused"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="BG/Center/VBox" unique_id=2117493575]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+
+[node name="ResumeBtn" type="Button" parent="BG/Center/VBox" unique_id=744752767]
+custom_minimum_size = Vector2(240, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "▶  Resume"
+
+[node name="SettingsBtn" type="Button" parent="BG/Center/VBox" unique_id=1148408440]
+custom_minimum_size = Vector2(240, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "⚙️  Settings"
+
+[node name="MenuBtn" type="Button" parent="BG/Center/VBox" unique_id=1346383333]
+custom_minimum_size = Vector2(240, 42)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "🌴  Main Menu"
