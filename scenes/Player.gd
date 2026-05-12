@@ -214,14 +214,21 @@ func _process_perched(_delta: float, do_climb: bool) -> void:
 	var h := Input.get_axis("move_left", "move_right")
 	if h != 0.0: face = int(sign(h))
 	$AnimatedSprite2D.flip_h = (face < 0)
+	# E / climb button (or mobile BtnClimb) → drop from crown
 	if do_climb:
-		if Input.is_action_pressed("move_down"):
-			velocity.y = 300.0
-			tree_state = TreeState.NONE
-			climb_tree = null
+		velocity.y = 300.0
+		tree_state = TreeState.NONE
+		climb_tree = null
+	# Jump (X / Space) → swing to the nearest crown in facing direction,
+	# or leap off freely if no tree is in range
+	elif Input.is_action_just_pressed("jump"):
+		var target := _near_tree_in_facing()
+		if target != null:
+			_launch_to_tree(target)   # arc to next crown
 		else:
-			var target := _near_tree_in_facing()
-			if target != null: _launch_to_tree(target)
+			velocity.y = JUMP_VELOCITY
+			tree_state = TreeState.FLYING
+			climb_tree = null
 
 func _process_flying(delta: float) -> void:
 	velocity.y += GRAVITY * delta
@@ -299,7 +306,9 @@ func _check_sword_hit() -> void:
 			enemy.take_damage(30 * GameManager.damage_multiplier())
 
 func _handle_coconut() -> void:
-	if Input.is_action_just_pressed("coconut") and GameManager.ammo > 0 and tree_state == TreeState.NONE:
+	# Allow throws from ground AND from tree crown (key tactic vs aerial bosses)
+	var can_throw := tree_state == TreeState.NONE or tree_state == TreeState.PERCHED
+	if Input.is_action_just_pressed("coconut") and GameManager.ammo > 0 and can_throw:
 		GameManager.ammo -= 1
 		var proj: Node2D = preload("res://scenes/CoconutProjectile.tscn").instantiate()
 		proj.position = global_position
