@@ -22,6 +22,7 @@ func _ready() -> void:
 	_spawn_powerups()
 	_spawn_npcs()
 	_spawn_rising_water()
+	_spawn_rain()
 	_connect_player_to_hud()
 	# Karinkanni hint fires early so players know BEFORE they waste ammo from ground
 	_queue_hint("🥥 CLIMB a tree — Karinkanni floats too high to hit from the ground!", 1.5, 7.0)
@@ -83,3 +84,26 @@ func _spawn_rising_water() -> void:
 		dt.set_loops()
 		dt.tween_property(drop, "position:y", drop.position.y + 460.0, randf_range(1.2, 2.2))
 		dt.tween_property(drop, "position:y", -14.0, 0.0)
+
+## Screen-space CPUParticles2D rain — CanvasLayer so it follows the camera.
+func _spawn_rain() -> void:
+	var cl := CanvasLayer.new()
+	cl.name  = "RainLayer"
+	cl.layer = 8
+	var p := CPUParticles2D.new()
+	p.emitting               = true
+	p.amount                 = 180
+	p.lifetime               = 0.75
+	p.emission_shape         = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.emission_rect_extents  = Vector2(460, 8)
+	p.position               = Vector2(410, -8)
+	p.direction              = Vector2(0.12, 1.0).normalized()
+	p.spread                 = 3.0
+	p.gravity                = Vector2(0, 0)
+	p.initial_velocity_min   = 440.0
+	p.initial_velocity_max   = 520.0
+	p.color                  = Color(0.6, 0.78, 1.0, 0.38)
+	p.scale_amount_min       = 2.0
+	p.scale_amount_max       = 5.0
+	cl.add_child(p)
+	add_child(cl)
