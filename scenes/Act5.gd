@@ -37,10 +37,10 @@ func _spawn_powerups() -> void:
 	var data := [
 		[500.0,  GROUND_Y, "heart"],
 		[1500.0, GROUND_Y, "nut"],
-		[2800.0, 240.0,    "curry"],   # elevated — crown-leap required
+		[2800.0, 240.0,    "porotta"],   # elevated — crown-leap required
 		[4800.0, GROUND_Y, "heart"],
 		[5800.0, GROUND_Y, "nut"],
-		[6800.0, GROUND_Y, "rum"],
+		[6800.0, GROUND_Y, "toddy"],
 	]
 	for d: Array in data:
 		_add_powerup($PowerUps, d[0], float(d[1]), d[2])

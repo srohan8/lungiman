@@ -130,7 +130,7 @@ func _spawn_powerups() -> void:
 	var data := [
 		[ 450.0, 235.0,    "heart"],   # on first elevated platform
 		[1250.0, 228.0,    "nut"],     # on second elevated platform
-		[3000.0, GROUND_Y, "rum"],
+		[3000.0, GROUND_Y, "toddy"],
 		[4500.0, GROUND_Y, "nut"],
 		[5800.0, GROUND_Y, "heart"],
 		[6200.0, GROUND_Y, "chai"],    # second chai near Yakshi for insurance

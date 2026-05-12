@@ -87,6 +87,6 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 
 func _drop_powerup() -> void:
 	var pu: Node2D = preload("res://scenes/PowerUp.tscn").instantiate()
-	pu.type = (["heart","nut","rum","curry","chai"])[randi() % 5]
+	pu.type = (["heart","nut","porotta","toddy","chai"])[randi() % 5]
 	pu.position = position
 	get_parent().add_child(pu)

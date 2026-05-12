@@ -6,8 +6,8 @@ var bob_t: float  = 0.0
 const ICONS := {
 	"heart":       "❤️",
 	"nut":         "🥥",
-	"rum":         "🍺",
-	"curry":       "🍛",
+	"porotta":     "🫓",
+	"toddy":       "🏺",
 	"chai":        "☕",
 	"resurrection":"🪙",
 }

@@ -17,6 +17,8 @@ var hypnosis_active: bool  = false
 var hypnosis_timer:  float = 0.0
 var paralysis_active: bool  = false
 var paralysis_timer:  float = 0.0
+var toddy_active:   bool  = false   # dizzy — wobbly controls + camera sway
+var toddy_timer:    float = 0.0
 
 # ── Boss HP ───────────────────────────────────────────────────────────────────
 var boss_hp:     int = 0
@@ -55,6 +57,10 @@ func _process(delta: float) -> void:
 		paralysis_timer -= delta
 		if paralysis_timer <= 0.0:
 			paralysis_active = false
+	if toddy_active:
+		toddy_timer -= delta
+		if toddy_timer <= 0.0:
+			toddy_active = false
 
 func apply_powerup(type: String) -> void:
 	match type:
@@ -64,17 +70,24 @@ func apply_powerup(type: String) -> void:
 		"nut":
 			ammo = mini(ammo + 4, max_ammo)
 			ammo_changed.emit(ammo)
-		"rum":
-			_activate_slow_mo(6.0)
-		"curry":
-			hp = mini(hp + 22, max_hp)
+		"porotta":
+			# Kerala flatbread — comfort food gives fighting spirit
+			hp = mini(hp + 25, max_hp)
 			hp_changed.emit(hp)
-			_activate_slow_mo(3.7)
 			rage_active = true
-			rage_timer  = 3.7
+			rage_timer  = 4.0
 		"chai":
-			_activate_slow_mo(2.0)
-			hypnosis_active = false
+			# Hot tea — clears the mind, slows the world
+			_activate_slow_mo(6.0)
+			hypnosis_active  = false
+			paralysis_active = false
+			toddy_active     = false   # chai sobers you up
+		"toddy":
+			# Kerala palm toddy — +20 HP but you get dizzy (wobbly controls for 5s)
+			hp = mini(hp + 20, max_hp)
+			hp_changed.emit(hp)
+			toddy_active = true
+			toddy_timer  = 5.0
 		"resurrection":
 			has_resurrection = true
 
@@ -138,4 +151,5 @@ func reset() -> void:
 	paralysis_active = false
 	boss_hp          = 0
 	boss_max_hp      = 0
+	toddy_active     = false
 	Engine.time_scale = 1.0

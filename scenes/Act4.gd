@@ -40,7 +40,7 @@ func _spawn_powerups() -> void:
 		[600.0,  GROUND_Y, "nut"],
 		[2000.0, GROUND_Y, "heart"],
 		[3500.0, GROUND_Y, "nut"],
-		[5000.0, GROUND_Y, "rum"],
+		[5000.0, GROUND_Y, "toddy"],
 		[6500.0, GROUND_Y, "heart"],
 	]
 	for d: Array in data:

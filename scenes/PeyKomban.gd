@@ -141,7 +141,7 @@ func _die() -> void:
 	queue_free()
 
 func _drop_powerup() -> void:
-	for t: String in ["heart", "nut", "rum"]:
+	for t: String in ["heart", "nut", "porotta"]:
 		var pu: Node2D = preload("res://scenes/PowerUp.tscn").instantiate()
 		pu.type     = t
 		pu.position = position + Vector2(randf_range(-40, 40), -20)

@@ -101,7 +101,7 @@ func _spawn_powerups() -> void:
 	var data := [
 		[ 700.0, GROUND_Y, "heart"],
 		[2200.0, GROUND_Y, "nut"],
-		[3800.0, GROUND_Y, "rum"],
+		[3800.0, GROUND_Y, "toddy"],
 		[5500.0, GROUND_Y, "nut"],
 		[7000.0, GROUND_Y, "heart"],
 	]

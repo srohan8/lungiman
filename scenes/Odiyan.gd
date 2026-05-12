@@ -147,7 +147,7 @@ func _die() -> void:
 
 func _drop_powerup() -> void:
 	var pu: Node2D = preload("res://scenes/PowerUp.tscn").instantiate()
-	pu.type     = "rum"
+	pu.type     = "toddy"   # Odiyan's reward — earned it, but you'll wobble
 	pu.position = position + Vector2(0, -20)
 	get_parent().add_child(pu)
 

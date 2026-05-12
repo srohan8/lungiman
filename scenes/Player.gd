@@ -128,6 +128,10 @@ func _process(delta: float) -> void:
 		var shake := _shake_trauma * _shake_trauma
 		$Camera2D.offset = Vector2(randf_range(-1.0, 1.0) * shake * 18.0,
 								   randf_range(-1.0, 1.0) * shake * 18.0)
+	elif GameManager.toddy_active:
+		# Toddy dizziness — slow rolling sway, gets worse mid-duration
+		var sway := sin(Time.get_ticks_msec() * 0.0025) * 14.0
+		$Camera2D.offset = Vector2(sway, sin(Time.get_ticks_msec() * 0.004) * 5.0)
 	else:
 		$Camera2D.offset = Vector2.ZERO
 	if tree_state == TreeState.PERCHED and GameManager.ammo < GameManager.max_ammo:
@@ -182,6 +186,9 @@ func _process_none(delta: float, do_climb: bool) -> void:
 	var move_dir := Input.get_axis("move_left", "move_right")
 	if GameManager.hypnosis_active:
 		move_dir = -move_dir
+	if GameManager.toddy_active:
+		# Toddy dizziness — slight random drift, sometimes stumble
+		move_dir = clampf(move_dir + randf_range(-0.35, 0.35), -1.0, 1.0)
 	if move_dir != 0.0:
 		face = int(sign(move_dir))
 		var spd := AIR_SPEED if not is_on_floor() else SPEED

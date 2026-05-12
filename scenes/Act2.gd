@@ -46,10 +46,10 @@ func _spawn_powerups() -> void:
 	var data := [
 		[800.0,  GROUND_Y, "nut"],
 		[1800.0, GROUND_Y, "heart"],
-		[3000.0, GROUND_Y, "rum"],
+		[3000.0, GROUND_Y, "toddy"],
 		[4500.0, GROUND_Y, "nut"],
 		[6000.0, GROUND_Y, "heart"],
-		[7000.0, GROUND_Y, "curry"],
+		[7000.0, GROUND_Y, "porotta"],
 	]
 	for d: Array in data:
 		_add_powerup($PowerUps, d[0], float(d[1]), d[2])
