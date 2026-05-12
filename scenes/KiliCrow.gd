@@ -25,11 +25,31 @@ func _ready() -> void:
 	_show_label("🐦 Kili\n[Feed me rice]")
 
 func _build_visual() -> void:
-	var vis := ColorRect.new()
-	vis.color    = Color(0.08, 0.08, 0.10, 1.0)   # midnight black
-	vis.size     = Vector2(20, 18)
-	vis.position = Vector2(-10, -18)
-	add_child(vis)
+	const PATH := "res://assets/sprites/kili_sheet.png"
+	const FRAME_W := 280.0   # 20 SVG units × scale 14
+	const FRAME_H := 504.0   # 36 SVG units × scale 14
+	var spr := AnimatedSprite2D.new()
+	spr.position = Vector2(0, -18)
+	var sf := SpriteFrames.new()
+	for anim_name: String in ["perch", "caw"]:
+		sf.add_animation(anim_name)
+		sf.set_animation_loop(anim_name, true)
+		sf.set_animation_speed(anim_name, 4.0)
+	if ResourceLoader.exists(PATH):
+		var sheet: Texture2D = load(PATH)
+		for i: int in 2:
+			var at := AtlasTexture.new()
+			at.atlas  = sheet
+			at.region = Rect2(i * FRAME_W, 0, FRAME_W, FRAME_H)
+			sf.add_frame("perch" if i == 0 else "caw", at)
+	else:
+		for anim_name: String in ["perch", "caw"]:
+			var img := Image.create(20, 18, false, Image.FORMAT_RGBA8)
+			img.fill(Color(0.08, 0.08, 0.10))
+			sf.add_frame(anim_name, ImageTexture.create_from_image(img))
+	spr.sprite_frames = sf
+	spr.play("perch")
+	add_child(spr)
 
 func _find_odiyan() -> void:
 	var enemies := get_tree().get_nodes_in_group("enemies")
@@ -74,7 +94,16 @@ func _caw(_t: float) -> void:
 	var hud := get_tree().get_first_node_in_group("hud")
 	if hud and hud.has_method("show_hint"):
 		hud.show_hint("🐦 Kili warns — Odiyan transforms soon!", 1.8)
-	get_tree().create_timer(1.2).timeout.connect(_clear_label)
+	# Play caw animation
+	var spr := get_node_or_null("AnimatedSprite2D") as AnimatedSprite2D
+	if spr == null:
+		for c: Node in get_children():
+			if c is AnimatedSprite2D: spr = c; break
+	if spr != null: spr.play("caw")
+	get_tree().create_timer(1.2).timeout.connect(func() -> void:
+		_clear_label()
+		if spr != null and is_instance_valid(spr): spr.play("perch")
+	)
 
 func _show_label(txt: String) -> void:
 	var lbl := get_node_or_null("Lbl")
