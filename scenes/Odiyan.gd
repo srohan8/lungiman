@@ -29,8 +29,8 @@ var hit_cooldown:     float = 0.0
 var _player: Node2D         = null
 var _spr: AnimatedSprite2D  = null
 
-const ODIYAN_FRAME_W := 56.0
-const ODIYAN_FRAME_H := 68.0
+const ODIYAN_FRAME_W := 672.0   # 56 SVG units × scale 12
+const ODIYAN_FRAME_H := 816.0   # 68 SVG units × scale 12
 
 func _ready() -> void:
 	add_to_group("enemies")

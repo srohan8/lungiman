@@ -26,7 +26,7 @@ func _load_sprite() -> void:
 		for i: int in 2:
 			var at := AtlasTexture.new()
 			at.atlas  = sheet
-			at.region = Rect2(i * 32, 0, 32, 64)
+			at.region = Rect2(i * 2048, 0, 2048, 4096)   # 32×64 SVG × scale 64
 			sf.add_frame("idle" if i == 0 else "talk", at)
 	else:
 		for anim_name: String in ["idle", "talk"]:

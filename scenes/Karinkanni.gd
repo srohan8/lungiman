@@ -22,8 +22,8 @@ var hit_cooldown:   float = 0.0
 var _player: Node2D       = null
 var _spr: AnimatedSprite2D = null
 
-const KK_FRAME_W := 60.0
-const KK_FRAME_H := 60.0
+const KK_FRAME_W := 5400.0   # 60 SVG units × scale 90
+const KK_FRAME_H := 5400.0   # 60 SVG units × scale 90
 
 func _ready() -> void:
 	add_to_group("enemies")

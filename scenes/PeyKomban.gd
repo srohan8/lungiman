@@ -28,8 +28,8 @@ var _flash_timer: float = 0.0
 var _player: Node2D     = null
 var _spr: AnimatedSprite2D = null
 
-const PK_FRAME_W := 80.0
-const PK_FRAME_H := 90.0
+const PK_FRAME_W := 800.0   # 80 SVG units × scale 10
+const PK_FRAME_H := 900.0   # 90 SVG units × scale 10
 
 func _ready() -> void:
 	add_to_group("enemies")

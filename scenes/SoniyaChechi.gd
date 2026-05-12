@@ -38,7 +38,7 @@ func _load_sprite() -> void:
 		for i: int in 2:
 			var at := AtlasTexture.new()
 			at.atlas  = sheet
-			at.region = Rect2(i * 36, 0, 36, 64)
+			at.region = Rect2(i * 648, 0, 648, 1152)   # 36×64 SVG × scale 18
 			sf.add_frame("idle" if i == 0 else "talk", at)
 	else:
 		for anim_name: String in ["idle", "talk"]:
@@ -80,9 +80,10 @@ func _drop_chai() -> void:
 ## Triggered on stage 3 visit in Act I — drunkards crash the stall.
 func _trigger_showdown() -> void:
 	if _showdown_done: return
-	if QuestManager.get_state("chaya_kada_showdown") == 2: return
+	var qm: Node = get_node_or_null("/root/QuestManager")
+	if qm != null and qm.get_state("chaya_kada_showdown") == 2: return
 	_showdown_done = true
-	QuestManager.activate_quest("chaya_kada_showdown")
+	if qm != null: qm.activate_quest("chaya_kada_showdown")
 	get_tree().create_timer(3.2).timeout.connect(func() -> void:
 		var sd: Node = preload("res://scenes/ChayadaShowdown.tscn").instantiate()
 		get_tree().root.add_child(sd)

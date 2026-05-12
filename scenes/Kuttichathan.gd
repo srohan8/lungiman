@@ -26,8 +26,8 @@ var _eye: ColorRect        = null
 var _eye_t: float          = 0.0
 const EYE_BLINK_CYCLE := 0.8
 
-const KUTTI_FRAME_W := 44.0
-const KUTTI_FRAME_H := 60.0
+const KUTTI_FRAME_W := 1936.0   # 44 SVG units × scale 44
+const KUTTI_FRAME_H := 2640.0   # 60 SVG units × scale 44
 
 func _ready() -> void:
 	add_to_group("enemies")

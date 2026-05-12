@@ -20,8 +20,8 @@ var _clones_p3:       bool  = false
 var _player: Node2D         = null
 var _spr: AnimatedSprite2D  = null
 
-const YAKSHI_FRAME_W := 52.0
-const YAKSHI_FRAME_H := 80.0
+const YAKSHI_FRAME_W := 624.0   # 52 SVG units × scale 12
+const YAKSHI_FRAME_H := 960.0   # 80 SVG units × scale 12
 
 func _ready() -> void:
 	add_to_group("enemies")

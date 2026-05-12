@@ -8,8 +8,8 @@ const LUNGE_RANGE   := 220.0
 const LUNGE_DURATION  := 0.45
 const RECOVER_DURATION := 0.90
 const MAX_HP        := 55
-const CROC_W        := 90.0
-const CROC_H        := 44.0
+const CROC_W        := 900.0   # 90 SVG units × scale 10
+const CROC_H        := 440.0   # 44 SVG units × scale 10
 
 enum State { PATROL, LUNGE, RECOVER }
 

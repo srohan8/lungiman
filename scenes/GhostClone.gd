@@ -13,8 +13,8 @@ var hit_cooldown: float = 0.0
 var _bob_t:       float = 0.0
 var _spr: AnimatedSprite2D = null
 
-const GHOST_FRAME_W := 30.0
-const GHOST_FRAME_H := 60.0
+const GHOST_FRAME_W := 600.0   # 30 SVG units × scale 20
+const GHOST_FRAME_H := 1200.0  # 60 SVG units × scale 20
 
 func _ready() -> void:
 	add_to_group("enemies")
