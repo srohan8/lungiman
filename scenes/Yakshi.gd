@@ -9,13 +9,16 @@ const HYPNO_RANGE    := 280.0
 const STUN_DURATION  := 0.40
 const FLASH_DURATION := 0.25
 
-var hp:           int   = MAX_HP
-var phase:        int   = 0   # 0 patrol  1 hypnotising  2 stunned
-var stun_timer:   float = 0.0
-var _flash_timer: float = 0.0
-var dir:          int   = 1
-var _player: Node2D     = null
-var _spr: AnimatedSprite2D = null
+var hp:               int   = MAX_HP
+var phase:            int   = 0   # 0 patrol  1 hypnotising  2 stunned
+var stun_timer:       float = 0.0
+var _flash_timer:     float = 0.0
+var _hypno_pulse_t:   float = 0.0   # Phase 3: repeat hypnosis every 5s
+var dir:              int   = 1
+var _clones_p2:       bool  = false
+var _clones_p3:       bool  = false
+var _player: Node2D         = null
+var _spr: AnimatedSprite2D  = null
 
 const YAKSHI_FRAME_W := 52.0
 const YAKSHI_FRAME_H := 80.0
@@ -65,6 +68,12 @@ func _physics_process(delta: float) -> void:
 		_flash_timer -= delta
 		if _flash_timer <= 0.0:
 			modulate = Color(0.85, 0.95, 1.0, 0.88)
+	# Phase 3: hypnosis pulses every 5s
+	if _clones_p3 and hp > 0:
+		_hypno_pulse_t -= delta
+		if _hypno_pulse_t <= 0.0:
+			_hypno_pulse_t = 5.0
+			GameManager.activate_hypnosis(6.0)
 
 	match phase:
 		0:   # Patrol
@@ -101,7 +110,30 @@ func take_damage(dmg: int) -> void:
 		modulate     = Color(1.0, 0.3, 0.3, 0.9)
 		phase        = 2
 		stun_timer   = STUN_DURATION
+		# Phase 2 (<2 HP): spawn 2 ghost clones mid-fight
+		if hp <= 1 and not _clones_p2:
+			_clones_p2 = true
+			_spawn_fight_clones(2)
+			_show_hint("🧙‍♀️ Yakshi summons her mirrors!")
+		# Phase 3 (<1 HP): enable repeating hypnosis pulse
+		if hp <= 0 and not _clones_p3:
+			_clones_p3 = true
+			_spawn_fight_clones(2)
+			_hypno_pulse_t = 5.0
+			_show_hint("🌙 The veil drops — don’t be caught on the ground!")
 		if hp <= 0: _die()
+
+func _spawn_fight_clones(count: int) -> void:
+	for i: int in count:
+		var g: Node2D = preload("res://scenes/GhostClone.tscn").instantiate()
+		g.position = position + Vector2(randf_range(-180, 180), 0)
+		g.is_real  = (i == 0)   # first one is real
+		get_parent().add_child(g)
+
+func _show_hint(text: String) -> void:
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud and hud.has_method("show_hint"):
+		hud.show_hint(text, 3.5)
 
 func _die() -> void:
 	GameManager.clear_boss()

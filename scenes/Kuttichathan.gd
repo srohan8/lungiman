@@ -20,8 +20,11 @@ var _stun_t:      float = 0.0
 var _lunging:     bool  = false
 var _stunned:     bool  = false
 var _flash_timer: float = 0.0
-var _player: Node2D     = null
+var _player: Node2D        = null
 var _spr: AnimatedSprite2D = null
+var _eye: ColorRect        = null
+var _eye_t: float          = 0.0
+const EYE_BLINK_CYCLE := 0.8
 
 const KUTTI_FRAME_W := 44.0
 const KUTTI_FRAME_H := 60.0
@@ -35,6 +38,14 @@ func _ready() -> void:
 	_player = get_tree().get_first_node_in_group("player")
 	GameManager.set_boss(MAX_HP)
 	_load_sprite()
+	_add_eye()
+
+func _add_eye() -> void:
+	_eye = ColorRect.new()
+	_eye.color    = Color(1.0, 0.85, 0.0, 1.0)   # bright amber eye
+	_eye.size     = Vector2(10.0, 10.0)
+	_eye.position = Vector2(-5.0, -42.0)
+	add_child(_eye)
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/kuttichathan_sheet.png"
@@ -106,6 +117,11 @@ func _physics_process(delta: float) -> void:
 				_lunge_t = LUNGE_DURATION
 
 	move_and_slide()
+	# Blink the eye open/closed — visual cue that this is the real one
+	if _eye != null:
+		_eye_t += delta
+		var cycle := fmod(_eye_t, EYE_BLINK_CYCLE)
+		_eye.size.y = 10.0 if cycle < EYE_BLINK_CYCLE * 0.85 else 2.0
 
 func _spawn_clone() -> void:
 	var clone: Node2D = preload("res://scenes/GhostClone.tscn").instantiate()
