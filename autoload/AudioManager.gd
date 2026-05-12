@@ -69,7 +69,7 @@ func play_act_music(act_key: String) -> void:
 	if not TRACK_MAP.has(act_key):
 		return
 	_current_track = act_key
-	var track_data: Dictionary = TRACK_MAP[act_key]
+	var _track_data: Dictionary = TRACK_MAP[act_key]
 	# Try loading a real .ogg from assets/audio/
 	var ogg_path := "res://assets/audio/%s_ambient.ogg" % act_key.to_lower()
 	var inactive := _music_player_b if _active_player == _music_player_a else _music_player_a

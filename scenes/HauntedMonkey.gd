@@ -34,13 +34,24 @@ func _ready() -> void:
 	_build_visual()
 
 func _build_visual() -> void:
-	var img := Image.create(22, 28, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0.30, 0.20, 0.08))   # dark brown
+	const PATH := "res://assets/sprites/monkey_sheet.png"
+	const FRAME_W := 352.0   # 44 SVG units × scale 8
+	const FRAME_H := 448.0   # 56 SVG units × scale 8
 	var sf := SpriteFrames.new()
 	sf.add_animation("walk")
 	sf.set_animation_loop("walk", true)
 	sf.set_animation_speed("walk", 8.0)
-	sf.add_frame("walk", ImageTexture.create_from_image(img))
+	if ResourceLoader.exists(PATH):
+		var sheet: Texture2D = load(PATH)
+		for i: int in 2:
+			var at := AtlasTexture.new()
+			at.atlas  = sheet
+			at.region = Rect2(i * FRAME_W, 0, FRAME_W, FRAME_H)
+			sf.add_frame("walk", at)
+	else:
+		var img := Image.create(22, 28, false, Image.FORMAT_RGBA8)
+		img.fill(Color(0.30, 0.20, 0.08))
+		sf.add_frame("walk", ImageTexture.create_from_image(img))
 	$AnimatedSprite2D.sprite_frames = sf
 	$AnimatedSprite2D.play("walk")
 
