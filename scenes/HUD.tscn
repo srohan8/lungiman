@@ -1,56 +1,57 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene format=3 uid="uid://ctcodasns0leo"]
 
-[ext_resource type="Script" path="res://scenes/HUD.gd" id="1_hud"]
+[ext_resource type="Script" uid="uid://crkarjkjrcwkc" path="res://scenes/HUD.gd" id="1_hud"]
 
-[node name="HUD" type="CanvasLayer"]
+[node name="HUD" type="CanvasLayer" unique_id=487083327]
 script = ExtResource("1_hud")
 
-[node name="Stats" type="VBoxContainer" parent="."]
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
+[node name="Stats" type="VBoxContainer" parent="." unique_id=1172380668]
 offset_left = 8.0
 offset_top = 8.0
 offset_right = 170.0
 offset_bottom = 80.0
 
-[node name="LblHP" type="Label" parent="Stats"]
+[node name="LblHP" type="Label" parent="Stats" unique_id=342423901]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "HP: 5"
-theme_override_font_sizes/font_size = 14
 
-[node name="LblAmmo" type="Label" parent="Stats"]
+[node name="LblAmmo" type="Label" parent="Stats" unique_id=1044695053]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "🥥 5"
-theme_override_font_sizes/font_size = 14
 
-[node name="LblScore" type="Label" parent="Stats"]
+[node name="LblScore" type="Label" parent="Stats" unique_id=604966884]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
 text = "Score: 0"
-theme_override_font_sizes/font_size = 14
 
-[node name="BossBarContainer" type="VBoxContainer" parent="."]
+[node name="BossBarContainer" type="VBoxContainer" parent="." unique_id=892602702]
 visible = false
+anchors_preset = 5
 anchor_left = 0.5
-anchor_top = 0.0
 anchor_right = 0.5
-anchor_bottom = 0.0
 offset_left = -115.0
 offset_top = 8.0
 offset_right = 115.0
 offset_bottom = 56.0
 
-[node name="BossBarLabel" type="Label" parent="BossBarContainer"]
+[node name="BossBarLabel" type="Label" parent="BossBarContainer" unique_id=1135885009]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
 text = "BOSS"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 13
 
-[node name="BossBar" type="ProgressBar" parent="BossBarContainer"]
+[node name="BossBar" type="ProgressBar" parent="BossBarContainer" unique_id=169034410]
 custom_minimum_size = Vector2(230, 16)
+layout_mode = 2
 max_value = 5.0
 value = 5.0
 show_percentage = false
 
-[node name="ClimbPrompt" type="Label" parent="."]
+[node name="ClimbPrompt" type="Label" parent="." unique_id=1962630146]
 visible = false
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -59,27 +60,26 @@ offset_left = -80.0
 offset_top = 20.0
 offset_right = 80.0
 offset_bottom = 42.0
+theme_override_font_sizes/font_size = 14
 text = "[E] Climb"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 14
 
-[node name="StatusLabel" type="Label" parent="."]
+[node name="StatusLabel" type="Label" parent="." unique_id=1676183792]
 visible = false
+anchors_preset = 1
 anchor_left = 1.0
-anchor_top = 0.0
 anchor_right = 1.0
-anchor_bottom = 0.0
 offset_left = -160.0
 offset_top = 8.0
 offset_right = -8.0
 offset_bottom = 34.0
-horizontal_alignment = 2
-theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(1, 0.6, 0.1, 1)
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 2
 
-[node name="HintLabel" type="Label" parent="."]
+[node name="HintLabel" type="Label" parent="." unique_id=1682832345]
 visible = false
-anchor_left = 0.0
+anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -87,7 +87,36 @@ offset_left = 8.0
 offset_top = -54.0
 offset_right = -8.0
 offset_bottom = -12.0
-text = ""
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 15
 theme_override_colors/font_color = Color(1, 0.95, 0.6, 1)
+theme_override_font_sizes/font_size = 15
+horizontal_alignment = 1
+
+[node name="QuestPanel" type="VBoxContainer" parent="." unique_id=1907381135]
+visible = false
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -190.0
+offset_top = 42.0
+offset_right = -8.0
+offset_bottom = 100.0
+
+[node name="QuestTitle" type="Label" parent="QuestPanel" unique_id=1474846540]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 12
+text = "📜 Quest"
+horizontal_alignment = 2
+
+[node name="QuestProgress" type="Label" parent="QuestPanel" unique_id=409631283]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.9, 0.7, 1)
+theme_override_font_sizes/font_size = 11
+text = "0 / 0"
+horizontal_alignment = 2
+
+[node name="QuestBar" type="ProgressBar" parent="QuestPanel" unique_id=1891153284]
+custom_minimum_size = Vector2(180, 10)
+layout_mode = 2
+max_value = 1.0
+show_percentage = false

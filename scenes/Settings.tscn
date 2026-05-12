@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://b253fwtw6ja80"]
+
+[ext_resource type="Script" uid="uid://7e5soxud6n5a" path="res://scenes/Settings.gd" id="1_rbmmp"]
+
+[node name="Settings" type="CanvasLayer" unique_id=1886457768]
+script = ExtResource("1_rbmmp")
+
+[node name="BG" type="ColorRect" parent="." unique_id=1897215528]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.04, 0.04, 0.08, 0.9)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=898167482]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="VBox" type="VBoxContainer" parent="Center" unique_id=2032806473]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+alignment = 1
+
+[node name="Title" type="Label" parent="Center/VBox" unique_id=1213082095]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.85, 0.5, 1)
+theme_override_font_sizes/font_size = 26
+text = "⚙️ Settings"
+horizontal_alignment = 1
+
+[node name="Spacer1" type="Control" parent="Center/VBox" unique_id=1263628540]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="MusicLabel" type="Label" parent="Center/VBox" unique_id=743639737]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "🎵 Music Volume"
+
+[node name="MusicRow" type="HBoxContainer" parent="Center/VBox" unique_id=2104854555]
+layout_mode = 2
+
+[node name="MusicSlider" type="HSlider" parent="Center/VBox/MusicRow" unique_id=1612212122]
+custom_minimum_size = Vector2(260, 20)
+layout_mode = 2
+value = 80.0
+
+[node name="MusicValue" type="Label" parent="Center/VBox/MusicRow" unique_id=317075021]
+custom_minimum_size = Vector2(45, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "80%"
+
+[node name="Spacer2" type="Control" parent="Center/VBox" unique_id=1776927070]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+
+[node name="SFXLabel" type="Label" parent="Center/VBox" unique_id=333137600]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "🔊 SFX Volume"
+
+[node name="SFXRow" type="HBoxContainer" parent="Center/VBox" unique_id=1759044577]
+layout_mode = 2
+
+[node name="SFXSlider" type="HSlider" parent="Center/VBox/SFXRow" unique_id=1784376309]
+custom_minimum_size = Vector2(260, 20)
+layout_mode = 2
+value = 100.0
+
+[node name="SFXValue" type="Label" parent="Center/VBox/SFXRow" unique_id=127432995]
+custom_minimum_size = Vector2(45, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "100%"
+
+[node name="Spacer3" type="Control" parent="Center/VBox" unique_id=1124903582]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="BackBtn" type="Button" parent="Center/VBox" unique_id=1137713748]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Back"

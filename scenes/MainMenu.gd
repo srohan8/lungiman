@@ -15,8 +15,15 @@ const COL_ACTIVE  := Color(0.85, 0.70, 0.15)
 
 var _main_panel:   Control
 var _quest_panel:  Control
+var _qm:           Node     # QuestManager — resolved at runtime via /root path
+
+# Quest state ints (mirrors QuestManager.QuestState to avoid compile-time autoload lookup)
+const _QS_LOCKED := 0
+const _QS_ACTIVE := 1
+const _QS_DONE   := 2
 
 func _ready() -> void:
+	_qm = get_node_or_null("/root/QuestManager")
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_build_background()
 	_main_panel  = _build_main_panel()
@@ -82,13 +89,14 @@ func _build_main_panel() -> Control:
 	vbox.add_child(sp)
 
 	# Buttons
-	var btn_play  := _make_button("▶  New Game")
-	var btn_level := _make_button("🗺  Level Select")
-	var btn_quest := _make_button("📜  Side Quests")
+	var btn_play     := _make_button("▶  New Game")
+	var btn_level    := _make_button("🗺  Level Select")
+	var btn_quest    := _make_button("📜  Side Quests")
+	var btn_settings := _make_button("⚙️  Settings")
 
 	btn_play.pressed.connect(func() -> void:
 		GameManager.reset()
-		QuestManager.reset()
+		if _qm != null: _qm.reset()
 		SceneManager.go_to("res://scenes/World.tscn")
 	)
 	btn_level.pressed.connect(_open_level_select)
@@ -97,10 +105,15 @@ func _build_main_panel() -> Control:
 		_quest_panel.visible = true
 		_main_panel.visible  = false
 	)
+	btn_settings.pressed.connect(func() -> void:
+		var s: Node = preload("res://scenes/Settings.tscn").instantiate()
+		get_tree().root.add_child(s)
+	)
 
 	vbox.add_child(btn_play)
 	vbox.add_child(btn_level)
 	vbox.add_child(btn_quest)
+	vbox.add_child(btn_settings)
 	root.add_child(vbox)
 	return root
 
@@ -245,13 +258,14 @@ func _refresh_quest_panel() -> void:
 	div.custom_minimum_size = Vector2(0, 2)
 	vbox.add_child(div)
 
-	for quest_id: String in QuestManager.QUEST_DATA:
-		var state:    int    = QuestManager.get_state(quest_id)
-		var progress: int    = QuestManager.get_progress(quest_id)
-		var total:    int    = QuestManager.get_total(quest_id)
-		var title:    String = QuestManager.get_title(quest_id)
-		var desc:     String = QuestManager.get_desc(quest_id)
-		var reward:   String = QuestManager.get_reward(quest_id)
+	if _qm == null: return
+	for quest_id: String in _qm.QUEST_DATA:
+		var state:    int    = _qm.get_state(quest_id)
+		var progress: int    = _qm.get_progress(quest_id)
+		var total:    int    = _qm.get_total(quest_id)
+		var title:    String = _qm.get_title(quest_id)
+		var desc:     String = _qm.get_desc(quest_id)
+		var reward:   String = _qm.get_reward(quest_id)
 
 		var hbox := HBoxContainer.new()
 		hbox.add_theme_constant_override("separation", 10)
@@ -281,21 +295,21 @@ func _refresh_quest_panel() -> void:
 		dlabel.add_theme_color_override("font_color", Color(0.70, 0.80, 0.70))
 		tbox.add_child(dlabel)
 
-		if state == QuestManager.QuestState.ACTIVE and total > 1:
+		if state == _QS_ACTIVE and total > 1:
 			var prog_label := Label.new()
 			prog_label.text = "Progress: %d / %d" % [progress, total]
 			prog_label.add_theme_font_size_override("font_size", 10)
 			prog_label.add_theme_color_override("font_color", COL_ACTIVE)
 			tbox.add_child(prog_label)
 
-		if state == QuestManager.QuestState.DONE:
+		if state == _QS_DONE:
 			var rew := Label.new()
 			rew.text = "✔ " + reward
 			rew.add_theme_font_size_override("font_size", 10)
 			rew.add_theme_color_override("font_color", COL_DONE)
 			tbox.add_child(rew)
-		elif state == QuestManager.QuestState.LOCKED:
-			var act_data: Dictionary = QuestManager.QUEST_DATA[quest_id]
+		elif state == _QS_LOCKED:
+			var act_data: Dictionary = _qm.QUEST_DATA[quest_id]
 			var rew := Label.new()
 			rew.text = "🔒 Available in Act %d" % act_data["act"]
 			rew.add_theme_font_size_override("font_size", 10)
@@ -326,15 +340,15 @@ func _refresh_quest_panel() -> void:
 
 func _quest_icon(state: int) -> String:
 	match state:
-		QuestManager.QuestState.DONE:   return "✅"
-		QuestManager.QuestState.ACTIVE: return "⚡"
-		_:                              return "🔒"
+		_QS_DONE:   return "✅"
+		_QS_ACTIVE: return "⚡"
+		_:          return "🔒"
 
 func _quest_color(state: int) -> Color:
 	match state:
-		QuestManager.QuestState.DONE:   return COL_DONE
-		QuestManager.QuestState.ACTIVE: return COL_ACTIVE
-		_:                              return COL_LOCKED
+		_QS_DONE:   return COL_DONE
+		_QS_ACTIVE: return COL_ACTIVE
+		_:          return COL_LOCKED
 
 func _make_button(label: String) -> Button:
 	var btn := Button.new()
