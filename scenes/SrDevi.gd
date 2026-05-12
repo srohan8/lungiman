@@ -39,6 +39,8 @@ func _load_sprite() -> void:
 func _on_body_entered(body: Node) -> void:
 	if not body.is_in_group("player"):
 		return
+	var qm := get_node_or_null("/root/QuestManager")
+	var quest_state: int = qm.get_state("bell_of_bhadrakali") if qm != null else 0
 	var idx := mini(_stage, DIALOGUES.size() - 1)
 	$Label.text    = DIALOGUES[idx]
 	$Label.visible = true
@@ -48,3 +50,14 @@ func _on_body_entered(body: Node) -> void:
 		$Label.visible = false
 		if _spr != null: _spr.play("idle")
 	)
+	# Stage 1 onward: activate quest and offer entry to houseboat
+	if _stage == 2 and quest_state == 0 and qm != null:
+		qm.activate_quest("bell_of_bhadrakali")
+		get_tree().create_timer(3.8).timeout.connect(func() -> void:
+			SceneManager.go_to("res://scenes/Houseboat.tscn")
+		)
+	elif _stage >= 2 and quest_state == 1:
+		# Quest active — re-enter houseboat
+		get_tree().create_timer(3.8).timeout.connect(func() -> void:
+			SceneManager.go_to("res://scenes/Houseboat.tscn")
+		)
