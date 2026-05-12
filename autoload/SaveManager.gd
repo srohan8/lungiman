@@ -28,7 +28,7 @@ func load_game() -> void:
 		return
 	var text   := file.get_as_text()
 	file.close()
-	var result := JSON.parse_string(text)
+	var result: Variant = JSON.parse_string(text)
 	if result == null or not result is Dictionary:
 		return
 	var data: Dictionary = result

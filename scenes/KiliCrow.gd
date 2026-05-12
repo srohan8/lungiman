@@ -79,12 +79,13 @@ func _process(delta: float) -> void:
 	if not _following or _player == null: return
 
 	# Smooth follow
-	var target := _player.global_position + Vector2(-FOLLOW_DIST * sign(_player.get("face") if _player.get("face") != null else 1.0), -30.0)
+	var face_val: int = int(_player.get("face")) if _player.get("face") != null else 1
+	var target: Vector2 = _player.global_position + Vector2(-FOLLOW_DIST * sign(face_val), -30.0)
 	global_position = global_position.lerp(target, FOLLOW_SPEED * delta / 100.0)
 
 	# Watch Odiyan's transform_timer to caw CAW_LEAD seconds before flash
 	if _odiyan != null and is_instance_valid(_odiyan) and _caw_cd <= 0.0:
-		var form_timer: float = _odiyan.get("form_timer") if _odiyan.get("form_timer") != null else 99.0
+		var form_timer: float = float(_odiyan.get("form_timer")) if _odiyan.get("form_timer") != null else 99.0
 		if form_timer <= CAW_LEAD:
 			_caw(_caw_timer)
 			_caw_cd = 2.5
