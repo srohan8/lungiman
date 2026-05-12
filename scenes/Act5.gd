@@ -13,7 +13,8 @@ const ZONE_H       := 260.0   # massive ancient trees
 
 func _ready() -> void:
 	# No _next_scene — Pey Komban death emits game_won instead
-	_trigger_x  = ACT_TRIGGER_X
+	_trigger_x   = ACT_TRIGGER_X
+	_unlocks_act = 0   # finale — no further act to unlock
 	_spawn_trees()
 	_spawn_pey_komban()
 	_spawn_powerups()

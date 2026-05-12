@@ -22,6 +22,9 @@ var paralysis_timer:  float = 0.0
 var boss_hp:     int = 0
 var boss_max_hp: int = 0
 
+# ── Progress (persists across resets within a session) ────────────────────────
+var acts_unlocked: int = 0   # 0 = prologue only; 1 = Act I unlocked; etc.
+
 # ── Mobile input ──────────────────────────────────────────────────────────────
 var climb_press_pending: bool = false
 
@@ -117,6 +120,9 @@ func clear_boss() -> void:
 func boss_take_damage(amount: int) -> void:
 	boss_hp = maxi(0, boss_hp - amount)
 	boss_hp_changed.emit(boss_hp)
+
+func unlock_act(act_index: int) -> void:
+	acts_unlocked = maxi(acts_unlocked, act_index)
 
 func win_game() -> void:
 	game_won.emit()

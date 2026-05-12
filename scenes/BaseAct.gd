@@ -13,15 +13,23 @@ const GROUND_Y := 375.0
 var _act_triggered := false
 var _next_scene    := ""
 var _trigger_x     := 7800.0
+var _unlocks_act   := 0     # set by each Act: completing this act unlocks _unlocks_act in LevelSelect
 
 # ── Auto-transition ──────────────────────────────────────────────────────────
 
 func _process(_delta: float) -> void:
+	# Escape → back to main menu
+	if Input.is_action_just_pressed("ui_cancel"):
+		SceneManager.go_to("res://scenes/MainMenu.tscn")
+		return
+
 	if _act_triggered or _next_scene.is_empty():
 		return
 	var player := _get_player()
 	if player and player.global_position.x >= _trigger_x:
 		_act_triggered = true
+		if _unlocks_act > 0:
+			GameManager.unlock_act(_unlocks_act)
 		SceneManager.go_to(_next_scene)
 
 # ── HUD wiring ───────────────────────────────────────────────────────────────

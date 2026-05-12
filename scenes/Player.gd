@@ -18,7 +18,7 @@ const LEAP_DIST_MAX     := 550.0
 const LEAP_SPEED_FACTOR := 11.0
 const LEAP_TOF_MIN      := 20.0
 const CLIMB_DURATION    := 0.50
-const HERO_HALF_H       := 40.0
+const HERO_HALF_H       := 60.0
 
 # ── River / water ─────────────────────────────────────────────────────────────
 const WADE_SPEED_MULT    := 0.55

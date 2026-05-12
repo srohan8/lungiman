@@ -12,3 +12,8 @@ func _on_retry_pressed() -> void:
 	get_tree().paused = false
 	GameManager.reset()
 	SceneManager.go_to("res://scenes/World.tscn")
+
+func _on_menu_pressed() -> void:
+	get_tree().paused = false
+	GameManager.reset()
+	SceneManager.go_to("res://scenes/MainMenu.tscn")

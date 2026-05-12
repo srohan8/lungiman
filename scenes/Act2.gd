@@ -18,8 +18,9 @@ const ZONE2_X_TO   := 7500.0
 const ZONE2_H      := 160.0
 
 func _ready() -> void:
-	_next_scene = NEXT_SCENE
-	_trigger_x  = ACT_TRIGGER_X
+	_next_scene  = NEXT_SCENE
+	_trigger_x   = ACT_TRIGGER_X
+	_unlocks_act = 3
 	_spawn_trees()
 	_spawn_kuttichathan()
 	_spawn_powerups()

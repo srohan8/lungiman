@@ -33,4 +33,9 @@ custom_minimum_size = Vector2(0, 16)
 text = "Retry"
 theme_override_font_sizes/font_size = 20
 
+[node name="MenuBtn" type="Button" parent="Center/VBox"]
+text = "Main Menu"
+theme_override_font_sizes/font_size = 16
+
 [connection signal="pressed" from="Center/VBox/Retry" to="." method="_on_retry_pressed"]
+[connection signal="pressed" from="Center/VBox/MenuBtn" to="." method="_on_menu_pressed"]

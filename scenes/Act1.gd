@@ -30,8 +30,9 @@ const GHOST_X_FROM := 1500.0
 const GHOST_X_TO   := 6500.0
 
 func _ready() -> void:
-	_next_scene = NEXT_SCENE
-	_trigger_x  = ACT_TRIGGER_X
+	_next_scene  = NEXT_SCENE
+	_trigger_x   = ACT_TRIGGER_X
+	_unlocks_act = 2   # completing Act I unlocks Act II
 	_spawn_trees()
 	_spawn_elevated_platforms()
 	_build_river()

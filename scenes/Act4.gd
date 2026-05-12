@@ -13,8 +13,9 @@ const ZONE_X_TO    := 7600.0
 const ZONE_H       := 240.0   # tall — crowns reach y~135, needed to hit Karinkanni
 
 func _ready() -> void:
-	_next_scene = NEXT_SCENE
-	_trigger_x  = ACT_TRIGGER_X
+	_next_scene  = NEXT_SCENE
+	_trigger_x   = ACT_TRIGGER_X
+	_unlocks_act = 5
 	_spawn_trees()
 	_spawn_karinkanni()
 	_spawn_powerups()

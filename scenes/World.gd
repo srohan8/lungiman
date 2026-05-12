@@ -25,7 +25,8 @@ const RIVER_X := 2860.0
 const RIVER_W := 500.0
 
 func _ready() -> void:
-	_next_scene = NEXT_SCENE
+	_next_scene  = NEXT_SCENE
+	_unlocks_act = 1   # completing prologue unlocks Act I
 	_trigger_x  = ACT_TRIGGER_X
 	_spawn_trees()
 	_spawn_river()

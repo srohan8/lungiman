@@ -19,8 +19,10 @@ var _tracks_found  := 0
 var _odiyan_ref: Node2D = null   # set when boss spawns
 
 func _ready() -> void:
-	_next_scene = NEXT_SCENE
-	_trigger_x  = ACT_TRIGGER_X
+	_next_scene  = NEXT_SCENE
+	_trigger_x   = ACT_TRIGGER_X
+	_unlocks_act = 4
+	QuestManager.activate_quest("odiyan_tracks")
 	_spawn_trees()
 	_spawn_odiyan()
 	_spawn_tracks()
@@ -83,6 +85,7 @@ func _on_track_entered(body: Node, marker: Node2D, _idx: int) -> void:
 		return   # must press Z near the smoke to "read" it
 	_tracks_found += 1
 	marker.queue_free()
+	QuestManager.advance_quest("odiyan_tracks")
 	# Flash HUD message per track found
 	var hud := _get_hud()
 	if hud and hud.has_method("show_hint"):

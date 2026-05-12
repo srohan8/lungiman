@@ -16,13 +16,14 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Kanjiravanam Chronicles"
 config/description="A Kerala mythology side-scrolling platformer"
-run/main_scene="res://scenes/World.tscn"
+run/main_scene="res://scenes/MainMenu.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 
 [autoload]
 
 GameManager="*res://autoload/GameManager.gd"
 SceneManager="*res://autoload/SceneManager.gd"
+QuestManager="*res://autoload/QuestManager.gd"
 MCPRuntime="*res://addons/godot_mcp/runtime/mcp_runtime.gd"
 
 [display]
