@@ -34,7 +34,6 @@ func _build_scene() -> void:
 	bg.color        = Color(0.02, 0.04, 0.12)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.size         = Vector2(820, 460)
 	sky_cl.add_child(bg)
 	add_child(sky_cl)
 
@@ -133,16 +132,16 @@ func _build_cabin() -> void:
 	add_child(rw)
 
 	# Ceiling platform (interior)
-	var ceil := StaticBody2D.new()
-	ceil.collision_layer = 1; ceil.collision_mask = 0
-	ceil.position = Vector2(400, 202)
+	var ceiling_body := StaticBody2D.new()
+	ceiling_body.collision_layer = 1; ceiling_body.collision_mask = 0
+	ceiling_body.position = Vector2(400, 202)
 	var cc := CollisionShape2D.new()
 	var cs := RectangleShape2D.new()
-	cs.size = Vector2(360, 14); cc.shape = cs; ceil.add_child(cc)
+	cs.size = Vector2(360, 14); cc.shape = cs; ceiling_body.add_child(cc)
 	var cv := ColorRect.new()
 	cv.color = PLANK_COL; cv.size = Vector2(360, 14)
-	cv.position = Vector2(-180, -7); ceil.add_child(cv)
-	add_child(ceil)
+	cv.position = Vector2(-180, -7); ceiling_body.add_child(cv)
+	add_child(ceiling_body)
 
 func _spawn_bell() -> void:
 	var bell_area := Area2D.new()
@@ -177,6 +176,7 @@ func _spawn_bell() -> void:
 	add_child(bell_area)
 
 func _on_bell_collected() -> void:
+	bell_retrieved.emit()
 	_queue_hint_local("🔔 You have the bell! Get out!", 0.0, 4.0)
 	GameManager.show_score_popup(Vector2(400, 220), 300, Color(1.0, 0.85, 0.1))
 	GameManager.score += 300
