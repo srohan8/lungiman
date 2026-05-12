@@ -148,7 +148,6 @@ func _apply_sky(sky_color: Color) -> void:
 		bg.color        = sky_color
 		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		bg.size         = Vector2(820, 460)   # viewport size; anchors expand at runtime
 		sky_cl.add_child(bg)
 		add_child(sky_cl)
 	# Vignette CanvasLayer — persists above game world, below HUD (layer 10)
