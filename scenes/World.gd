@@ -101,12 +101,52 @@ func _spawn_ghosts() -> void:
 		$Enemies.add_child(ghost)
 
 func _spawn_npcs() -> void:
+	var biju: Node2D = preload("res://scenes/BijuEttan.tscn").instantiate()
+	biju.position = Vector2(150.0, GROUND_Y - 10.0)
+	add_child(biju)
 	var thoma: Node2D = preload("res://scenes/BrotherThoma.tscn").instantiate()
 	thoma.position = Vector2(400.0, GROUND_Y - 10.0)
 	add_child(thoma)
 	var soniya: Node2D = preload("res://scenes/SoniyaChechi.tscn").instantiate()
 	soniya.position = Vector2(3400.0, GROUND_Y - 10.0)
 	add_child(soniya)
+	_spawn_throw_tutorial()
+
+func _spawn_throw_tutorial() -> void:
+	# Stationary practice target at x=620 — throw a coconut to knock it down
+	var post := StaticBody2D.new()
+	post.position = Vector2(620.0, GROUND_Y - 24.0)
+	var vis := ColorRect.new()
+	vis.size     = Vector2(24.0, 48.0)
+	vis.position = Vector2(-12.0, -48.0)
+	vis.color    = Color(0.85, 0.35, 0.15)
+	post.add_child(vis)
+	var lbl := Label.new()
+	lbl.text = "🥥 Throw!"
+	lbl.position = Vector2(-30.0, -80.0)
+	lbl.add_theme_font_size_override("font_size", 11)
+	post.add_child(lbl)
+	var col := CollisionShape2D.new()
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(24.0, 48.0)
+	col.shape  = shape
+	post.add_child(col)
+	# Area2D detects coconut hits
+	var hit_area := Area2D.new()
+	hit_area.collision_layer = 0
+	hit_area.collision_mask  = 4
+	var hcol := CollisionShape2D.new()
+	var hshape := RectangleShape2D.new()
+	hshape.size = Vector2(32.0, 56.0)
+	hcol.shape  = hshape
+	hit_area.add_child(hcol)
+	hit_area.area_entered.connect(func(_a: Area2D) -> void:
+		if post.is_inside_tree(): post.queue_free()
+		GameManager.show_score_popup(Vector2(620.0, GROUND_Y - 60.0), 5, Color(1.0, 0.9, 0.3))
+	)
+	post.add_child(hit_area)
+	add_child(post)
+	_queue_hint("🥥 Press [Q] to throw a coconut at the target!", 6.0, 5.0)
 
 func _spawn_powerups() -> void:
 	var data := [

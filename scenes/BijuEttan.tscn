@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://bnmwy4nwhuthw"]
+
+[ext_resource type="Script" uid="uid://b2bs1jwdscw7o" path="res://scenes/BijuEttan.gd" id="1_rsiov"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rsiov"]
+size = Vector2(80, 80)
+
+[node name="BijuEttan" type="Area2D" unique_id=377524444]
+script = ExtResource("1_rsiov")
+
+[node name="Label" type="Label" parent="." unique_id=2133319778]
+offset_left = -100.0
+offset_top = -100.0
+offset_right = 100.0
+offset_bottom = -70.0
+text = "🌿 Biju Ettan"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1854524916]
+shape = SubResource("RectangleShape2D_rsiov")
