@@ -91,7 +91,8 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if _lunging:
-		velocity.x = LUNGE_SPEED * dir
+		var spd := LUNGE_SPEED * (1.6 if hp <= 2 else 1.0)
+		velocity.x = spd * dir
 		_lunge_t  -= delta
 		if _lunge_t <= 0.0:
 			_lunging  = false
@@ -108,13 +109,14 @@ func _physics_process(delta: float) -> void:
 		if _spr != null:
 			_spr.flip_h = (dir < 0)
 			if _spr.animation != "idle": _spr.play("idle")
-		# Lunge at player
+		# Lunge at player — Phase 2 (hp ≤ 2): faster ride lunge
 		if is_instance_valid(_player):
 			var dx := _player.global_position.x - global_position.x
 			if absf(dx) < CLONE_RANGE and absf(dx) > 80.0:
 				dir      = int(sign(dx))
 				_lunging = true
 				_lunge_t = LUNGE_DURATION
+				if hp <= 2 and _spr != null: _spr.play("ride")
 
 	move_and_slide()
 	# Blink the eye open/closed — visual cue that this is the real one
@@ -135,6 +137,12 @@ func take_damage(dmg: int) -> void:
 	GameManager.boss_take_damage(dmg)
 	_flash_timer = FLASH_DURATION
 	modulate     = Color(1.0, 1.0, 0.2, 1.0)
+	if hp <= 2 and hp > 0:
+		# Phase 2: shorter clone interval
+		clone_timer = minf(clone_timer, 3.5)
+		var hud := get_tree().get_first_node_in_group("hud")
+		if hud and hud.has_method("show_hint"):
+			hud.show_hint("🔥 He\'s riding fireballs now!", 3.0)
 	if hp <= 0: _die()
 
 func _die() -> void:
