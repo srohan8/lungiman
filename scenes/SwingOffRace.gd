@@ -15,7 +15,6 @@ const COUNTDOWN     := 3.0                         # "3-2-1-GO!" before start
 var _trees:         Array = []      # ordered Array[Node2D] of 5 race trees
 var _ravi_idx:      int   = 0       # which tree Ravi is currently perched on
 var _player:        Node2D = null
-var _player_idx:    int   = -1      # which tree the player is on (-1 = ground)
 var _leap_timer:    float = 0.0
 var _countdown:     float = COUNTDOWN
 var _started:       bool  = false
