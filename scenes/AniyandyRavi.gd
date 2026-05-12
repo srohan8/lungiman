@@ -45,6 +45,7 @@ func _load_sprite() -> void:
 			img.fill(Color(0.75, 0.55, 0.25))   # warm Kerala brown
 			sf.add_frame(anim_name, ImageTexture.create_from_image(img))
 	_spr.sprite_frames = sf
+	_spr.scale = Vector2(64.0 / 1152.0, 64.0 / 1152.0)
 	_spr.play("idle")
 	add_child(_spr)
 

@@ -54,6 +54,7 @@ func _build_visual() -> void:
 		sf.add_frame("walk", ImageTexture.create_from_image(img))
 	$AnimatedSprite2D.sprite_frames = sf
 	$AnimatedSprite2D.play("walk")
+	$AnimatedSprite2D.scale = Vector2(44.0 / 448.0, 44.0 / 448.0)
 
 func _deaths_for_swarm() -> int:
 	if swarm_id == "":

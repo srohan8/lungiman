@@ -50,10 +50,16 @@ var _progress: Dictionary = {}   # quest_id → int (steps completed)
 
 signal quest_updated(quest_id: String, new_state: int)
 
+const DEV_ALL_QUESTS_DONE := true   # set false for production
+
 func _ready() -> void:
 	for id: String in QUEST_DATA:
-		_states[id]   = QuestState.LOCKED
-		_progress[id] = 0
+		if DEV_ALL_QUESTS_DONE:
+			_states[id]   = QuestState.DONE
+			_progress[id] = QUEST_DATA[id]["total_steps"]
+		else:
+			_states[id]   = QuestState.LOCKED
+			_progress[id] = 0
 
 # ── Public API ────────────────────────────────────────────────────────────────
 

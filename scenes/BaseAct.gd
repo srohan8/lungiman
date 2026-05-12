@@ -156,9 +156,19 @@ func _apply_sky(sky_color: Color) -> void:
 		cl.name  = "Vignette"
 		cl.layer = 10
 		var tex_rect := TextureRect.new()
-		const VIGN_PATH := "res://assets/vignette.png"
-		if ResourceLoader.exists(VIGN_PATH):
-			tex_rect.texture = load(VIGN_PATH)
+		var grad := GradientTexture2D.new()
+		var g := Gradient.new()
+		g.set_color(0, Color(0.0, 0.0, 0.0, 0.0))
+		g.set_offset(0, 0.0)
+		g.set_color(1, Color(0.0, 0.0, 0.0, 0.65))
+		g.set_offset(1, 1.0)
+		grad.gradient  = g
+		grad.fill      = GradientTexture2D.FILL_RADIAL
+		grad.fill_from = Vector2(0.5, 0.5)
+		grad.fill_to   = Vector2(1.0, 0.5)
+		grad.width     = 512
+		grad.height    = 512
+		tex_rect.texture      = grad
 		tex_rect.stretch_mode = TextureRect.STRETCH_SCALE
 		tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE

@@ -48,6 +48,7 @@ func _build_visual() -> void:
 			img.fill(Color(0.08, 0.08, 0.10))
 			sf.add_frame(anim_name, ImageTexture.create_from_image(img))
 	spr.sprite_frames = sf
+	spr.scale = Vector2(36.0 / 504.0, 36.0 / 504.0)
 	spr.play("perch")
 	add_child(spr)
 

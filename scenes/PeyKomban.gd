@@ -44,7 +44,7 @@ func _ready() -> void:
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/peykomban_sheet.png"
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -PK_FRAME_H * 0.5)
+	_spr.position = Vector2(0, -110.0 * 0.5)
 	var sf := SpriteFrames.new()
 	if ResourceLoader.exists(PATH):
 		var sheet: Texture2D = load(PATH)
@@ -65,6 +65,7 @@ func _load_sprite() -> void:
 		img.fill(Color(0.20, 0.12, 0.08, 1.0))
 		sf.add_frame("patrol", ImageTexture.create_from_image(img))
 	_spr.sprite_frames = sf
+	_spr.scale = Vector2(110.0 / PK_FRAME_H, 110.0 / PK_FRAME_H)
 	_spr.play("patrol")
 	add_child(_spr)
 	$ColorRect.visible = false

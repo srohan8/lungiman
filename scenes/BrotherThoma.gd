@@ -34,6 +34,7 @@ func _load_sprite() -> void:
 			img.fill(Color(0.9, 0.9, 0.85))
 			sf.add_frame(anim_name, ImageTexture.create_from_image(img))
 	_spr.sprite_frames = sf
+	_spr.scale = Vector2(64.0 / 4096.0, 64.0 / 4096.0)
 	_spr.play("idle")
 	add_child(_spr)
 

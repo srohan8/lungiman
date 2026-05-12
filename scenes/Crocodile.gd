@@ -37,7 +37,7 @@ func _ready() -> void:
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/croc_sheet.png"
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(CROC_W * 0.5, CROC_H * 0.5)
+	_spr.position = Vector2(CROC_W * 0.05, CROC_H * 0.05)
 	var sf := SpriteFrames.new()
 	if ResourceLoader.exists(PATH):
 		var sheet: Texture2D = load(PATH)
@@ -68,6 +68,7 @@ func _load_sprite() -> void:
 		img.fill(Color(0.25, 0.45, 0.20))
 		sf.add_frame("patrol", ImageTexture.create_from_image(img))
 	_spr.sprite_frames = sf
+	_spr.scale = Vector2(0.1, 0.1)
 	_spr.play("patrol")
 	add_child(_spr)
 	$ColorRect.visible = false

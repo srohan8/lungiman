@@ -36,7 +36,7 @@ func _ready() -> void:
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/yakshi_sheet.png"
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -YAKSHI_FRAME_H * 0.5)
+	_spr.position = Vector2(0, -80.0 * 0.5)
 	var sf := SpriteFrames.new()
 	if ResourceLoader.exists(PATH):
 		var sheet: Texture2D = load(PATH)
@@ -57,6 +57,7 @@ func _load_sprite() -> void:
 		img.fill(Color(0.85, 0.95, 1.0, 0.88))
 		sf.add_frame("float", ImageTexture.create_from_image(img))
 	_spr.sprite_frames = sf
+	_spr.scale = Vector2(80.0 / YAKSHI_FRAME_H, 80.0 / YAKSHI_FRAME_H)
 	_spr.play("float")
 	add_child(_spr)
 	$ColorRect.visible = false

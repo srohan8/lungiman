@@ -63,6 +63,8 @@ func _load_sprite() -> void:
 		img.fill(Color(0.55, 0.0, 0.80, 0.92))
 		sf.add_frame("closed", ImageTexture.create_from_image(img))
 	_spr.sprite_frames = sf
+	_spr.scale = Vector2(60.0 / KK_FRAME_H, 60.0 / KK_FRAME_H)
+	_spr.position = Vector2(0, -30)
 	_spr.play("closed")
 	add_child(_spr)
 	$Body.visible = false

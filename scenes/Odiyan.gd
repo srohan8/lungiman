@@ -46,7 +46,7 @@ func _ready() -> void:
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/odiyan_sheet.png"
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -ODIYAN_FRAME_H * 0.5)
+	_spr.position = Vector2(0, -70.0 * 0.5)
 	var sf := SpriteFrames.new()
 	if ResourceLoader.exists(PATH):
 		var sheet: Texture2D = load(PATH)
@@ -68,6 +68,7 @@ func _load_sprite() -> void:
 		img.fill(Color(0.75, 0.75, 0.75))
 		sf.add_frame("human", ImageTexture.create_from_image(img))
 	_spr.sprite_frames = sf
+	_spr.scale = Vector2(70.0 / ODIYAN_FRAME_H, 70.0 / ODIYAN_FRAME_H)
 	_spr.play("human")
 	add_child(_spr)
 	$ColorRect.visible = false

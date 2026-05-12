@@ -35,7 +35,7 @@ func _ready() -> void:
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/ghost_sheet.png"
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -GHOST_FRAME_H * 0.5)
+	_spr.position = Vector2(0, -60.0 * 0.5)
 	var sf := SpriteFrames.new()
 	sf.add_animation("float")
 	sf.set_animation_loop("float", true)
@@ -52,6 +52,7 @@ func _load_sprite() -> void:
 		img.fill(Color(0.4, 0.4, 1.0, 0.65))
 		sf.add_frame("float", ImageTexture.create_from_image(img))
 	_spr.sprite_frames = sf
+	_spr.scale = Vector2(60.0 / GHOST_FRAME_H, 60.0 / GHOST_FRAME_H)
 	_spr.play("float")
 	# Real = slightly opaque; fake = more transparent with pulse
 	_spr.modulate = Color(1.0, 0.85, 1.0, 0.88) if is_real else Color(0.7, 0.7, 1.0, 0.65)

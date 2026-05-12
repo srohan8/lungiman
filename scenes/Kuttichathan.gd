@@ -50,7 +50,7 @@ func _add_eye() -> void:
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/kuttichathan_sheet.png"
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -KUTTI_FRAME_H * 0.5)
+	_spr.position = Vector2(0, -60.0 * 0.5)
 	var sf := SpriteFrames.new()
 	if ResourceLoader.exists(PATH):
 		var sheet: Texture2D = load(PATH)
@@ -71,6 +71,7 @@ func _load_sprite() -> void:
 		img.fill(Color(1.0, 0.45, 0.05, 0.95))
 		sf.add_frame("idle", ImageTexture.create_from_image(img))
 	_spr.sprite_frames = sf
+	_spr.scale = Vector2(60.0 / KUTTI_FRAME_H, 60.0 / KUTTI_FRAME_H)
 	_spr.play("idle")
 	add_child(_spr)
 	$ColorRect.visible = false

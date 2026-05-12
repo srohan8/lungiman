@@ -36,7 +36,7 @@ const SHAKE_DECAY := 3.8
 # ── Sprite sheet ─────────────────────────────────────────────────────────────
 # hero_sheet.png: single horizontal row, FRAME_H tall, variable-width frames.
 # Falls back to solid-colour placeholders if sheet is missing.
-const FRAME_H    := 98
+const FRAME_H    := 60
 const FRAME_DATA := {
 	"walk":       {"fps": 10.0, "loop": true,  "frames": [[0,58],[58,57],[115,58]]},
 	"idle":       {"fps":  4.0, "loop": true,  "frames": [[173,68],[241,70]]},
