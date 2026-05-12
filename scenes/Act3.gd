@@ -49,7 +49,7 @@ func _spawn_tracks() -> void:
 	_add_platform(1800.0, 240.0, 120.0)
 
 	for i: int in TRACK_XS.size():
-		var x   := TRACK_XS[i]
+		var x: float = TRACK_XS[i]
 		var y   := 240.0 if i == 1 else GROUND_Y - 10.0   # #2 is elevated
 
 		var marker := Area2D.new()

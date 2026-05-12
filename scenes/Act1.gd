@@ -35,6 +35,7 @@ func _ready() -> void:
 	_unlocks_act = 2   # completing Act I unlocks Act II
 	_spawn_trees()
 	_spawn_elevated_platforms()
+	_spawn_broken_bridge()
 	_build_river()
 	_spawn_yakshi()
 	_spawn_ghosts()
@@ -113,6 +114,52 @@ func _on_river_exited(body: Node) -> void:
 		if body.has_method("exit_water"):
 			body.exit_water()
 
+## Broken bridge at x=700 — gap forces player onto flanking trees to swing across.
+## Visual: splintered wooden stumps, dark water pit below.
+func _spawn_broken_bridge() -> void:
+	const BRIDGE_X   := 650.0
+	const BRIDGE_W   := 320.0
+	var water_y := GROUND_Y - 18.0
+
+	# Dark pit visual (broken planks + water underneath)
+	var pit := ColorRect.new()
+	pit.color    = Color(0.04, 0.10, 0.30, 0.80)
+	pit.size     = Vector2(BRIDGE_W, 60.0)
+	pit.position = Vector2(BRIDGE_X, water_y - 20.0)
+	pit.z_index  = -1
+	add_child(pit)
+
+	# Left stump
+	var ls := ColorRect.new()
+	ls.color    = Color(0.35, 0.22, 0.10, 1.0)
+	ls.size     = Vector2(40.0, 22.0)
+	ls.position = Vector2(BRIDGE_X - 8.0, water_y - 22.0)
+	add_child(ls)
+
+	# Right stump
+	var rs := ColorRect.new()
+	rs.color    = Color(0.35, 0.22, 0.10, 1.0)
+	rs.size     = Vector2(40.0, 22.0)
+	rs.position = Vector2(BRIDGE_X + BRIDGE_W - 32.0, water_y - 22.0)
+	add_child(rs)
+
+	# Damage zone — falling in costs HP like river water
+	var pit_area := Area2D.new()
+	pit_area.collision_layer = 0
+	pit_area.collision_mask  = 2
+	var pit_col   := CollisionShape2D.new()
+	var pit_shape := RectangleShape2D.new()
+	pit_shape.size    = Vector2(BRIDGE_W, 50.0)
+	pit_col.shape     = pit_shape
+	pit_area.position = Vector2(BRIDGE_X + BRIDGE_W * 0.5, GROUND_Y + 5.0)
+	pit_area.add_child(pit_col)
+	pit_area.body_entered.connect(_on_river_entered)
+	pit_area.body_exited.connect(_on_river_exited)
+	add_child(pit_area)
+
+	# Early hint — fires before the player reaches the gap
+	_queue_hint("🌴 Bridge is out — CLIMB and SWING across!", 1.5, 5.0)
+
 func _spawn_yakshi() -> void:
 	var yakshi: Node2D = preload("res://scenes/Yakshi.tscn").instantiate()
 	yakshi.position = Vector2(6800.0, GROUND_Y)
@@ -141,8 +188,12 @@ func _spawn_powerups() -> void:
 func _spawn_npcs() -> void:
 	# Brother Thoma near the very start
 	var thoma: Node2D = preload("res://scenes/BrotherThoma.tscn").instantiate()
-	thoma.position = Vector2(400.0, GROUND_Y - 10.0)
+	thoma.position = Vector2(200.0, GROUND_Y - 10.0)
 	add_child(thoma)
+	# Aniyandi Ravi — Toddy stall before the broken bridge
+	var ravi: Node2D = preload("res://scenes/AniyandyRavi.tscn").instantiate()
+	ravi.position = Vector2(420.0, GROUND_Y - 10.0)
+	add_child(ravi)
 	# Soniya's Chaya Kada — placed before the ghost zone
 	var soniya: Node2D = preload("res://scenes/SoniyaChechi.tscn").instantiate()
 	soniya.position = Vector2(3400.0, GROUND_Y - 10.0)

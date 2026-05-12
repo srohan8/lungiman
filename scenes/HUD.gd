@@ -16,6 +16,21 @@ func _process(delta: float) -> void:
 	else:
 		$BossBarContainer.visible = false
 
+	# Toddy dizzy indicator
+	if has_node("StatusLabel"):
+		var lbl := $StatusLabel
+		if GameManager.toddy_active:
+			lbl.text    = "🏺 Dizzy!"
+			lbl.visible = true
+		elif GameManager.hypnosis_active:
+			lbl.text    = "👁 Hypnotised!"
+			lbl.visible = true
+		elif GameManager.paralysis_active:
+			lbl.text    = "❄️ Paralysed!"
+			lbl.visible = true
+		else:
+			lbl.visible = false
+
 	# Hint timer
 	if _hint_timer > 0.0:
 		_hint_timer -= delta

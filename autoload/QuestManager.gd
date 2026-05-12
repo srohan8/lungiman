@@ -41,7 +41,7 @@ const QUEST_DATA := {
 var _states:   Dictionary = {}   # quest_id → QuestState
 var _progress: Dictionary = {}   # quest_id → int (steps completed)
 
-signal quest_updated(quest_id: String, new_state: QuestState)
+signal quest_updated(quest_id: String, new_state: int)
 
 func _ready() -> void:
 	for id: String in QUEST_DATA:
@@ -69,7 +69,7 @@ func advance_quest(quest_id: String, steps: int = 1) -> void:
 func complete_quest(quest_id: String) -> void:
 	_complete(quest_id)
 
-func get_state(quest_id: String) -> QuestState:
+func get_state(quest_id: String) -> int:
 	return _states.get(quest_id, QuestState.LOCKED)
 
 func get_progress(quest_id: String) -> int:

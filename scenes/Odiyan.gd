@@ -149,7 +149,7 @@ func _drop_powerup() -> void:
 	var pu: Node2D = preload("res://scenes/PowerUp.tscn").instantiate()
 	pu.type     = "toddy"   # Odiyan's reward — earned it, but you'll wobble
 	pu.position = position + Vector2(0, -20)
-	get_parent().add_child(pu)
+	get_parent().call_deferred("add_child", pu)
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player") or hit_cooldown > 0.0: return

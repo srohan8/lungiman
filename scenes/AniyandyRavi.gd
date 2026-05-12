@@ -1,14 +1,14 @@
 extends Area2D
 
-## Soniya Chechi — Chaya Kada owner. 3-stage multi-line dialogue.
-## Stage 1: intro quip  Stage 2: serves chai  Stage 3+: repeat quips
+## Aniyandi Ravi — Toddy stall owner. Swing-off Race quest giver.
+## Acts I and II. Drops toddy on first meeting.
 
 const DIALOGUES := [
-	"You smell like Old Monk\nand wet banana leaf. Sit.",
-	"☕ Here. Drink before\nyou face whatever that is.",
-	"Back already?\nThe chai is extra hot this time.",
-	"I saw what charged through.\nYou need more than chai.",
-	"...want chai?",
+	"Old Monk? HANG on that\ntree 5 seconds first! 🏺",
+	"🏺 Here — earned it.\nDon't blame me for the wobble.",
+	"You still alive?\nThat's surprising.",
+	"Want to race me across\nthose trees? First to 5 wins.",
+	"I've been here since\nyour grandfather's time, boy.",
 ]
 
 var _stage:  int  = 0
@@ -23,7 +23,7 @@ func _ready() -> void:
 	_load_sprite()
 
 func _load_sprite() -> void:
-	const PATH := "res://assets/sprites/soniya_sheet.png"
+	const PATH := "res://assets/sprites/ravi_sheet.png"
 	_spr = AnimatedSprite2D.new()
 	_spr.position = Vector2(0, -32)
 	var sf := SpriteFrames.new()
@@ -41,7 +41,7 @@ func _load_sprite() -> void:
 	else:
 		for anim_name: String in ["idle", "talk"]:
 			var img := Image.create(36, 64, false, Image.FORMAT_RGBA8)
-			img.fill(Color(0.5, 0.7, 0.5))
+			img.fill(Color(0.75, 0.55, 0.25))   # warm Kerala brown
 			sf.add_frame(anim_name, ImageTexture.create_from_image(img))
 	_spr.sprite_frames = sf
 	_spr.play("idle")
@@ -53,10 +53,10 @@ func _on_body_entered(body: Node) -> void:
 	_show_stage()
 	if not _served and _stage >= 1:
 		_served = true
-		_drop_chai()
+		_drop_toddy()
 
 func _show_stage() -> void:
-	var idx    := mini(_stage, DIALOGUES.size() - 1)
+	var idx        := mini(_stage, DIALOGUES.size() - 1)
 	$Label.text    = DIALOGUES[idx]
 	$Label.visible = true
 	if _spr != null: _spr.play("talk")
@@ -66,8 +66,8 @@ func _show_stage() -> void:
 		if _spr != null: _spr.play("idle")
 	)
 
-func _drop_chai() -> void:
+func _drop_toddy() -> void:
 	var pu: Node2D = preload("res://scenes/PowerUp.tscn").instantiate()
-	pu.type     = "chai"
+	pu.type     = "toddy"
 	pu.position = position + Vector2(35.0, -15.0)
 	get_parent().call_deferred("add_child", pu)

@@ -246,12 +246,12 @@ func _refresh_quest_panel() -> void:
 	vbox.add_child(div)
 
 	for quest_id: String in QuestManager.QUEST_DATA:
-		var state    := QuestManager.get_state(quest_id)
-		var progress := QuestManager.get_progress(quest_id)
-		var total    := QuestManager.get_total(quest_id)
-		var title    := QuestManager.get_title(quest_id)
-		var desc     := QuestManager.get_desc(quest_id)
-		var reward   := QuestManager.get_reward(quest_id)
+		var state:    int    = QuestManager.get_state(quest_id)
+		var progress: int    = QuestManager.get_progress(quest_id)
+		var total:    int    = QuestManager.get_total(quest_id)
+		var title:    String = QuestManager.get_title(quest_id)
+		var desc:     String = QuestManager.get_desc(quest_id)
+		var reward:   String = QuestManager.get_reward(quest_id)
 
 		var hbox := HBoxContainer.new()
 		hbox.add_theme_constant_override("separation", 10)
@@ -324,13 +324,13 @@ func _refresh_quest_panel() -> void:
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-func _quest_icon(state: QuestManager.QuestState) -> String:
+func _quest_icon(state: int) -> String:
 	match state:
 		QuestManager.QuestState.DONE:   return "✅"
 		QuestManager.QuestState.ACTIVE: return "⚡"
 		_:                              return "🔒"
 
-func _quest_color(state: QuestManager.QuestState) -> Color:
+func _quest_color(state: int) -> Color:
 	match state:
 		QuestManager.QuestState.DONE:   return COL_DONE
 		QuestManager.QuestState.ACTIVE: return COL_ACTIVE
