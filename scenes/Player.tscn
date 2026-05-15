@@ -19,8 +19,8 @@ shape = SubResource("CapsuleShape2D_player")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=441215338]
 position = Vector2(0, -60)
-offset = Vector2(0, -120)
+offset = Vector2(0, -37)
 limit_left = 0
 limit_top = -200
 limit_right = 8200
-limit_bottom = 800
+limit_bottom = 700

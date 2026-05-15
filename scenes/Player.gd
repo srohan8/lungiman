@@ -32,7 +32,7 @@ const ROLL_IFRAMES  := 0.40
 
 # ── Screen shake ─────────────────────────────────────────────────────────────
 const SHAKE_DECAY  := 3.8
-const CAM_OFFSET_Y := -120.0   # ground at ~75% on 1280×720; base for shake/sway
+const CAM_OFFSET_Y := -37.0    # ground at ~75% on 480×270; base for shake/sway
 
 # ── Sprite sheet ─────────────────────────────────────────────────────────────
 # hero_sheet.png: single horizontal row, FRAME_H tall, variable-width frames.
