@@ -31,7 +31,8 @@ const ROLL_DURATION := 0.35
 const ROLL_IFRAMES  := 0.40
 
 # ── Screen shake ─────────────────────────────────────────────────────────────
-const SHAKE_DECAY := 3.8
+const SHAKE_DECAY  := 3.8
+const CAM_OFFSET_Y := -120.0   # ground at ~75% on 1280×720; base for shake/sway
 
 # ── Sprite sheet ─────────────────────────────────────────────────────────────
 # hero_sheet.png: single horizontal row, FRAME_H tall, variable-width frames.
@@ -48,13 +49,30 @@ const FRAME_DATA := {
 }
 const ANIM_COLORS := {
 	"walk":       Color(0.20, 0.55, 1.00),
+	"run":        Color(0.20, 0.55, 1.00),
 	"idle":       Color(0.20, 0.55, 1.00),
 	"swing_grab": Color(0.20, 0.80, 0.50),
 	"swing":      Color(0.10, 0.90, 0.70),
 	"sword":      Color(1.00, 0.85, 0.10),
 	"sword2":     Color(1.00, 0.65, 0.10),
 	"chai":       Color(0.85, 0.40, 0.10),
+	"throw":      Color(0.90, 0.60, 0.10),
 }
+
+# ── Dedicated grid sprite sheets ──────────────────────────────────────────────
+const RUN_SHEET_PATH    := "res://assets/sprites/Hero-run.png"
+const RUN_FRAME_W       := 768
+const RUN_FRAME_H       := 448
+const RUN_COLS          := 4
+const RUN_TOTAL_FRAMES  := 21   # 4×6 grid, last row col 0 only
+
+const THROW_SHEET_PATH   := "res://assets/sprites/Hero-Coconut-throw.png"
+const THROW_FRAME_W      := 768
+const THROW_FRAME_H      := 448
+const THROW_COLS         := 4
+const THROW_TOTAL_FRAMES := 29   # 4×8 grid, last row col 0 only
+var   _throw_anim_timer  := 0.0
+const THROW_ANIM_DUR     := 0.70   # covers all 29 frames at ~14fps ≈ 2.07s; cap display at 0.70s
 
 enum TreeState { NONE, CLIMBING, PERCHED, FLYING }
 
@@ -128,6 +146,52 @@ func _build_sprite_frames() -> void:
 			sf.set_animation_loop(anim_name, true)
 			sf.set_animation_speed(anim_name, 8.0)
 			sf.add_frame(anim_name, tex)
+	# ── Run animation — grid sheet (Hero-run.png) ────────────────────────────
+	if ResourceLoader.exists(RUN_SHEET_PATH):
+		var run_sheet: Texture2D = load(RUN_SHEET_PATH)
+		if not sf.has_animation("run"):
+			sf.add_animation("run")
+		sf.set_animation_loop("run", true)
+		sf.set_animation_speed("run", 14.0)
+		for i in RUN_TOTAL_FRAMES:
+			var col := i % RUN_COLS
+			@warning_ignore("integer_division")
+			var row: int = i / RUN_COLS
+			var at := AtlasTexture.new()
+			at.atlas  = run_sheet
+			at.region = Rect2(col * RUN_FRAME_W, row * RUN_FRAME_H, RUN_FRAME_W, RUN_FRAME_H)
+			sf.add_frame("run", at)
+	elif not sf.has_animation("run"):
+		var img := Image.create(30, 60, false, Image.FORMAT_RGBA8)
+		img.fill(ANIM_COLORS["run"])
+		sf.add_animation("run")
+		sf.set_animation_loop("run", true)
+		sf.set_animation_speed("run", 8.0)
+		sf.add_frame("run", ImageTexture.create_from_image(img))
+
+	# ── Throw animation — grid sheet (Hero-Coconut-throw.png) ────────────────
+	if ResourceLoader.exists(THROW_SHEET_PATH):
+		var throw_sheet: Texture2D = load(THROW_SHEET_PATH)
+		if not sf.has_animation("throw"):
+			sf.add_animation("throw")
+		sf.set_animation_loop("throw", false)
+		sf.set_animation_speed("throw", 14.0)
+		for i in THROW_TOTAL_FRAMES:
+			var col := i % THROW_COLS
+			@warning_ignore("integer_division")
+			var row: int = i / THROW_COLS
+			var at := AtlasTexture.new()
+			at.atlas  = throw_sheet
+			at.region = Rect2(col * THROW_FRAME_W, row * THROW_FRAME_H, THROW_FRAME_W, THROW_FRAME_H)
+			sf.add_frame("throw", at)
+	elif not sf.has_animation("throw"):
+		var img2 := Image.create(30, 60, false, Image.FORMAT_RGBA8)
+		img2.fill(ANIM_COLORS["throw"])
+		sf.add_animation("throw")
+		sf.set_animation_loop("throw", false)
+		sf.set_animation_speed("throw", 8.0)
+		sf.add_frame("throw", ImageTexture.create_from_image(img2))
+
 	$AnimatedSprite2D.sprite_frames = sf
 	$AnimatedSprite2D.play("idle")
 
@@ -136,13 +200,13 @@ func _process(delta: float) -> void:
 		_shake_trauma = maxf(0.0, _shake_trauma - SHAKE_DECAY * delta)
 		var shake := _shake_trauma * _shake_trauma
 		$Camera2D.offset = Vector2(randf_range(-1.0, 1.0) * shake * 18.0,
-								   randf_range(-1.0, 1.0) * shake * 18.0)
+								   CAM_OFFSET_Y + randf_range(-1.0, 1.0) * shake * 18.0)
 	elif GameManager.toddy_active:
 		# Toddy dizziness — slow rolling sway, gets worse mid-duration
 		var sway := sin(Time.get_ticks_msec() * 0.0025) * 14.0
-		$Camera2D.offset = Vector2(sway, sin(Time.get_ticks_msec() * 0.004) * 5.0)
+		$Camera2D.offset = Vector2(sway, CAM_OFFSET_Y + sin(Time.get_ticks_msec() * 0.004) * 5.0)
 	else:
-		$Camera2D.offset = Vector2.ZERO
+		$Camera2D.offset = Vector2(0.0, CAM_OFFSET_Y)
 	if tree_state == TreeState.PERCHED and GameManager.ammo < GameManager.max_ammo:
 		ammo_regen_timer -= delta
 		# Chaya Kada reward: 2× faster regen near a SoniyaChechi / tea shop
@@ -165,8 +229,9 @@ func _physics_process(delta: float) -> void:
 	_handle_sword(delta)
 	_handle_coconut()
 	_update_animation()
-	river_dmg_cooldown = maxf(0.0, river_dmg_cooldown - delta)
-	iframe_timer       = maxf(0.0, iframe_timer - delta)
+	river_dmg_cooldown  = maxf(0.0, river_dmg_cooldown - delta)
+	iframe_timer        = maxf(0.0, iframe_timer - delta)
+	_throw_anim_timer   = maxf(0.0, _throw_anim_timer - delta)
 	if in_water:
 		_water_dmg_timer -= delta
 		if _water_dmg_timer <= 0.0:
@@ -340,6 +405,7 @@ func _handle_coconut() -> void:
 	var can_throw := tree_state == TreeState.NONE or tree_state == TreeState.PERCHED
 	if Input.is_action_just_pressed("coconut") and GameManager.ammo > 0 and can_throw:
 		GameManager.ammo -= 1
+		_throw_anim_timer = THROW_ANIM_DUR
 		var proj: Node2D = preload("res://scenes/CoconutProjectile.tscn").instantiate()
 		proj.position = global_position
 		get_parent().add_child(proj)
@@ -378,19 +444,40 @@ func _is_near_tea_shop() -> bool:
 			return true
 	return false
 
+# Scale for new dedicated grid sheets (768×448 frame → 60px on-screen height)
+const GRID_SHEET_SCALE := 0.134
+# Animations that come from the large grid sheets and need downscaling
+const GRID_SHEET_ANIMS := [&"run", &"throw"]
+
+func _set_sprite_scale(anim: StringName) -> void:
+	var s := GRID_SHEET_SCALE if anim in GRID_SHEET_ANIMS else 1.0
+	$AnimatedSprite2D.scale = Vector2(s, s)
+
 func _update_animation() -> void:
 	var spr := $AnimatedSprite2D
+	# Priority: sword > throw > tree states > run/idle
 	if sword_phase > 0:
 		var anim: StringName = &"sword" if sword_phase <= 2 else &"sword2"
 		if spr.animation != anim: spr.play(anim)
+		_set_sprite_scale(anim)
 		spr.flip_h = (face < 0)
 		return
+	if _throw_anim_timer > 0.0 and tree_state == TreeState.NONE:
+		if spr.sprite_frames.has_animation(&"throw"):
+			if spr.animation != &"throw": spr.play(&"throw")
+			_set_sprite_scale(&"throw")
+			spr.flip_h = (face < 0)
+			return
 	var target_anim: StringName
 	match tree_state:
 		TreeState.CLIMBING, TreeState.PERCHED: target_anim = &"swing_grab"
 		TreeState.FLYING:                      target_anim = &"swing"
-		_: target_anim = &"walk" if absf(velocity.x) > 10.0 else &"idle"
-	if spr.animation != target_anim: spr.play(target_anim)
+		_:
+			var move_anim: StringName = &"run" if spr.sprite_frames.has_animation(&"run") else &"walk"
+			target_anim = move_anim if absf(velocity.x) > 10.0 else &"idle"
+	if spr.sprite_frames.has_animation(target_anim) and spr.animation != target_anim:
+		spr.play(target_anim)
+	_set_sprite_scale(target_anim)
 	spr.flip_h = (face < 0)
 	if iframe_timer > 0.0:
 		modulate = Color(1.0, 1.0, 1.0, 0.45)   # hit flash

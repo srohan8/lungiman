@@ -1,8 +1,8 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene format=3 uid="uid://13y3cj4x71cs"]
 
-[ext_resource type="Script" path="res://scenes/Act2.gd" id="1_act2"]
-[ext_resource type="PackedScene" path="res://scenes/Player.tscn" id="2_player"]
-[ext_resource type="PackedScene" path="res://scenes/HUD.tscn" id="3_hud"]
+[ext_resource type="Script" uid="uid://fra04tc833mk" path="res://scenes/Act2.gd" id="1_act2"]
+[ext_resource type="PackedScene" uid="uid://p7yfh3xddcrf" path="res://scenes/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://ctcodasns0leo" path="res://scenes/HUD.tscn" id="3_hud"]
 [ext_resource type="PackedScene" path="res://scenes/GameOver.tscn" id="4_go"]
 [ext_resource type="PackedScene" path="res://scenes/Victory.tscn" id="5_vic"]
 [ext_resource type="PackedScene" path="res://scenes/MobileButtons.tscn" id="6_mob"]
@@ -10,37 +10,36 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
 size = Vector2(8200, 40)
 
-[node name="Act2" type="Node2D"]
+[node name="Act2" type="Node2D" unique_id=754983467]
 script = ExtResource("1_act2")
 
-[node name="Player" parent="." instance=ExtResource("2_player")]
-position = Vector2(100, 340)
+[node name="Player" parent="." unique_id=1631664253 instance=ExtResource("2_player")]
+position = Vector2(100, 520)
 
-[node name="Ground" type="StaticBody2D" parent="."]
-position = Vector2(4100, 395)
-collision_layer = 1
+[node name="Ground" type="StaticBody2D" parent="." unique_id=1910578747]
+position = Vector2(4100, 580)
 collision_mask = 0
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=740678056]
 shape = SubResource("RectangleShape2D_ground")
 
-[node name="GroundVis" type="ColorRect" parent="Ground"]
+[node name="GroundVis" type="ColorRect" parent="Ground" unique_id=1856031423]
 offset_left = -4100.0
 offset_top = -20.0
 offset_right = 4100.0
 offset_bottom = 20.0
-color = Color(0.22, 0.16, 0.10, 1)
+color = Color(0.22, 0.16, 0.1, 1)
 
-[node name="Trees" type="Node2D" parent="."]
+[node name="Trees" type="Node2D" parent="." unique_id=679607616]
 
-[node name="Enemies" type="Node2D" parent="."]
+[node name="Enemies" type="Node2D" parent="." unique_id=1249469087]
 
-[node name="PowerUps" type="Node2D" parent="."]
+[node name="PowerUps" type="Node2D" parent="." unique_id=212342795]
 
-[node name="HUD" parent="." instance=ExtResource("3_hud")]
+[node name="HUD" parent="." unique_id=1310431637 instance=ExtResource("3_hud")]
 
-[node name="GameOver" parent="." instance=ExtResource("4_go")]
+[node name="GameOver" parent="." unique_id=1817009125 instance=ExtResource("4_go")]
 
-[node name="Victory" parent="." instance=ExtResource("5_vic")]
+[node name="Victory" parent="." unique_id=297147196 instance=ExtResource("5_vic")]
 
-[node name="MobileButtons" parent="." instance=ExtResource("6_mob")]
+[node name="MobileButtons" parent="." unique_id=263640254 instance=ExtResource("6_mob")]

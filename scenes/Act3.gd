@@ -10,7 +10,7 @@ const ACT_TRIGGER_X := 7800.0
 const ZONE_TREES   := 20
 const ZONE_X_FROM  := 250.0
 const ZONE_X_TO    := 7500.0
-const ZONE_H       := 190.0
+const ZONE_H       := 284.0
 
 # Hoof-print positions (Odiyan's Tracks quest)
 const TRACK_XS     := [700.0, 1800.0, 3200.0, 4000.0]
@@ -52,11 +52,11 @@ func _spawn_odiyan() -> void:
 ## Spawn 4 hoof-print markers (Area2D + spirit smoke visual)
 func _spawn_tracks() -> void:
 	# Hoof print #2 sits on an elevated platform — teaches climbing to investigate
-	_add_platform(1800.0, 240.0, 120.0)
+	_add_platform(1800.0, 358.0, 120.0)
 
 	for i: int in TRACK_XS.size():
 		var x: float = TRACK_XS[i]
-		var y   := 240.0 if i == 1 else GROUND_Y - 10.0   # #2 is elevated
+		var y   := 358.0 if i == 1 else GROUND_Y - 10.0   # #2 is elevated
 
 		var marker := Area2D.new()
 		marker.collision_layer = 0

@@ -8,7 +8,7 @@ extends Node2D
 ##           _spawn_boat, _connect_player_to_hud, _get_player, _get_hud,
 ##           _queue_hint
 
-const GROUND_Y := 375.0
+const GROUND_Y := 560.0
 
 var _act_triggered := false
 var _next_scene    := ""
@@ -147,7 +147,7 @@ func _apply_sky(sky_color: Color) -> void:
 		bg.name         = "SkyBackground"
 		bg.color        = sky_color
 		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bg.size         = Vector2(820, 460)   # viewport size — anchors don't resolve before add_child
+		bg.size         = Vector2(1280, 720)  # viewport size — anchors don't resolve before add_child
 		sky_cl.add_child(bg)
 		add_child(sky_cl)
 	# Vignette CanvasLayer — persists above game world, below HUD (layer 10)
@@ -170,7 +170,7 @@ func _apply_sky(sky_color: Color) -> void:
 		grad.height    = 512
 		tex_rect.texture      = grad
 		tex_rect.stretch_mode = TextureRect.STRETCH_SCALE
-		tex_rect.size         = Vector2(820, 460)   # viewport size
+		tex_rect.size         = Vector2(1280, 720)  # viewport size
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		cl.add_child(tex_rect)
 		add_child(cl)

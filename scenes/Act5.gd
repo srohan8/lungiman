@@ -9,7 +9,7 @@ const ACT_TRIGGER_X := 7800.0   # fallback only — game_won fires first
 const ZONE_TREES   := 24
 const ZONE_X_FROM  := 150.0
 const ZONE_X_TO    := 7650.0
-const ZONE_H       := 260.0   # massive ancient trees
+const ZONE_H       := 388.0   # massive ancient trees
 
 func _ready() -> void:
 	_trigger_x   = ACT_TRIGGER_X
@@ -60,7 +60,7 @@ func _spawn_fireflies() -> void:
 		var ff := ColorRect.new()
 		ff.color    = Color(0.75, 1.0, 0.35, 0.80)
 		ff.size     = Vector2(4.0, 4.0)
-		ff.position = Vector2(randf_range(500.0, 7500.0), randf_range(80.0, 340.0))
+		ff.position = Vector2(randf_range(500.0, 7500.0), randf_range(120.0, 510.0))
 		ff.z_index  = 5
 		add_child(ff)
 		# Each firefly drifts in a small random oval, loops forever
@@ -92,7 +92,7 @@ func _spawn_powerups() -> void:
 	var data := [
 		[500.0,  GROUND_Y, "heart"],
 		[1500.0, GROUND_Y, "nut"],
-		[2800.0, 240.0,    "porotta"],   # elevated — crown-leap required
+		[2800.0, 358.0,    "porotta"],   # elevated — crown-leap required
 		[4800.0, GROUND_Y, "heart"],
 		[5800.0, GROUND_Y, "nut"],
 		[6800.0, GROUND_Y, "toddy"],
@@ -100,7 +100,7 @@ func _spawn_powerups() -> void:
 	for d: Array in data:
 		_add_powerup($PowerUps, d[0], float(d[1]), d[2])
 	# Elevated platform holding the curry
-	_add_platform(2800.0, 240.0, 140.0, Color(0.35, 0.25, 0.12, 1.0))
+	_add_platform(2800.0, 358.0, 140.0, Color(0.35, 0.25, 0.12, 1.0))
 
 func _spawn_npcs() -> void:
 	var thoma: Node2D = preload("res://scenes/BrotherThoma.tscn").instantiate()

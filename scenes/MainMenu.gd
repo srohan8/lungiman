@@ -189,7 +189,7 @@ func _open_level_select() -> void:
 		["🌑  Act V — Pey Komban's Rampage","res://scenes/Act5.tscn",5],
 	]
 
-	var unlocked: int = GameManager.acts_unlocked
+	var unlocked: int = 99   # DEV: all acts unlocked for testing
 
 	for level_data: Array in LEVELS:
 		var label_text: String = level_data[0]

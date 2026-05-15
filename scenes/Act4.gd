@@ -10,7 +10,7 @@ const ACT_TRIGGER_X := 7800.0
 const ZONE_TREES   := 22
 const ZONE_X_FROM  := 200.0
 const ZONE_X_TO    := 7600.0
-const ZONE_H       := 240.0   # tall — crowns reach y~135, needed to hit Karinkanni
+const ZONE_H       := 358.0   # tall — crowns reach y~202, needed to hit Karinkanni
 
 func _ready() -> void:
 	_next_scene  = NEXT_SCENE
@@ -35,7 +35,7 @@ func _spawn_trees() -> void:
 
 func _spawn_karinkanni() -> void:
 	var boss: Node2D = preload("res://scenes/Karinkanni.tscn").instantiate()
-	boss.position = Vector2(4000.0, 150.0)
+	boss.position = Vector2(4000.0, 185.0)
 	$Enemies.add_child(boss)
 
 func _spawn_powerups() -> void:
@@ -77,12 +77,12 @@ func _spawn_rising_water() -> void:
 		var drop := ColorRect.new()
 		drop.color    = Color(0.5, 0.7, 1.0, 0.30)
 		drop.size     = Vector2(2.0, 14.0)
-		drop.position = Vector2(randf_range(0.0, 8200.0), randf_range(0.0, 460.0))
+		drop.position = Vector2(randf_range(0.0, 8200.0), randf_range(0.0, 720.0))
 		drop.z_index  = 3
 		add_child(drop)
 		var dt := create_tween()
 		dt.set_loops()
-		dt.tween_property(drop, "position:y", drop.position.y + 460.0, randf_range(1.2, 2.2))
+		dt.tween_property(drop, "position:y", drop.position.y + 720.0, randf_range(1.2, 2.2))
 		dt.tween_property(drop, "position:y", -14.0, 0.0)
 
 ## Screen-space CPUParticles2D rain — CanvasLayer so it follows the camera.
@@ -95,7 +95,7 @@ func _spawn_rain() -> void:
 	p.amount                 = 180
 	p.lifetime               = 0.75
 	p.emission_shape         = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	p.emission_rect_extents  = Vector2(460, 8)
+	p.emission_rect_extents  = Vector2(640, 8)
 	p.position               = Vector2(410, -8)
 	p.direction              = Vector2(0.12, 1.0).normalized()
 	p.spread                 = 3.0
