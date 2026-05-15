@@ -1,8 +1,8 @@
 extends "res://scenes/BaseAct.gd"
 
 ## Act IV — Karinkanni's Curse
-## Rain-drenched mangroves. Karinkanni floats at y~150.
-## MUST be on a tree crown (y~135) to hit her with coconuts.
+## Rain-drenched mangroves. Karinkanni floats at y~315 (above tree crowns at y~350).
+## MUST be on a tree crown to hit her with coconuts.
 
 const NEXT_SCENE    := "res://scenes/Act5.tscn"
 const ACT_TRIGGER_X := 7800.0
@@ -10,7 +10,7 @@ const ACT_TRIGGER_X := 7800.0
 const ZONE_TREES   := 22
 const ZONE_X_FROM  := 200.0
 const ZONE_X_TO    := 7600.0
-const ZONE_H       := 358.0   # tall — crowns reach y~202, needed to hit Karinkanni
+const ZONE_H       := 210.0   # crown y≈350 — tall mangroves; Karinkanni floats just above
 
 func _ready() -> void:
 	_next_scene  = NEXT_SCENE
@@ -35,7 +35,7 @@ func _spawn_trees() -> void:
 
 func _spawn_karinkanni() -> void:
 	var boss: Node2D = preload("res://scenes/Karinkanni.tscn").instantiate()
-	boss.position = Vector2(4000.0, 185.0)
+	boss.position = Vector2(4000.0, 315.0)
 	$Enemies.add_child(boss)
 
 func _spawn_powerups() -> void:

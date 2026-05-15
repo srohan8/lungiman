@@ -11,13 +11,13 @@ const ACT_TRIGGER_X := 7800.0
 const ZONE1_TREES  := 18
 const ZONE1_X_FROM := 200.0
 const ZONE1_X_TO   := 3500.0
-const ZONE1_H      := 328.0
+const ZONE1_H      := 170.0   # crown y≈390 — visible at 34% from top on 480×270
 const ZONE1_LEAN   := 0.05
 
 const ZONE2_TREES  := 16
 const ZONE2_X_FROM := 3600.0
 const ZONE2_X_TO   := 7600.0
-const ZONE2_H      := 388.0
+const ZONE2_H      := 200.0   # crown y≈360 — deeper forest, taller trees
 const ZONE2_LEAN   := 0.04
 
 # River zone (gap in Zone 1)
@@ -60,10 +60,10 @@ func _spawn_trees() -> void:
 ## Four elevated platforms to reward climbing over ground-rushing
 func _spawn_elevated_platforms() -> void:
 	var plank := Color(0.28, 0.18, 0.08, 1.0)
-	_add_platform( 550.0, 358.0, 150.0, plank)  # near start — teaches vertical
-	_add_platform(1250.0, 351.0, 130.0, plank)  # mid Zone 1
-	_add_platform(3550.0, 329.0, 170.0, plank)  # just past river, rewards leapers
-	_add_platform(5100.0, 344.0, 150.0, plank)  # deep Zone 2
+	_add_platform( 550.0, 460.0, 150.0, plank)  # near start — teaches vertical
+	_add_platform(1250.0, 455.0, 130.0, plank)  # mid Zone 1
+	_add_platform(3550.0, 445.0, 170.0, plank)  # just past river, rewards leapers
+	_add_platform(5100.0, 425.0, 150.0, plank)  # deep Zone 2 (taller trees)
 
 func _build_river() -> void:
 	var water_y := GROUND_Y - 18.0
@@ -104,8 +104,8 @@ func _build_river() -> void:
 		$Enemies.add_child(croc)
 
 	# Chai powerup on elevated platform ABOVE the river — reward for leaping
-	_add_platform(RIVER_X + RIVER_W * 0.5, 314.0, 100.0)
-	_add_powerup($PowerUps, RIVER_X + RIVER_W * 0.5, 306.0, "chai")
+	_add_platform(RIVER_X + RIVER_W * 0.5, 435.0, 100.0)
+	_add_powerup($PowerUps, RIVER_X + RIVER_W * 0.5, 427.0, "chai")
 
 func _on_river_entered(body: Node) -> void:
 	if body.is_in_group("player"):
@@ -209,8 +209,8 @@ func _spawn_ghosts() -> void:
 
 func _spawn_powerups() -> void:
 	var data := [
-		[ 450.0, 351.0,    "heart"],   # on first elevated platform
-		[1250.0, 341.0,    "nut"],     # on second elevated platform
+		[ 450.0, 452.0,    "heart"],   # on first elevated platform
+		[1250.0, 447.0,    "nut"],     # on second elevated platform
 		[3000.0, GROUND_Y, "toddy"],
 		[4500.0, GROUND_Y, "nut"],
 		[5800.0, GROUND_Y, "heart"],

@@ -10,12 +10,12 @@ const ACT_TRIGGER_X := 7800.0
 const ZONE1_TREES  := 10
 const ZONE1_X_FROM := 300.0
 const ZONE1_X_TO   := 3800.0
-const ZONE1_H      := 239.0
+const ZONE1_H      := 130.0   # crown y≈430 — carnival scrubland, short trees
 
 const ZONE2_TREES  := 10
 const ZONE2_X_FROM := 4000.0
 const ZONE2_X_TO   := 7500.0
-const ZONE2_H      := 239.0
+const ZONE2_H      := 130.0   # crown y≈430
 
 var _fire_rain_running := false
 
@@ -145,7 +145,7 @@ func _drop_fireball() -> void:
 ## Carnival Bell stall at x=1500 — throw coconut from crown to hit it, drops nut.
 func _spawn_carnival_bell() -> void:
 	# Elevated platform for the stall
-	_add_platform(1500.0, 299.0, 80.0, Color(0.45, 0.22, 0.08, 1.0))
+	_add_platform(1500.0, 450.0, 80.0, Color(0.45, 0.22, 0.08, 1.0))
 
 	# Bell hitbox Area2D — detected by coconut projectiles
 	var bell := Area2D.new()
@@ -174,8 +174,8 @@ func _spawn_carnival_bell() -> void:
 		if rung_flag[0]: return
 		if area.is_in_group("coconut"):
 			rung_flag[0] = true
-			_add_powerup($PowerUps, 1500.0, 276.0, "nut")
-			_add_powerup($PowerUps, 1540.0, 276.0, "nut")
+			_add_powerup($PowerUps, 1500.0, 442.0, "nut")
+			_add_powerup($PowerUps, 1540.0, 442.0, "nut")
 			var hud := _get_hud()
 			if hud: hud.show_hint("🏆 Carnival Champion!", 3.0)
 			bv.color = Color(0.5, 0.5, 0.5, 1.0)   # greyed out after ring

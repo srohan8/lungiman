@@ -9,17 +9,17 @@ const ACT_TRIGGER_X := 7800.0
 const ZONE1_TREES  := 14
 const ZONE1_X_FROM := 320.0
 const ZONE1_X_TO   := 2780.0
-const ZONE1_H      := 276.0
+const ZONE1_H      := 140.0   # crown y≈420 — visible at 45% from top on 480×270
 
 const ZONE2_TREES  := 9
 const ZONE2_X_FROM := 2900.0
 const ZONE2_X_TO   := 4350.0
-const ZONE2_H      := 299.0
+const ZONE2_H      := 160.0   # crown y≈400
 
 const ZONE3_TREES  := 12
 const ZONE3_X_FROM := 4450.0
 const ZONE3_X_TO   := 6750.0
-const ZONE3_H      := 358.0
+const ZONE3_H      := 190.0   # crown y≈370
 
 const RIVER_X := 2860.0
 const RIVER_W := 500.0
@@ -151,8 +151,8 @@ func _spawn_throw_tutorial() -> void:
 
 func _spawn_powerups() -> void:
 	var data := [
-		[450.0,  351.0,    "heart"],
-		[920.0,  351.0,    "nut"],
+		[450.0,  470.0,    "heart"],
+		[920.0,  470.0,    "nut"],
 		[1520.0, GROUND_Y, "heart"],
 		[1820.0, GROUND_Y, "nut"],
 		[3920.0, GROUND_Y, "nut"],
@@ -163,5 +163,5 @@ func _spawn_powerups() -> void:
 	]
 	for d: Array in data:
 		_add_powerup($PowerUps, d[0], float(d[1]), d[2])
-	_add_platform(RIVER_X + RIVER_W * 0.5, 314.0, 100.0)
-	_add_powerup($PowerUps, RIVER_X + RIVER_W * 0.5, 306.0, "chai")
+	_add_platform(RIVER_X + RIVER_W * 0.5, 440.0, 100.0)
+	_add_powerup($PowerUps, RIVER_X + RIVER_W * 0.5, 432.0, "chai")
