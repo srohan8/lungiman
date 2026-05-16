@@ -19,6 +19,10 @@ const LEAP_SPEED_FACTOR := 11.0
 const LEAP_TOF_MIN      := 20.0
 const CLIMB_DURATION    := 0.50
 const HERO_HALF_H       := 60.0
+const SWING_ROPE_MIN    := 80.0
+const SWING_ROPE_MAX    := 200.0
+const SWING_PUMP_FORCE  := 0.8     # rad/s² per unit of horizontal input
+const LASSO_THROW_TIME  := 0.18    # seconds for tip to travel to crown
 
 # ── River / water ─────────────────────────────────────────────────────────────
 const WADE_SPEED_MULT    := 0.55
@@ -74,7 +78,7 @@ const THROW_TOTAL_FRAMES := 29   # 4×8 grid, last row col 0 only
 var   _throw_anim_timer  := 0.0
 const THROW_ANIM_DUR     := 0.70   # covers all 29 frames at ~14fps ≈ 2.07s; cap display at 0.70s
 
-enum TreeState { NONE, CLIMBING, PERCHED, FLYING }
+enum TreeState { NONE, CLIMBING, PERCHED, FLYING, SWINGING }
 
 # ── State ─────────────────────────────────────────────────────────────────────
 var tree_state   := TreeState.NONE
@@ -84,6 +88,16 @@ var climb_start  := Vector2.ZERO
 var climb_target := Vector2.ZERO
 var climb_t      := 0.0
 var face         := 1
+
+var swing_pivot:        Vector2 = Vector2.ZERO
+var swing_angle:        float   = 0.0
+var swing_angular_vel:  float   = 0.0
+var swing_rope_len:     float   = 120.0
+var lasso_state:        int     = 0   # 0=none  1=throwing  2=hooked(=SWINGING)
+var lasso_timer:        float   = 0.0
+var lasso_tip:          Vector2 = Vector2.ZERO
+var lasso_tip_start:    Vector2 = Vector2.ZERO
+var lasso_target_tree:  Node2D  = null
 
 var coyote_timer  := 0.0
 var jump_buffer   := 0.0
@@ -196,6 +210,8 @@ func _build_sprite_frames() -> void:
 	$AnimatedSprite2D.play("idle")
 
 func _process(delta: float) -> void:
+	if lasso_state > 0:
+		queue_redraw()
 	if _shake_trauma > 0.0:
 		_shake_trauma = maxf(0.0, _shake_trauma - SHAKE_DECAY * delta)
 		var shake := _shake_trauma * _shake_trauma
@@ -225,6 +241,7 @@ func _physics_process(delta: float) -> void:
 		TreeState.CLIMBING: _process_climbing(delta)
 		TreeState.PERCHED:  _process_perched(delta, do_climb)
 		TreeState.FLYING:   _process_flying(delta)
+		TreeState.SWINGING: _process_swinging(delta)
 	_handle_roll(delta)
 	_handle_sword(delta)
 	_handle_coconut()
@@ -260,6 +277,12 @@ func _process_none(delta: float, do_climb: bool) -> void:
 		coyote_timer = 0.0
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
 		velocity.y *= JUMP_RELEASE_MULT
+	# Lasso from mid-air during a ground jump (coyote expired, airborne)
+	if not is_on_floor() and coyote_timer <= 0.0 and lasso_state == 0:
+		if Input.is_action_just_pressed("jump"):
+			var t := _near_tree_for_lasso()
+			if t != null:
+				_start_lasso_throw(t)
 	var move_dir := Input.get_axis("move_left", "move_right")
 	if GameManager.hypnosis_active:
 		move_dir = -move_dir
@@ -303,19 +326,33 @@ func _process_perched(_delta: float, do_climb: bool) -> void:
 		velocity.y = 300.0
 		tree_state = TreeState.NONE
 		climb_tree = null
-	# Jump (X / Space) → swing to the nearest crown in facing direction,
+	# Jump → throw lasso to nearest crown in facing direction,
 	# or leap off freely if no tree is in range
 	elif Input.is_action_just_pressed("jump"):
-		var target := _near_tree_in_facing()
+		var target := _near_tree_for_lasso()
 		if target != null:
-			_launch_to_tree(target)   # arc to next crown
+			_start_lasso_throw(target)
 		else:
 			velocity.y = JUMP_VELOCITY
 			tree_state = TreeState.FLYING
 			climb_tree = null
 
 func _process_flying(delta: float) -> void:
-	# Appam Glide: hold Jump while FLYING to slow descent (requires quest reward)
+	# ── Lasso throw in progress ───────────────────────────────────────────────
+	if lasso_state == 1:
+		lasso_timer -= delta
+		var t := clampf(1.0 - lasso_timer / LASSO_THROW_TIME, 0.0, 1.0)
+		lasso_tip = lasso_tip_start.lerp(lasso_target_tree.get_crown_position(), t)
+		if lasso_timer <= 0.0:
+			_hook_to_tree()
+			return
+	# ── Lasso throw trigger (not already throwing) ────────────────────────────
+	if lasso_state == 0 and Input.is_action_just_pressed("jump"):
+		var target := _near_tree_for_lasso()
+		if target != null:
+			_start_lasso_throw(target)
+			return
+	# ── Appam Glide: hold Jump while FLYING to slow descent (requires quest reward)
 	var has_glide: bool = _qm != null and _qm.get_state("swing_off_race") == 2
 	if has_glide and Input.is_action_pressed("jump") and velocity.y > 0.0:
 		if glide_timer <= 0.0 and Input.is_action_just_pressed("jump"):
@@ -326,38 +363,81 @@ func _process_flying(delta: float) -> void:
 	else:
 		velocity.y += GRAVITY * delta
 	if is_on_floor():
-		tree_state  = TreeState.NONE
-		glide_timer = 0.0
+		tree_state        = TreeState.NONE
+		glide_timer       = 0.0
+		lasso_state       = 0
+		lasso_target_tree = null
 
-func _near_tree_in_facing() -> Node2D:
-	var best: Node2D   = null
-	var best_dx: float = INF
-	var my_crown: Vector2 = climb_tree.get_crown_position() as Vector2
+func _near_tree_for_lasso() -> Node2D:
+	var best: Node2D     = null
+	var best_dist: float = INF
 	for tree: Node2D in get_tree().get_nodes_in_group("trees"):
-		if tree == climb_tree: continue
-		var their_crown: Vector2 = tree.get_crown_position() as Vector2
-		var dx: float    = their_crown.x - my_crown.x
-		if face > 0 and dx <= 0.0: continue
-		if face < 0 and dx >= 0.0: continue
-		if absf(dx) > LEAP_DIST_MAX: continue
-		if absf(dx) < best_dx:
-			best_dx = absf(dx)
-			best    = tree
+		var crown: Vector2 = tree.get_crown_position()
+		var dx: float = crown.x - global_position.x
+		if face > 0 and dx < 10.0: continue   # must be meaningfully ahead
+		if face < 0 and dx > -10.0: continue
+		var dist := global_position.distance_to(crown)
+		if dist > LEAP_DIST_MAX: continue
+		if dist < best_dist:
+			best_dist = dist
+			best      = tree
 	return best
 
-func _launch_to_tree(target: Node2D) -> void:
-	var src: Vector2  = climb_tree.get_crown_position() as Vector2 - Vector2(0.0, HERO_HALF_H)
-	var dst: Vector2  = target.get_crown_position() as Vector2     - Vector2(0.0, HERO_HALF_H)
-	var dist_x: float = dst.x - src.x
-	var dist_y: float = dst.y - src.y
-	var tof_f  := maxf(LEAP_TOF_MIN, absf(dist_x) / LEAP_SPEED_FACTOR)
-	var tof    := tof_f / 60.0
-	velocity.x  = dist_x / tof
-	velocity.y  = (dist_y - 0.5 * GRAVITY * tof * tof) / tof
-	tree_state  = TreeState.FLYING
-	climb_tree  = null
+func _start_lasso_throw(target: Node2D) -> void:
+	lasso_state       = 1
+	lasso_target_tree = target
+	lasso_timer       = LASSO_THROW_TIME
+	lasso_tip_start   = global_position
+	lasso_tip         = global_position
+	tree_state        = TreeState.FLYING
+	climb_tree        = null
+
+func _hook_to_tree() -> void:
+	swing_pivot    = lasso_target_tree.get_crown_position()
+	var offset     := global_position - swing_pivot
+	swing_rope_len  = clampf(offset.length(), SWING_ROPE_MIN, SWING_ROPE_MAX)
+	swing_angle     = atan2(offset.x, offset.y)
+	var rope_dir   := offset.normalized()
+	var tangent    := Vector2(-rope_dir.y, rope_dir.x)
+	swing_angular_vel = velocity.dot(tangent) / swing_rope_len
+	climb_tree     = lasso_target_tree
+	lasso_state    = 2
+	tree_state     = TreeState.SWINGING
+
+func _release_rope() -> void:
+	velocity = swing_angular_vel * swing_rope_len * Vector2(cos(swing_angle), -sin(swing_angle))
+	if absf(velocity.x) > 1.0:
+		face = int(sign(velocity.x))
+	lasso_state       = 0
+	lasso_target_tree = null
+	climb_tree        = null
+	tree_state        = TreeState.FLYING
+
+func _process_swinging(delta: float) -> void:
+	swing_pivot        = climb_tree.get_crown_position()   # track tree sway
+	swing_angular_vel += (-GRAVITY / swing_rope_len) * sin(swing_angle) * delta
+	var h := Input.get_axis("move_left", "move_right")
+	if h != 0.0:
+		face = int(sign(h))
+		swing_angular_vel += SWING_PUMP_FORCE * h * delta
+	swing_angle += swing_angular_vel * delta
+	position     = swing_pivot + Vector2(sin(swing_angle), cos(swing_angle)) * swing_rope_len \
+				 - Vector2(0.0, HERO_HALF_H)
+	lasso_tip    = swing_pivot
+	velocity     = Vector2.ZERO
+	if Input.is_action_just_pressed("jump"):
+		_release_rope()
+	if absf(swing_angle) >= PI * 0.95:   # safety: prevent full loop
+		_release_rope()
+
+func _draw() -> void:
+	if lasso_state > 0:
+		var local_tip := to_local(lasso_tip)
+		var hands     := Vector2(face * 8.0, -40.0)
+		draw_line(hands, local_tip, Color(0.78, 0.62, 0.35, 0.9), 2.0)
 
 func perch_on(tree: Node2D) -> void:
+	if lasso_state > 0: return           # swinging through a crown does NOT auto-perch
 	if tree_state != TreeState.FLYING: return
 	tree_state = TreeState.PERCHED
 	climb_tree = tree
@@ -431,7 +511,8 @@ func exit_water() -> void:
 	in_water = false
 
 func is_safe_from_charge() -> bool:
-	return tree_state == TreeState.PERCHED or tree_state == TreeState.FLYING
+	return tree_state == TreeState.PERCHED or tree_state == TreeState.FLYING \
+		or tree_state == TreeState.SWINGING
 
 func add_trauma(amount: float) -> void:
 	_shake_trauma = minf(1.0, _shake_trauma + amount)
@@ -470,8 +551,12 @@ func _update_animation() -> void:
 			return
 	var target_anim: StringName
 	match tree_state:
-		TreeState.CLIMBING, TreeState.PERCHED: target_anim = &"swing_grab"
-		TreeState.FLYING:                      target_anim = &"swing"
+		TreeState.CLIMBING, TreeState.PERCHED:
+			target_anim = &"swing_grab"
+		TreeState.SWINGING:
+			target_anim = &"swing"
+		TreeState.FLYING:
+			target_anim = &"swing_grab" if lasso_state == 1 else &"swing"
 		_:
 			var move_anim: StringName = &"run" if spr.sprite_frames.has_animation(&"run") else &"walk"
 			target_anim = move_anim if absf(velocity.x) > 10.0 else &"idle"
