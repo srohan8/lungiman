@@ -51,6 +51,8 @@ func _ready() -> void:
 			"scroll": 0.18, "tile": true, "remove_white": true},   # dense jungle treeline
 		{"path": "res://assets/backgrounds/prologue_el_skyline.png",
 			"scroll": 0.24, "tile": true, "remove_white": true},   # Kerala temple+tree skyline
+		{"path": "res://assets/backgrounds/prologue_el_paddy.png",
+			"scroll": 0.28, "tile": true, "remove_white": true},   # Kerala paddy fields at dusk — in front of skyline
 		{"path": "res://assets/backgrounds/prologue_el_palm_near.png",
 			"scroll": 0.32, "tile": true, "remove_white": true},   # single tall near palm
 		{"path": "res://assets/backgrounds/prologue_el_grass.png",
