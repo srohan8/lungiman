@@ -119,7 +119,7 @@ func _spawn_trees() -> void:
 		_add_tree($Trees, z3[i], ZONE3_H, 0.06 * (1 if i % 2 == 0 else -1), tint)
 
 func _spawn_river() -> void:
-	var water_y := GROUND_Y - 18.0
+	var water_y := GROUND_Y - 22.0   # boats at water surface (WATER_TOP=20)
 	_build_river_visual(RIVER_X, RIVER_W)
 	var river := Area2D.new()
 	river.collision_layer = 0

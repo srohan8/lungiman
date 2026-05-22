@@ -67,3 +67,16 @@ func _on_climb_trigger_body_exited(body: Node2D) -> void:
 func _on_crown_area_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		body.perch_on(self)
+
+## Called by Player while charging catapult. Bends the trunk toward direction.
+## charge: 0.0–1.0   direction: +1=right, -1=left
+func set_catapult_bend(charge: float, direction: int) -> void:
+	if _spr == null: return
+	_spr.rotation = float(direction) * charge * 0.36   # max ~21° lean
+
+## Called when player fires or aborts. Springs trunk back to vertical.
+func spring_back() -> void:
+	if _spr == null: return
+	var tw := create_tween()
+	tw.tween_property(_spr, "rotation", 0.0, 0.50)\
+		.set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)

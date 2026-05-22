@@ -158,7 +158,7 @@ func _spawn_boat(parent: Node, x: float, water_y: float) -> void:
 	const BOAT_TEX := "res://assets/sprites/boat_sheet.png"
 	if ResourceLoader.exists(BOAT_TEX):
 		# Larger scale to match the wider hull
-		const SC := 0.052
+		const SC := 0.068
 		var spr  := Sprite2D.new()
 		spr.texture  = load(BOAT_TEX)
 		spr.scale    = Vector2(SC, SC)
@@ -223,7 +223,7 @@ func _spawn_boat(parent: Node, x: float, water_y: float) -> void:
 ## river_x : world-x of the LEFT edge of the river
 ## river_w : width of the river zone in pixels
 func _build_river_visual(river_x: float, river_w: float) -> void:
-	const WATER_TOP   := 42.0    # surface sits this far above GROUND_Y
+	const WATER_TOP   := 20.0    # surface closer to ground level
 	const WATER_DEPTH := 180.0   # deep body extends this far below surface
 	const BANK_W      := 32.0    # earth bank width on each side
 	const BANK_H      := 78.0    # bank height above GROUND_Y
