@@ -158,7 +158,7 @@ func _spawn_boat(parent: Node, x: float, water_y: float) -> void:
 	const BOAT_TEX := "res://assets/sprites/boat_sheet.png"
 	if ResourceLoader.exists(BOAT_TEX):
 		# Larger scale to match the wider hull
-		const SC := 0.040
+		const SC := 0.052
 		var spr  := Sprite2D.new()
 		spr.texture  = load(BOAT_TEX)
 		spr.scale    = Vector2(SC, SC)
@@ -231,8 +231,9 @@ func _build_river_visual(river_x: float, river_w: float) -> void:
 	var bank_col  := Color(0.28, 0.18, 0.07, 1.0)   # Kerala laterite clay
 
 	# Deep water body — extends below ground so the channel has visual depth
+	# Kerala backwater colour: dark murky olive-brown, not open-ocean blue.
 	var deep := ColorRect.new()
-	deep.color    = Color(0.02, 0.08, 0.38, 1.0)
+	deep.color    = Color(0.06, 0.09, 0.05, 1.0)   # dark greenish-brown backwater
 	deep.size     = Vector2(river_w, WATER_TOP + WATER_DEPTH)
 	deep.position = Vector2(river_x, surface_y)
 	deep.z_index  = 6    # above ground tile (z_index 5)
@@ -255,11 +256,16 @@ func _build_river_visual(river_x: float, river_w: float) -> void:
 		surface.scale    = Vector2(sx, sy)
 		surface.position = Vector2(river_x, surface_y - 6.0)
 		surface.z_index  = 7
+		# Shader: scroll UV + bake amber-brown Kerala backwater tint directly in GLSL.
+		# Tint multiplied per-channel: suppresses ocean blue, warms the water.
 		sh.code = """shader_type canvas_item;
 uniform float speed : hint_range(0.0, 3.0) = 0.38;
 void fragment() {
 	vec2 scrolled = vec2(fract(UV.x + TIME * speed), UV.y);
-	COLOR = texture(TEXTURE, scrolled);
+	vec4 tex = texture(TEXTURE, scrolled);
+	// Kerala backwater at dusk — murky olive-amber, not ocean blue
+	vec3 tint = vec3(0.50, 0.40, 0.22);
+	COLOR = vec4(tex.rgb * tint, tex.a * 0.92);
 }
 """
 		mat.shader       = sh
@@ -267,6 +273,7 @@ void fragment() {
 		add_child(surface)
 	else:
 		# Procedural fallback — multi-layer sine waves (no PNG needed)
+		# Warm murky backwater colours instead of ocean blue.
 		var surface := ColorRect.new()
 		surface.size     = Vector2(river_w, WATER_TOP + 6.0)
 		surface.position = Vector2(river_x, surface_y - 6.0)
@@ -278,8 +285,8 @@ void fragment() {
 	float w2 = sin(UV.x *  9.0 - TIME * speed * 0.7 + 1.2) * 0.04 + 0.96;
 	float w3 = sin(UV.x *  5.0 + TIME * speed * 0.4 + 2.5) * 0.05 + 0.95;
 	float wave = w1 * w2 * w3;
-	vec4 deep  = vec4(0.04, 0.16, 0.55, 0.96);
-	vec4 light = vec4(0.12, 0.36, 0.84, 0.88);
+	vec4 deep  = vec4(0.06, 0.09, 0.05, 0.96);   // dark murky backwater
+	vec4 light = vec4(0.28, 0.22, 0.12, 0.88);   // amber surface catch-light
 	COLOR = mix(deep, light, wave * (1.0 - UV.y * 0.45));
 }
 """
@@ -287,9 +294,9 @@ void fragment() {
 		surface.material = mat
 		add_child(surface)
 
-	# Specular highlight strip at waterline
+	# Specular highlight strip at waterline — warm amber from the setting sun
 	var glint := ColorRect.new()
-	glint.color    = Color(0.68, 0.90, 1.0, 0.26)
+	glint.color    = Color(0.96, 0.78, 0.42, 0.38)
 	glint.size     = Vector2(river_w, 4.0)
 	glint.position = Vector2(river_x, surface_y - 8.0)
 	glint.z_index  = 8
