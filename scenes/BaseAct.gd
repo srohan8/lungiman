@@ -427,6 +427,8 @@ func _apply_background(bg_path: String, sky_color: Color,
 		var pbg := ParallaxBackground.new()
 		pbg.name  = "BackgroundParallax"
 		pbg.layer = -10
+		# Lock vertical scroll — background must not jump when player jumps.
+		pbg.scroll_base_scale = Vector2(1.0, 0.0)
 
 		# Sky crop: skip the top fraction of the background (where the background has its
 		# own painted sky). The separate SkyLayer image fills that gap instead.
@@ -557,6 +559,9 @@ func _init_sprite_parallax(sky_color: Color, sky_path: String = "") -> void:
 		var pbg := ParallaxBackground.new()
 		pbg.name  = "BackgroundParallax"
 		pbg.layer = -10
+		# Lock vertical scroll completely — background must never jump when player jumps.
+		# scroll_base_scale.y = 0 means camera y movement contributes 0 to all layer offsets.
+		pbg.scroll_base_scale = Vector2(1.0, 0.0)
 		add_child(pbg)
 	# Ground tile (same logic as _apply_background)
 	var ground_node := get_node_or_null("Ground")
