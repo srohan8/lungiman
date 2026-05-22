@@ -1,0 +1,13 @@
+[gd_scene format=3 uid="uid://bikeride_scene"]
+
+[ext_resource type="Script" path="res://scenes/BikeRide.gd" id="1_bikeride"]
+[ext_resource type="PackedScene" path="res://scenes/MobileButtons.tscn" id="2_mob"]
+[ext_resource type="PackedScene" path="res://scenes/PauseMenu.tscn" id="3_pause"]
+
+[node name="BikeRide" type="Node2D"]
+script = ExtResource("1_bikeride")
+
+[node name="MobileButtons" parent="." instance=ExtResource("2_mob")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("3_pause")]
+process_mode = 3

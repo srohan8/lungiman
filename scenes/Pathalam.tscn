@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://pathalam_scene"]
+
+[ext_resource type="Script" path="res://scenes/Pathalam.gd" id="1_pathalam"]
+[ext_resource type="PackedScene" uid="uid://p7yfh3xddcrf" path="res://scenes/Player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://ctcodasns0leo" path="res://scenes/HUD.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://scenes/GameOver.tscn" id="4_go"]
+[ext_resource type="PackedScene" path="res://scenes/MobileButtons.tscn" id="5_mob"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ground"]
+size = Vector2(5200, 40)
+
+[node name="Pathalam" type="Node2D"]
+script = ExtResource("1_pathalam")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(100, 718)
+
+[node name="Ground" type="StaticBody2D" parent="."]
+position = Vector2(2600, 720)
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground"]
+shape = SubResource("RectangleShape2D_ground")
+
+[node name="GroundVis" type="ColorRect" parent="Ground"]
+offset_left = -2600.0
+offset_top = -20.0
+offset_right = 2600.0
+offset_bottom = 20.0
+color = Color(0.08, 0.06, 0.10, 1)
+
+[node name="Trees" type="Node2D" parent="."]
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="GameOver" parent="." instance=ExtResource("4_go")]
+
+[node name="MobileButtons" parent="." instance=ExtResource("5_mob")]

@@ -18,11 +18,24 @@ const LEAP_DIST_MAX     := 550.0
 const LEAP_SPEED_FACTOR := 11.0
 const LEAP_TOF_MIN      := 20.0
 const CLIMB_DURATION    := 0.50
-const HERO_HALF_H       := 60.0
+## Vertical offset from the crown attachment point to the body origin.
+## The CharacterBody2D origin sits BELOW the visible sprite & collision (sprite at
+## (0,-60), collision capsule bottom at body-30). To put the player's feet ON
+## the crown when perched, the body needs to be 30 px BELOW the crown — hence -30.
+const HERO_HALF_H       := -30.0
 const SWING_ROPE_MIN    := 80.0
-const SWING_ROPE_MAX    := 200.0
-const SWING_PUMP_FORCE  := 0.8     # rad/s² per unit of horizontal input
-const LASSO_THROW_TIME  := 0.18    # seconds for tip to travel to crown
+const SWING_ROPE_MAX    := 320.0
+const SWING_PUMP_FORCE  := 2.6     # rad/s² per unit of horizontal input
+const SWING_DAMPING     := 0.4     # rad/s² lost to "air drag" — swing decays in 3-4 cycles
+const SWING_AUTO_RELEASE := 2.5    # seconds before auto-release (snappy commit, was 5.0)
+const LASSO_THROW_TIME  := 0.12    # seconds for tip to travel to crown
+# Tarzan feel: pivot sits well above the target crown so the player can swing
+# *below* it (a real rope can only pull, never push). Without this, perched-to-perched
+# starts with the player ABOVE the pivot, producing a degenerate horizontal oscillation
+# that looks like the rope is anchored to the ground.
+const SWING_PIVOT_ABOVE_CROWN := 100.0   # higher physics pivot keeps the swing arc apex AT crown height (not above it). Rope visual still anchors to the leaf cluster — handled in _draw().
+# Boost the initial angular velocity so the swing snaps forward instead of stalling
+const SWING_INITIAL_PUSH      := 1.0    # gentle kick — keeps natural max angle below the "feet above crown" threshold
 
 # ── River / water ─────────────────────────────────────────────────────────────
 const WADE_SPEED_MULT    := 0.55
@@ -34,22 +47,34 @@ const ROLL_SPEED    := 480.0
 const ROLL_DURATION := 0.35
 const ROLL_IFRAMES  := 0.40
 
+# ── Mundu Whip (Odiyan's Tracks quest reward) ─────────────────────────────────
+## Hold Z / sword for MUNDU_WHIP_HOLD seconds → cloth-arc lasso spins out and
+## stuns/damages all enemies within MUNDU_WHIP_RADIUS.  Unlocked once the
+## odiyan_tracks quest reaches state DONE (2).
+const MUNDU_WHIP_HOLD   := 0.60   # seconds to hold sword button before whip fires
+const MUNDU_WHIP_STUN   := 1.20   # whip animation + cooldown duration in seconds
+const MUNDU_WHIP_RADIUS := 140.0  # area-of-effect radius (pixels)
+
 # ── Screen shake ─────────────────────────────────────────────────────────────
 const SHAKE_DECAY  := 3.8
 const CAM_OFFSET_Y := -37.0    # ground at ~75% on 480×270; base for shake/sway
 
 # ── Sprite sheet ─────────────────────────────────────────────────────────────
-# hero_sheet.png: single horizontal row, FRAME_H tall, variable-width frames.
-# Falls back to solid-colour placeholders if sheet is missing.
-const FRAME_H    := 60
-const FRAME_DATA := {
-	"walk":       {"fps": 10.0, "loop": true,  "frames": [[0,58],[58,57],[115,58]]},
-	"idle":       {"fps":  4.0, "loop": true,  "frames": [[173,68],[241,70]]},
-	"swing_grab": {"fps":  1.0, "loop": false, "frames": [[311,79]]},
-	"swing":      {"fps": 12.0, "loop": true,  "frames": [[390,65],[455,66],[521,47]]},
-	"sword":      {"fps": 16.0, "loop": false, "frames": [[568,90],[658,90],[748,90],[838,89]]},
-	"sword2":     {"fps": 16.0, "loop": false, "frames": [[927,55],[982,58],[1040,72]]},
-	"chai":       {"fps":  8.0, "loop": true,  "frames": [[1112,96],[1208,109],[1317,46]]},
+# Generated via Scenario.gg (Gemini 3 Flash + LungiMan reference + pose prompts).
+# Each sheet is a 4×3 grid of 12 frames (idle is 6×3 = 18 cells, last 2 empty).
+# Cell size derives from sheet size: width / cols, height / rows.
+const HERO_SHEETS := {
+	"idle":        {"path": "res://assets/sprites/Hero-idle.png",        "cols": 4, "rows": 3, "frames": 12, "fps":  8.0, "loop": true},
+	"walk":        {"path": "res://assets/sprites/Hero-walk.png",        "cols": 4, "rows": 3, "frames": 12, "fps": 12.0, "loop": true},
+	"run":         {"path": "res://assets/sprites/Hero-run.png",         "cols": 4, "rows": 3, "frames": 12, "fps": 16.0, "loop": true},
+	"sword":       {"path": "res://assets/sprites/Hero-sword.png",       "cols": 4, "rows": 3, "frames": 12, "fps": 18.0, "loop": false},
+	"sword2":      {"path": "res://assets/sprites/Hero-sword.png",       "cols": 4, "rows": 3, "frames": 12, "fps": 18.0, "loop": false},
+	"swing_grab":  {"path": "res://assets/sprites/Hero-swing-grab.png",  "cols": 4, "rows": 3, "frames": 12, "fps": 12.0, "loop": false},
+	"swing":       {"path": "res://assets/sprites/Hero-swing.png",       "cols": 4, "rows": 3, "frames": 12, "fps": 12.0, "loop": true},
+	"throw":       {"path": "res://assets/sprites/Hero-throw.png",       "cols": 4, "rows": 3, "frames": 12, "fps": 14.0, "loop": false},
+	"chai":        {"path": "res://assets/sprites/Hero-chai.png",        "cols": 4, "rows": 3, "frames": 12, "fps":  6.0, "loop": true},
+	"mundu_lasso": {"path": "res://assets/sprites/Hero-mundu-lasso.png", "cols": 4, "rows": 3, "frames": 12, "fps": 12.0, "loop": false},
+	"boxer_idle":  {"path": "res://assets/sprites/Hero-boxer-idle.png",  "cols": 4, "rows": 3, "frames": 12, "fps":  6.0, "loop": true},
 }
 const ANIM_COLORS := {
 	"walk":       Color(0.20, 0.55, 1.00),
@@ -63,20 +88,8 @@ const ANIM_COLORS := {
 	"throw":      Color(0.90, 0.60, 0.10),
 }
 
-# ── Dedicated grid sprite sheets ──────────────────────────────────────────────
-const RUN_SHEET_PATH    := "res://assets/sprites/Hero-run.png"
-const RUN_FRAME_W       := 768
-const RUN_FRAME_H       := 448
-const RUN_COLS          := 4
-const RUN_TOTAL_FRAMES  := 21   # 4×6 grid, last row col 0 only
-
-const THROW_SHEET_PATH   := "res://assets/sprites/Hero-Coconut-throw.png"
-const THROW_FRAME_W      := 768
-const THROW_FRAME_H      := 448
-const THROW_COLS         := 4
-const THROW_TOTAL_FRAMES := 29   # 4×8 grid, last row col 0 only
 var   _throw_anim_timer  := 0.0
-const THROW_ANIM_DUR     := 0.70   # covers all 29 frames at ~14fps ≈ 2.07s; cap display at 0.70s
+const THROW_ANIM_DUR     := 0.70   # display cap for the throw animation
 
 enum TreeState { NONE, CLIMBING, PERCHED, FLYING, SWINGING }
 
@@ -98,6 +111,8 @@ var lasso_timer:        float   = 0.0
 var lasso_tip:          Vector2 = Vector2.ZERO
 var lasso_tip_start:    Vector2 = Vector2.ZERO
 var lasso_target_tree:  Node2D  = null
+var _swing_elapsed:     float   = 0.0   # auto-release timer (SWING_AUTO_RELEASE)
+var _post_release:      float   = 0.0   # prevent instant re-perch after rope drop
 
 var coyote_timer  := 0.0
 var jump_buffer   := 0.0
@@ -105,6 +120,9 @@ var jump_buffer   := 0.0
 var sword_phase   := 0
 var sword_t       := 0.0
 var sword_hit     := false
+
+var _mundu_whip_charge: float = 0.0   # > 0 = charging; after fire = cooldown countdown
+var _mundu_whip_active: bool  = false  # true while whip animation/cooldown blocks sword
 
 var in_water           := false
 var _water_dmg_timer   := 0.0
@@ -125,6 +143,22 @@ var ammo_regen_timer  := 0.0
 const AMMO_REGEN_INTERVAL := 6.0
 var _qm: Node = null   # QuestManager resolved at runtime
 
+## Worn-down visual tiers — sprite wear mirrors the Nilavilakku lamp states.
+## No number. The character himself shows how close he is to finished.
+## Tier 0 = full  · Tier 1 = 75%  · Tier 2 = 50%  · Tier 3 = 25%  · Tier 4 = critical
+var _wear_tier: int = 0
+
+## Tints per tier — subtle desaturation + warm-red shift as damage accumulates.
+## Maveli-blessed override: golden tint replaces all worn states.
+const WEAR_TINTS := [
+	Color(1.0,  1.0,  1.0,  1.0),   # 0 — full, no tint
+	Color(1.0,  0.97, 0.94, 1.0),   # 1 — 75%, barely perceptible warmth
+	Color(1.0,  0.90, 0.82, 1.0),   # 2 — 50%, slight sepia
+	Color(1.0,  0.80, 0.72, 1.0),   # 3 — 25%, visible wear
+	Color(1.0,  0.68, 0.60, 1.0),   # 4 — critical, reddish, he's done
+]
+const WEAR_TINT_MAVELI := Color(1.0, 0.95, 0.75, 1.0)   # Maveli gold, replaces all tiers
+
 signal climb_prompt_changed(is_visible: bool)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -134,84 +168,93 @@ func _ready() -> void:
 	collision_layer = 2
 	collision_mask  = 1
 	_qm = get_node_or_null("/root/QuestManager")
-	_build_sprite_frames()
+	_load_sprite_frames()
 
-func _build_sprite_frames() -> void:
-	const PATH := "res://assets/sprites/hero_sheet.png"
+## Flip to true to revert to flat-rectangle placeholders if a sheet load fails or
+## you want to debug game state without sprite art. Default false now that the
+## Scenario.gg sheets are wired.
+const USE_PLACEHOLDER_SPRITES := false
+
+func _build_placeholder_frames() -> void:
 	var sf := SpriteFrames.new()
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		for anim_name: String in FRAME_DATA:
-			var d: Dictionary = FRAME_DATA[anim_name]
-			sf.add_animation(anim_name)
-			sf.set_animation_loop(anim_name, d["loop"])
-			sf.set_animation_speed(anim_name, d["fps"])
-			for f: Array in d["frames"]:
+	for anim_name: String in ANIM_COLORS:
+		var img := Image.create(30, 60, false, Image.FORMAT_RGBA8)
+		img.fill(ANIM_COLORS[anim_name])
+		var tex := ImageTexture.create_from_image(img)
+		sf.add_animation(anim_name)
+		sf.set_animation_loop(anim_name, anim_name != &"throw" and anim_name != &"sword" and anim_name != &"sword2")
+		sf.set_animation_speed(anim_name, 8.0)
+		sf.add_frame(anim_name, tex)
+	$AnimatedSprite2D.sprite_frames = sf
+	$AnimatedSprite2D.scale         = Vector2.ONE
+	$AnimatedSprite2D.play("idle")
+
+## Loads each Scenario.gg sheet as an AtlasTexture grid into one SpriteFrames.
+## Falls back to placeholders if no sheet exists on disk.
+func _load_sprite_frames() -> void:
+	if USE_PLACEHOLDER_SPRITES:
+		_build_placeholder_frames()
+		return
+	var sf := SpriteFrames.new()
+	for anim_name: String in HERO_SHEETS:
+		var d: Dictionary = HERO_SHEETS[anim_name]
+		var path: String  = d["path"]
+		if not ResourceLoader.exists(path):
+			push_warning("Hero sprite sheet missing: " + path)
+			continue
+		var sheet: Texture2D = load(path)
+		var cols: int  = d["cols"]
+		var rows: int  = d["rows"]
+		var total: int = d["frames"]
+		var fw: int = int(float(sheet.get_width())  / float(cols))
+		var fh: int = int(float(sheet.get_height()) / float(rows))
+		sf.add_animation(anim_name)
+		sf.set_animation_loop(anim_name, d["loop"])
+		sf.set_animation_speed(anim_name, d["fps"])
+		var added := 0
+		for row: int in rows:
+			for col: int in cols:
+				if added >= total: break
 				var at := AtlasTexture.new()
 				at.atlas  = sheet
-				at.region = Rect2(f[0], 0, f[1], FRAME_H)
+				at.region = Rect2(col * fw, row * fh, fw, fh)
 				sf.add_frame(anim_name, at)
-	else:
-		for anim_name: String in ANIM_COLORS:
-			var img := Image.create(30, 60, false, Image.FORMAT_RGBA8)
-			img.fill(ANIM_COLORS[anim_name])
-			var tex := ImageTexture.create_from_image(img)
-			sf.add_animation(anim_name)
-			sf.set_animation_loop(anim_name, true)
-			sf.set_animation_speed(anim_name, 8.0)
-			sf.add_frame(anim_name, tex)
-	# ── Run animation — grid sheet (Hero-run.png) ────────────────────────────
-	if ResourceLoader.exists(RUN_SHEET_PATH):
-		var run_sheet: Texture2D = load(RUN_SHEET_PATH)
-		if not sf.has_animation("run"):
-			sf.add_animation("run")
-		sf.set_animation_loop("run", true)
-		sf.set_animation_speed("run", 14.0)
-		for i in RUN_TOTAL_FRAMES:
-			var col := i % RUN_COLS
-			@warning_ignore("integer_division")
-			var row: int = i / RUN_COLS
-			var at := AtlasTexture.new()
-			at.atlas  = run_sheet
-			at.region = Rect2(col * RUN_FRAME_W, row * RUN_FRAME_H, RUN_FRAME_W, RUN_FRAME_H)
-			sf.add_frame("run", at)
-	elif not sf.has_animation("run"):
-		var img := Image.create(30, 60, false, Image.FORMAT_RGBA8)
-		img.fill(ANIM_COLORS["run"])
-		sf.add_animation("run")
-		sf.set_animation_loop("run", true)
-		sf.set_animation_speed("run", 8.0)
-		sf.add_frame("run", ImageTexture.create_from_image(img))
-
-	# ── Throw animation — grid sheet (Hero-Coconut-throw.png) ────────────────
-	if ResourceLoader.exists(THROW_SHEET_PATH):
-		var throw_sheet: Texture2D = load(THROW_SHEET_PATH)
-		if not sf.has_animation("throw"):
-			sf.add_animation("throw")
-		sf.set_animation_loop("throw", false)
-		sf.set_animation_speed("throw", 14.0)
-		for i in THROW_TOTAL_FRAMES:
-			var col := i % THROW_COLS
-			@warning_ignore("integer_division")
-			var row: int = i / THROW_COLS
-			var at := AtlasTexture.new()
-			at.atlas  = throw_sheet
-			at.region = Rect2(col * THROW_FRAME_W, row * THROW_FRAME_H, THROW_FRAME_W, THROW_FRAME_H)
-			sf.add_frame("throw", at)
-	elif not sf.has_animation("throw"):
-		var img2 := Image.create(30, 60, false, Image.FORMAT_RGBA8)
-		img2.fill(ANIM_COLORS["throw"])
-		sf.add_animation("throw")
-		sf.set_animation_loop("throw", false)
-		sf.set_animation_speed("throw", 8.0)
-		sf.add_frame("throw", ImageTexture.create_from_image(img2))
-
+				added += 1
+			if added >= total: break
 	$AnimatedSprite2D.sprite_frames = sf
 	$AnimatedSprite2D.play("idle")
 
+## Worn-down tier — driven by GRIT (journey wear), not HP (combat health).
+## Grit only drops per boss defeated, so tints reflect cumulative toll not moment-to-moment damage.
+## Maveli's blessing in Pathalam overrides all tiers with sacred gold tint.
+func _update_wear_tier() -> void:
+	var ratio: float = float(GameManager.grit) / 100.0
+	var new_tier: int
+	if   ratio > 0.75: new_tier = 0
+	elif ratio > 0.50: new_tier = 1
+	elif ratio > 0.25: new_tier = 2
+	elif ratio > 0.10: new_tier = 3
+	else:              new_tier = 4
+
+	if new_tier == _wear_tier: return   # no change — skip modulate write
+	_wear_tier = new_tier
+
+	var blessed: bool = GameManager.get("maveli_blessed") == true
+	var tint: Color   = WEAR_TINT_MAVELI if blessed else WEAR_TINTS[_wear_tier]
+
+	# Tween the modulate change — sudden color shifts feel cheap, slow feels earned
+	var tw := create_tween()
+	tw.tween_property($AnimatedSprite2D, "modulate", tint, 0.8).set_trans(Tween.TRANS_SINE)
+
+	# Tier 4 (critical): slow the idle animation — fatigue visible in the body
+	if $AnimatedSprite2D.animation == "idle":
+		$AnimatedSprite2D.speed_scale = 0.55 if new_tier == 4 else 1.0
+
 func _process(delta: float) -> void:
-	if lasso_state > 0:
-		queue_redraw()
+	_update_wear_tier()
+	# Always queue_redraw — guarantees the rope line is cleared the frame after
+	# lasso_state goes to 0 (otherwise the last drawn frame stays burned in).
+	queue_redraw()
 	if _shake_trauma > 0.0:
 		_shake_trauma = maxf(0.0, _shake_trauma - SHAKE_DECAY * delta)
 		var shake := _shake_trauma * _shake_trauma
@@ -249,12 +292,16 @@ func _physics_process(delta: float) -> void:
 	river_dmg_cooldown  = maxf(0.0, river_dmg_cooldown - delta)
 	iframe_timer        = maxf(0.0, iframe_timer - delta)
 	_throw_anim_timer   = maxf(0.0, _throw_anim_timer - delta)
+	_post_release       = maxf(0.0, _post_release - delta)
 	if in_water:
 		_water_dmg_timer -= delta
 		if _water_dmg_timer <= 0.0:
 			_water_dmg_timer = WATER_DMG_INTERVAL
 			take_damage(8)
 	move_and_slide()
+	# Landing during a swing → natural arc-to-ground transition
+	if tree_state == TreeState.SWINGING and is_on_floor():
+		_release_rope()
 	emit_signal("climb_prompt_changed", near_tree != null and tree_state == TreeState.NONE)
 
 func _process_none(delta: float, do_climb: bool) -> void:
@@ -314,6 +361,7 @@ func _process_climbing(delta: float) -> void:
 	if climb_t >= 1.0:
 		position   = climb_target
 		tree_state = TreeState.PERCHED
+		_show_first_perch_hint()
 
 func _process_perched(_delta: float, do_climb: bool) -> void:
 	position = climb_tree.get_crown_position() - Vector2(0.0, HERO_HALF_H)
@@ -361,7 +409,7 @@ func _process_flying(delta: float) -> void:
 		glide_timer  -= delta
 		velocity.y    = minf(velocity.y + GRAVITY * GLIDE_GRAV_MULT * delta, GLIDE_MAX_FALL)
 	else:
-		velocity.y += GRAVITY * delta
+		velocity.y    = minf(velocity.y + GRAVITY * delta, MAX_FALL_SPEED)
 	if is_on_floor():
 		tree_state        = TreeState.NONE
 		glide_timer       = 0.0
@@ -393,15 +441,25 @@ func _start_lasso_throw(target: Node2D) -> void:
 	climb_tree        = null
 
 func _hook_to_tree() -> void:
-	swing_pivot    = lasso_target_tree.get_crown_position()
+	# Elevate the pivot above the crown so the rope hangs DOWN to the player.
+	# Without this, perched-to-perched the pivot is at the player's level → unphysical.
+	var crown_pos: Vector2 = lasso_target_tree.get_crown_position()
+	swing_pivot    = Vector2(crown_pos.x, crown_pos.y - SWING_PIVOT_ABOVE_CROWN)
 	var offset     := global_position - swing_pivot
 	swing_rope_len  = clampf(offset.length(), SWING_ROPE_MIN, SWING_ROPE_MAX)
 	swing_angle     = atan2(offset.x, offset.y)
 	var rope_dir   := offset.normalized()
 	var tangent    := Vector2(-rope_dir.y, rope_dir.x)
 	swing_angular_vel = velocity.dot(tangent) / swing_rope_len
+	# Tarzan snap: ensure the swing has forward momentum from frame 1.
+	# Without this, perched→swing starts at zero ω and just oscillates slowly in place.
+	if face > 0:
+		swing_angular_vel = maxf(swing_angular_vel, SWING_INITIAL_PUSH)
+	else:
+		swing_angular_vel = minf(swing_angular_vel, -SWING_INITIAL_PUSH)
 	climb_tree     = lasso_target_tree
 	lasso_state    = 2
+	_swing_elapsed = 0.0
 	tree_state     = TreeState.SWINGING
 
 func _release_rope() -> void:
@@ -411,38 +469,70 @@ func _release_rope() -> void:
 	lasso_state       = 0
 	lasso_target_tree = null
 	climb_tree        = null
+	_post_release     = 0.35   # 350 ms cooldown — prevents instant re-perch on nearby crown
 	tree_state        = TreeState.FLYING
 
 func _process_swinging(delta: float) -> void:
-	swing_pivot        = climb_tree.get_crown_position()   # track tree sway
+	_swing_elapsed    += delta
+	var crown_pos: Vector2 = climb_tree.get_crown_position()
+	swing_pivot    = Vector2(crown_pos.x, crown_pos.y - SWING_PIVOT_ABOVE_CROWN)  # track tree sway
 	swing_angular_vel += (-GRAVITY / swing_rope_len) * sin(swing_angle) * delta
 	var h := Input.get_axis("move_left", "move_right")
 	if h != 0.0:
 		face = int(sign(h))
 		swing_angular_vel += SWING_PUMP_FORCE * h * delta
+	# Angular damping — kills perpetual motion so the swing settles in 3-4 cycles
+	# even without input. Pumping can still overcome it (intentional).
+	swing_angular_vel -= sign(swing_angular_vel) * SWING_DAMPING * delta
 	swing_angle += swing_angular_vel * delta
-	position     = swing_pivot + Vector2(sin(swing_angle), cos(swing_angle)) * swing_rope_len \
-				 - Vector2(0.0, HERO_HALF_H)
-	lasso_tip    = swing_pivot
-	velocity     = Vector2.ZERO
-	if Input.is_action_just_pressed("jump"):
+	# Drive toward the pendulum-arc target via velocity — lets move_and_slide() resolve
+	# floor/wall collisions without clipping. Capped so player can't clip thin colliders.
+	var desired := swing_pivot \
+		+ Vector2(sin(swing_angle), cos(swing_angle)) * swing_rope_len \
+		- Vector2(0.0, HERO_HALF_H)
+	velocity   = (desired - global_position) / delta
+	velocity.y = minf(velocity.y, MAX_FALL_SPEED)   # never clip through floor
+	lasso_tip  = swing_pivot
+	# Release: jump pressed, safety angle exceeded, or auto-drop timer
+	if Input.is_action_just_pressed("jump") or _swing_elapsed >= SWING_AUTO_RELEASE:
 		_release_rope()
-	if absf(swing_angle) >= PI * 0.95:   # safety: prevent full loop
+		return
+	if absf(swing_angle) >= PI * 0.95:
 		_release_rope()
+		return
 
 func _draw() -> void:
 	if lasso_state > 0:
-		var local_tip := to_local(lasso_tip)
-		var hands     := Vector2(face * 8.0, -40.0)
+		# Visually anchor the rope to the TOP of the leaf cluster (crown.y − 34)
+		# instead of the physics pivot (crown.y − SWING_PIVOT_ABOVE_CROWN), so the
+		# rope appears to hook the foliage rather than empty sky above it.
+		var visual_tip := lasso_tip
+		var tree_ref: Node2D = climb_tree if climb_tree != null else lasso_target_tree
+		if tree_ref != null:
+			var crown_y: float = tree_ref.get_crown_position().y
+			visual_tip = Vector2(lasso_tip.x, crown_y - 34.0)
+		var local_tip := to_local(visual_tip)
+		var hands     := Vector2(face * 8.0, -20.0)   # chest-level rope anchor (sprite extends -30..+30)
 		draw_line(hands, local_tip, Color(0.78, 0.62, 0.35, 0.9), 2.0)
 
 func perch_on(tree: Node2D) -> void:
 	if lasso_state > 0: return           # swinging through a crown does NOT auto-perch
+	if _post_release > 0.0: return       # just dropped rope — skip auto-perch briefly
 	if tree_state != TreeState.FLYING: return
 	tree_state = TreeState.PERCHED
 	climb_tree = tree
 	velocity   = Vector2.ZERO
 	position   = tree.get_crown_position() - Vector2(0.0, HERO_HALF_H)
+	_show_first_perch_hint()
+
+## First time the player lands on a crown — surface the rope mechanic.
+## The hint is owned by GameManager so it doesn't re-fire on scene reload.
+func _show_first_perch_hint() -> void:
+	if GameManager.hint_first_perch_seen: return
+	GameManager.hint_first_perch_seen = true
+	var hud := get_tree().get_first_node_in_group("hud")
+	if hud != null and hud.has_method("show_hint"):
+		hud.show_hint("🪢 Press [Space] to throw your rope to the next tree!", 5.0)
 
 func _handle_roll(delta: float) -> void:
 	if rolling:
@@ -456,19 +546,52 @@ func _handle_roll(delta: float) -> void:
 		velocity.x   = face * ROLL_SPEED
 
 func _handle_sword(delta: float) -> void:
-	if sword_phase == 0:
+	# ── Whip cooldown — blocks normal sword while animation plays ────────────
+	if _mundu_whip_active:
+		_mundu_whip_charge = maxf(0.0, _mundu_whip_charge - delta)
+		if _mundu_whip_charge <= 0.0:
+			_mundu_whip_active = false
+		return
+
+	# ── Sword phase in progress — tick phases and bail ────────────────────────
+	if sword_phase > 0:
+		sword_t += delta
+		match sword_phase:
+			1:
+				if sword_t > 0.15: sword_phase = 2; sword_t = 0.0
+			2:
+				if not sword_hit: _check_sword_hit()
+				if sword_t > 0.20: sword_phase = 3; sword_t = 0.0
+			3:
+				if sword_t > 0.15: sword_phase = 0
+		return
+
+	# ── sword_phase == 0: accept new input ────────────────────────────────────
+	var has_whip: bool = _qm != null and _qm.get_state("odiyan_tracks") == 2
+
+	if has_whip and tree_state == TreeState.NONE:
+		# Charged-hold system: tap → normal sword; hold 0.6s → mundu whip
+		if Input.is_action_just_pressed("sword"):
+			_mundu_whip_charge = 0.001   # non-zero = "charging" sentinel
+
+		if _mundu_whip_charge > 0.0:
+			if Input.is_action_pressed("sword"):
+				_mundu_whip_charge += delta
+				if _mundu_whip_charge >= MUNDU_WHIP_HOLD:
+					# Threshold reached — fire the whip
+					_mundu_whip_charge = MUNDU_WHIP_STUN   # repurposed as cooldown
+					_mundu_whip_active = true
+					_fire_mundu_whip()
+					return
+			else:
+				# Released before threshold — treat as quick tap, fire normal sword
+				_mundu_whip_charge = 0.0
+				sword_phase = 1; sword_t = 0.0; sword_hit = false
+	else:
+		# Whip not yet unlocked — instant normal sword on just_pressed
+		_mundu_whip_charge = 0.0
 		if Input.is_action_just_pressed("sword") and tree_state == TreeState.NONE:
 			sword_phase = 1; sword_t = 0.0; sword_hit = false
-		return
-	sword_t += delta
-	match sword_phase:
-		1:
-			if sword_t > 0.15: sword_phase = 2; sword_t = 0.0
-		2:
-			if not sword_hit: _check_sword_hit()
-			if sword_t > 0.20: sword_phase = 3; sword_t = 0.0
-		3:
-			if sword_t > 0.15: sword_phase = 0
 
 func _check_sword_hit() -> void:
 	sword_hit   = true
@@ -479,6 +602,52 @@ func _check_sword_hit() -> void:
 		if not is_instance_valid(enemy): continue
 		if hit_box.has_point(enemy.global_position):
 			enemy.take_damage(30 * GameManager.damage_multiplier())
+
+## Mundu Whip — cloth arc spins 360° and damages every enemy within MUNDU_WHIP_RADIUS.
+## Visual: white-and-gold ColorRect spins out in world-space as a 2-frame gesture.
+## Mechanical: calls whip_stun(duration) if available, otherwise take_damage(20).
+## Fired from _handle_sword when sword button is held for MUNDU_WHIP_HOLD seconds.
+func _fire_mundu_whip() -> void:
+	# ── Visual: spinning cloth arc in world-space ────────────────────────────
+	var cloth := ColorRect.new()
+	cloth.color        = Color(0.95, 0.93, 0.82, 0.90)   # white mundu fabric
+	cloth.size         = Vector2(52.0, 9.0)
+	cloth.pivot_offset = Vector2(0.0, 4.5)
+	cloth.global_position = global_position + Vector2(float(face) * 8.0, -28.0)
+	cloth.rotation     = 0.0
+	get_parent().add_child(cloth)
+
+	# Gold border stripe
+	var gold := ColorRect.new()
+	gold.color    = Color(1.0, 0.80, 0.10, 1.0)
+	gold.size     = Vector2(52.0, 4.0)
+	gold.position = Vector2(0.0, 5.0)
+	cloth.add_child(gold)
+
+	# Arc tween: full 360° spin then fade
+	var tw := cloth.create_tween()
+	tw.tween_property(cloth, "rotation", float(face) * TAU, 0.42).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(cloth, "modulate:a", 0.0, 0.22)
+	tw.tween_callback(cloth.queue_free)
+
+	# ── Play mundu_lasso anim if it exists ────────────────────────────────────
+	var spr := $AnimatedSprite2D
+	if spr.sprite_frames.has_animation("mundu_lasso"):
+		spr.play("mundu_lasso")
+
+	# ── Hit all enemies within radius ────────────────────────────────────────
+	var hit_count := 0
+	for enemy: Node in get_tree().get_nodes_in_group("enemies"):
+		if not is_instance_valid(enemy): continue
+		if global_position.distance_to(enemy.global_position) > MUNDU_WHIP_RADIUS: continue
+		if enemy.has_method("whip_stun"):
+			enemy.whip_stun(MUNDU_WHIP_STUN)
+		else:
+			enemy.take_damage(20 * GameManager.damage_multiplier())
+		hit_count += 1
+
+	if hit_count > 0:
+		add_trauma(0.22)   # mild impact shake
 
 func _handle_coconut() -> void:
 	# Allow throws from ground AND from tree crown (key tactic vs aerial bosses)
@@ -525,14 +694,17 @@ func _is_near_tea_shop() -> bool:
 			return true
 	return false
 
-# Scale for new dedicated grid sheets (768×448 frame → 60px on-screen height)
-const GRID_SHEET_SCALE := 0.134
-# Animations that come from the large grid sheets and need downscaling
-const GRID_SHEET_ANIMS := [&"run", &"throw"]
+# Scale for all hero sheets (Scenario.gg 4K grids, 1194px tall cell → 110px on-screen).
+# 110 / 1194 ≈ 0.092  →  sprite bottom lands at y≈-17, collision bottom at y=-18 (1px error).
+# Matches NPC TARGET_H=110 so hero, Thoma, Soniya, and Biju all render at the same height.
+const GRID_SHEET_SCALE := 0.092
 
-func _set_sprite_scale(anim: StringName) -> void:
-	var s := GRID_SHEET_SCALE if anim in GRID_SHEET_ANIMS else 1.0
-	$AnimatedSprite2D.scale = Vector2(s, s)
+func _set_sprite_scale(_anim: StringName) -> void:
+	if USE_PLACEHOLDER_SPRITES:
+		if $AnimatedSprite2D.scale != Vector2.ONE:
+			$AnimatedSprite2D.scale = Vector2.ONE
+		return
+	$AnimatedSprite2D.scale = Vector2(GRID_SHEET_SCALE, GRID_SHEET_SCALE)
 
 func _update_animation() -> void:
 	var spr := $AnimatedSprite2D
@@ -558,8 +730,12 @@ func _update_animation() -> void:
 		TreeState.FLYING:
 			target_anim = &"swing_grab" if lasso_state == 1 else &"swing"
 		_:
-			var move_anim: StringName = &"run" if spr.sprite_frames.has_animation(&"run") else &"walk"
-			target_anim = move_anim if absf(velocity.x) > 10.0 else &"idle"
+			if not is_on_floor():
+				# Airborne — freeze on idle pose, no leg cycling mid-air
+				target_anim = &"idle"
+			else:
+				var move_anim: StringName = &"run" if spr.sprite_frames.has_animation(&"run") else &"walk"
+				target_anim = move_anim if absf(velocity.x) > 10.0 else &"idle"
 	if spr.sprite_frames.has_animation(target_anim) and spr.animation != target_anim:
 		spr.play(target_anim)
 	_set_sprite_scale(target_anim)

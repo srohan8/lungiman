@@ -4,20 +4,20 @@ extends "res://scenes/BaseAct.gd"
 ## Bamboo grove. Muruthikudi river bend. Dusk → nightfall.
 ## Features: river zone + boats + crocs, elevated platforms, decoy clones, Yakshi boss.
 
-const NEXT_SCENE    := "res://scenes/Act2.tscn"
+const NEXT_SCENE    := "res://scenes/BikeRide.tscn"
 const ACT_TRIGGER_X := 7800.0
 
 # Tree zones
 const ZONE1_TREES  := 18
 const ZONE1_X_FROM := 200.0
 const ZONE1_X_TO   := 3500.0
-const ZONE1_H      := 170.0   # crown y≈390 — visible at 34% from top on 480×270
+const ZONE1_H      := 310.0   # crown y≈390 (GROUND_Y now 700, trunk longer)
 const ZONE1_LEAN   := 0.05
 
 const ZONE2_TREES  := 16
 const ZONE2_X_FROM := 3600.0
 const ZONE2_X_TO   := 7600.0
-const ZONE2_H      := 200.0   # crown y≈360 — deeper forest, taller trees
+const ZONE2_H      := 340.0   # crown y≈360 (GROUND_Y now 700, trunk longer)
 const ZONE2_LEAN   := 0.04
 
 # River zone (gap in Zone 1)
@@ -33,7 +33,13 @@ func _ready() -> void:
 	_next_scene  = NEXT_SCENE
 	_trigger_x   = ACT_TRIGGER_X
 	_unlocks_act = 2   # completing Act I unlocks Act II
-	_apply_sky(Color(0.85, 0.50, 0.18))   # warm dusk orange
+	_init_sprite_parallax(Color(0.04, 0.12, 0.38),   # Yakshi Hollow deep night blue
+			"res://assets/backgrounds/bg_act1_far.png")   # bamboo grove + lily pond + ruined arch
+	_add_parallax_layers([
+		# Full-colour scenes: MAX alpha 0.18 — any higher = muddy colour soup
+		{"path": "res://assets/backgrounds/bg_act1_forest_mid.png",
+			"scroll": 0.08, "tile": true, "alpha": 0.18},   # misty bamboo forest (subtle far-depth ghost)
+	])
 	_spawn_trees()
 	_spawn_elevated_platforms()
 	_spawn_broken_bridge()
@@ -44,6 +50,7 @@ func _ready() -> void:
 	_spawn_ghosts()
 	_spawn_powerups()
 	_spawn_npcs()
+	_spawn_props()
 	_connect_player_to_hud()
 	# Timed hints — river hint fires just before player reaches the water
 	_queue_hint("⚠️ River ahead — ride a boat or CLIMB over!", 3.5, 5.5)
@@ -67,14 +74,7 @@ func _spawn_elevated_platforms() -> void:
 
 func _build_river() -> void:
 	var water_y := GROUND_Y - 18.0
-
-	# Water visual
-	var vis := ColorRect.new()
-	vis.color    = Color(0.06, 0.22, 0.70, 0.60)
-	vis.size     = Vector2(RIVER_W, 45.0)
-	vis.position = Vector2(RIVER_X, water_y - 22.0)
-	vis.z_index  = -1
-	add_child(vis)
+	_build_river_visual(RIVER_X, RIVER_W)
 
 	# River hazard area
 	var river := Area2D.new()
@@ -222,13 +222,29 @@ func _spawn_powerups() -> void:
 func _spawn_npcs() -> void:
 	# Brother Thoma near the very start
 	var thoma: Node2D = preload("res://scenes/BrotherThoma.tscn").instantiate()
-	thoma.position = Vector2(200.0, GROUND_Y - 10.0)
+	thoma.position = Vector2(200.0, GROUND_Y)
 	add_child(thoma)
-	# Aniyandi Ravi — Toddy stall before the broken bridge
+	# Mundakkal Ravi — Toddy stall before the broken bridge
 	var ravi: Node2D = preload("res://scenes/AniyandyRavi.tscn").instantiate()
-	ravi.position = Vector2(420.0, GROUND_Y - 10.0)
+	ravi.position = Vector2(420.0, GROUND_Y)
 	add_child(ravi)
 	# Soniya's Chaya Kada — placed before the ghost zone
 	var soniya: Node2D = preload("res://scenes/SoniyaChechi.tscn").instantiate()
-	soniya.position = Vector2(3400.0, GROUND_Y - 10.0)
+	soniya.position = Vector2(3400.0, GROUND_Y)
 	add_child(soniya)
+
+func _spawn_props() -> void:
+	_build_toddy_stall(420.0)
+	_build_chaya_kada(3400.0)
+
+## Mundakkal Ravi's palm-toddy stall — Scenario.gg sprite (toddy_shop_sheet.png).
+## image 4800×3584; content bottom ≈ 95 % → 1613 px below image centre.
+## scale 0.025 → offset 40 px → sprite centre at GROUND_Y − 40.
+func _build_toddy_stall(x: float) -> void:
+	_prop_sprite("res://assets/sprites/toddy_shop_sheet.png",
+			x, GROUND_Y - 40.0, 0.025, 1)
+
+## Soniya's Chaya Kada — Scenario.gg sprite (chaykada_sheet.png).
+func _build_chaya_kada(x: float) -> void:
+	_prop_sprite("res://assets/sprites/chaykada_sheet.png",
+			x, GROUND_Y - 40.0, 0.025, 1)

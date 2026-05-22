@@ -36,39 +36,17 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/croc_sheet.png"
+	const TARGET_H := 55.0   # low silhouette
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(CROC_W * 0.05, CROC_H * 0.05)
-	var sf := SpriteFrames.new()
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		for anim_name: String in ["patrol", "lunge", "submerged"]:
-			sf.add_animation(anim_name)
-			sf.set_animation_loop(anim_name, true)
-			sf.set_animation_speed(anim_name, 4.0)
-		# patrol: frames 0,1
-		for i: int in [0, 1]:
-			var at := AtlasTexture.new()
-			at.atlas  = sheet
-			at.region = Rect2(i * CROC_W, 0, CROC_W, CROC_H)
-			sf.add_frame("patrol", at)
-		# lunge: frame 2
-		var at_l := AtlasTexture.new()
-		at_l.atlas  = sheet
-		at_l.region = Rect2(2 * CROC_W, 0, CROC_W, CROC_H)
-		sf.add_frame("lunge", at_l)
-		# submerged: frame 3
-		var at_s := AtlasTexture.new()
-		at_s.atlas  = sheet
-		at_s.region = Rect2(3 * CROC_W, 0, CROC_W, CROC_H)
-		sf.add_frame("submerged", at_s)
-	else:
-		sf.add_animation("patrol")
-		sf.set_animation_loop("patrol", true)
-		var img := Image.create(int(CROC_W), int(CROC_H), false, Image.FORMAT_RGBA8)
-		img.fill(Color(0.25, 0.45, 0.20))
-		sf.add_frame("patrol", ImageTexture.create_from_image(img))
-	_spr.sprite_frames = sf
-	_spr.scale = Vector2(0.1, 0.1)
+	_spr.position = Vector2(0, -TARGET_H * 0.5)
+	# Sheet: 4 cells horizontal — walk1 | walk2 | walk3 | lunge
+	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 4, 1, [
+		{"name": "patrol",    "frames": [0, 1, 2], "fps": 6.0, "loop": true},
+		{"name": "lunge",     "frames": [3],       "fps": 4.0, "loop": false},
+		{"name": "submerged", "frames": [0],       "fps": 2.0, "loop": true},
+	], Color(0.25, 0.45, 0.20, 1.0))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	_spr.scale = Vector2(s, s)
 	_spr.play("patrol")
 	add_child(_spr)
 	$ColorRect.visible = false

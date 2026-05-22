@@ -21,6 +21,7 @@ func go_to(scene_path: String) -> void:
 		return
 	_transitioning = true
 	await _fade_in()
+	GameManager.reset_status_effects()   # clear carry-over status effects between acts
 	get_tree().change_scene_to_file(scene_path)
 	await _fade_out()
 	_transitioning = false
@@ -30,6 +31,7 @@ func reload() -> void:
 		return
 	_transitioning = true
 	await _fade_in()
+	GameManager.reset_status_effects()
 	get_tree().reload_current_scene()
 	await _fade_out()
 	_transitioning = false

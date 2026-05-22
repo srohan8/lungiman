@@ -35,6 +35,9 @@ func _load_sprite() -> void:
 	_spr.sprite_frames = sf
 	_spr.play("idle")
 	add_child(_spr)
+	# Hide the placeholder ColorRect from the .tscn template
+	var vis := get_node_or_null("Visual")
+	if vis: vis.hide()
 
 func _on_body_entered(body: Node) -> void:
 	if not body.is_in_group("player"):

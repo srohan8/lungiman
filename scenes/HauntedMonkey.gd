@@ -35,26 +35,16 @@ func _ready() -> void:
 
 func _build_visual() -> void:
 	const PATH := "res://assets/sprites/monkey_sheet.png"
-	const FRAME_W := 352.0   # 44 SVG units × scale 8
-	const FRAME_H := 448.0   # 56 SVG units × scale 8
-	var sf := SpriteFrames.new()
-	sf.add_animation("walk")
-	sf.set_animation_loop("walk", true)
-	sf.set_animation_speed("walk", 8.0)
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		for i: int in 2:
-			var at := AtlasTexture.new()
-			at.atlas  = sheet
-			at.region = Rect2(i * FRAME_W, 0, FRAME_W, FRAME_H)
-			sf.add_frame("walk", at)
-	else:
-		var img := Image.create(22, 28, false, Image.FORMAT_RGBA8)
-		img.fill(Color(0.30, 0.20, 0.08))
-		sf.add_frame("walk", ImageTexture.create_from_image(img))
-	$AnimatedSprite2D.sprite_frames = sf
+	const TARGET_H := 55.0
+	# Sheet: 4 cells horizontal — patrol1 | patrol2 | windup | lunge
+	$AnimatedSprite2D.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 4, 1, [
+		{"name": "walk",   "frames": [0, 1], "fps": 6.0, "loop": true},
+		{"name": "patrol", "frames": [0, 1], "fps": 6.0, "loop": true},
+		{"name": "attack", "frames": [2, 3], "fps": 8.0, "loop": false},
+	], Color(0.30, 0.20, 0.08, 1.0))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	$AnimatedSprite2D.scale = Vector2(s, s)
 	$AnimatedSprite2D.play("walk")
-	$AnimatedSprite2D.scale = Vector2(44.0 / 448.0, 44.0 / 448.0)
 
 func _deaths_for_swarm() -> int:
 	if swarm_id == "":

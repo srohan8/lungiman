@@ -1,7 +1,7 @@
 extends Node2D
 
-## SwingOffRace — Phase 3 quest. AI Aniyandi Ravi races the player crown-to-crown.
-## Spawned by AniyandyRavi when the player accepts the challenge.
+## SwingOffRace — Phase 3 quest. AI Mundakkal Ravi races the player crown-to-crown.
+## Spawned by MundakkalRavi (AniyandyRavi.tscn) when the player accepts the challenge.
 ## Ravi leaps 5 target trees; if the player reaches tree #5 crown before Ravi → WIN.
 ## Reward: QuestManager marks swing_off_race DONE → unlocks Appam Glide ability.
 

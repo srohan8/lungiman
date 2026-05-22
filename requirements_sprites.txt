@@ -1,0 +1,11 @@
+# Kanjiravanam Sprite Generator — Python dependencies
+# Install with:  pip install -r requirements_sprites.txt
+
+replicate>=0.32.0
+Pillow>=10.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Optional — much better background removal than the simple threshold fallback
+# Uses a neural net to cleanly cut characters from the white generated background
+# rembg>=2.0.50

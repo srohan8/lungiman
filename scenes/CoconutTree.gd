@@ -9,6 +9,9 @@ var _sway_phase: float = 0.0   # set in _ready based on position.x
 const SWAY_AMP   := 2.8        # max pixel offset of crown
 const SWAY_SPEED := 0.55       # cycles per second
 
+const TREE_SPRITE_PATH := "res://assets/sprites/coconut_tree.png"
+var _spr: Sprite2D = null
+
 func get_crown_position() -> Vector2:
 	var sway := sin(_sway_t * TAU + _sway_phase) * SWAY_AMP
 	return Vector2(
@@ -24,28 +27,34 @@ func _ready() -> void:
 	$CrownArea.position = get_crown_position() - position
 	# Unique phase so nearby trees don't sway in sync
 	_sway_phase = fmod(position.x * 0.031, TAU)
+	_load_sprite()
 
+func _load_sprite() -> void:
+	# Painted Kerala palm sprite — replaces the old procedural _draw() trunk + circles.
+	if not ResourceLoader.exists(TREE_SPRITE_PATH):
+		return
+	_spr = Sprite2D.new()
+	_spr.texture  = load(TREE_SPRITE_PATH)
+	_spr.centered = false   # anchor at top-left so we can position the base at origin
+	# Texture is ~1024x2048 (768x1536 source upscaled). Scale so visible height matches `height`.
+	var tex_h: float = float(_spr.texture.get_height())
+	var s: float = height / tex_h
+	_spr.scale = Vector2(s, s)
+	# Position the sprite so its bottom-center sits at the tree's origin (0,0 in local).
+	var tex_w: float = float(_spr.texture.get_width()) * s
+	_spr.position = Vector2(-tex_w * 0.5, -height)
+	# Draw the sprite BEHIND the climb/crown areas so collision hover still works.
+	_spr.z_index = -1
+	add_child(_spr)
 
 func _process(delta: float) -> void:
 	_sway_t += delta * SWAY_SPEED
-	queue_redraw()
-
-func _draw() -> void:
-	var crown_local := get_crown_position() - position
-	# Apply sway: crown shifts left/right by a sine wave
-	var sway := sin(_sway_t * TAU + _sway_phase) * SWAY_AMP
-	var crown_swayed := crown_local + Vector2(sway, abs(sway) * 0.15)
-	# Trunk (tip follows sway)
-	draw_line(Vector2.ZERO, crown_swayed, Color(0.55, 0.38, 0.15), 9.0)
-	# Mid-trunk texture rings
-	for t: float in [0.3, 0.55, 0.75]:
-		var mid := crown_swayed * t
-		draw_line(mid - Vector2(6, 0), mid + Vector2(6, 0), Color(0.42, 0.28, 0.10), 2.0)
-	# Crown foliage (3 overlapping circles, all follow sway)
-	draw_circle(crown_swayed,                          30.0, Color(0.22, 0.52, 0.18))
-	draw_circle(crown_swayed + Vector2(-18.0, -8.0),  22.0, Color(0.18, 0.48, 0.14))
-	draw_circle(crown_swayed + Vector2( 18.0, -8.0),  22.0, Color(0.18, 0.48, 0.14))
-	draw_circle(crown_swayed + Vector2(  0.0, -16.0), 18.0, Color(0.25, 0.58, 0.20))
+	if _spr != null:
+		# Gentle rotation sway — pivot from the trunk base.
+		var sway := sin(_sway_t * TAU + _sway_phase)
+		_spr.rotation = sway * 0.012   # ~0.7° max tilt
+	# Keep the crown area in sync with the sway crown position
+	$CrownArea.position = get_crown_position() - position
 
 func _on_climb_trigger_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):

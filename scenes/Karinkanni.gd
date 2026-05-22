@@ -35,36 +35,17 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/karinkanni_sheet.png"
+	const TARGET_H := 90.0
 	_spr = AnimatedSprite2D.new()
-	var sf := SpriteFrames.new()
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		for anim_name: String in ["closed", "opening", "open"]:
-			sf.add_animation(anim_name)
-			sf.set_animation_loop(anim_name, false)
-			sf.set_animation_speed(anim_name, 3.0)
-		# closed: frame 0
-		var at0 := AtlasTexture.new(); at0.atlas = load(PATH)
-		at0.region = Rect2(0, 0, KK_FRAME_W, KK_FRAME_H); sf.add_frame("closed", at0)
-		# opening: frames 0→1
-		for fi: int in [0, 1]:
-			var at := AtlasTexture.new(); at.atlas = sheet
-			at.region = Rect2(fi * KK_FRAME_W, 0, KK_FRAME_W, KK_FRAME_H)
-			sf.add_frame("opening", at)
-		# open: frame 2 (looping danger)
-		var at2 := AtlasTexture.new(); at2.atlas = sheet
-		at2.region = Rect2(2 * KK_FRAME_W, 0, KK_FRAME_W, KK_FRAME_H)
-		sf.set_animation_loop("open", true)
-		sf.add_frame("open", at2)
-	else:
-		sf.add_animation("closed")
-		sf.set_animation_loop("closed", true)
-		var img := Image.create(int(KK_FRAME_W), int(KK_FRAME_H), false, Image.FORMAT_RGBA8)
-		img.fill(Color(0.55, 0.0, 0.80, 0.92))
-		sf.add_frame("closed", ImageTexture.create_from_image(img))
-	_spr.sprite_frames = sf
-	_spr.scale = Vector2(60.0 / KK_FRAME_H, 60.0 / KK_FRAME_H)
-	_spr.position = Vector2(0, -30)
+	# Sheet: 3 cells horizontal — closed | half-open | fully open
+	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 3, 1, [
+		{"name": "closed",  "frames": [0],       "fps": 3.0, "loop": true},
+		{"name": "opening", "frames": [0, 1, 2], "fps": 6.0, "loop": false},
+		{"name": "open",    "frames": [2],       "fps": 3.0, "loop": true},
+	], Color(0.55, 0.0, 0.80, 0.92))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	_spr.scale = Vector2(s, s)
+	_spr.position = Vector2(0, -TARGET_H * 0.5)
 	_spr.play("closed")
 	add_child(_spr)
 	$Body.visible = false
@@ -127,6 +108,7 @@ func take_damage(dmg: int) -> void:
 
 func _die() -> void:
 	GameManager.clear_boss()
+	GameManager.boss_grit_drop()   # Grit: 40 → 20. Flicker → Sputter. The lamp is almost out.
 	GameManager.score += 300
 	GameManager.show_score_popup(position - Vector2(0, 40), 300, Color(0.60, 0.30, 1.0))
 	_drop_powerup()

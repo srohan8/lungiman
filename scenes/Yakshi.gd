@@ -35,29 +35,17 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/yakshi_sheet.png"
+	const TARGET_H := 120.0
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -80.0 * 0.5)
-	var sf := SpriteFrames.new()
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		var anims := [["float", [0,1], 4.0, true], ["hypno", [2,3], 6.0, true], ["stun", [4], 2.0, false]]
-		for a: Array in anims:
-			sf.add_animation(a[0])
-			sf.set_animation_loop(a[0], a[3])
-			sf.set_animation_speed(a[0], a[2])
-			for fi: int in a[1]:
-				var at := AtlasTexture.new()
-				at.atlas  = sheet
-				at.region = Rect2(fi * YAKSHI_FRAME_W, 0, YAKSHI_FRAME_W, YAKSHI_FRAME_H)
-				sf.add_frame(a[0], at)
-	else:
-		sf.add_animation("float")
-		sf.set_animation_loop("float", true)
-		var img := Image.create(int(YAKSHI_FRAME_W), int(YAKSHI_FRAME_H), false, Image.FORMAT_RGBA8)
-		img.fill(Color(0.85, 0.95, 1.0, 0.88))
-		sf.add_frame("float", ImageTexture.create_from_image(img))
-	_spr.sprite_frames = sf
-	_spr.scale = Vector2(80.0 / YAKSHI_FRAME_H, 80.0 / YAKSHI_FRAME_H)
+	_spr.position = Vector2(0, -TARGET_H * 0.5)
+	# Sheet: 3 cells horizontal — float | hypno | stun
+	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 3, 1, [
+		{"name": "float", "frames": [0], "fps": 2.0, "loop": true},
+		{"name": "hypno", "frames": [1], "fps": 3.0, "loop": true},
+		{"name": "stun",  "frames": [2], "fps": 2.0, "loop": false},
+	], Color(0.85, 0.95, 1.0, 0.88))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	_spr.scale = Vector2(s, s)
 	_spr.play("float")
 	add_child(_spr)
 	$ColorRect.visible = false
@@ -138,6 +126,7 @@ func _show_hint(text: String) -> void:
 
 func _die() -> void:
 	GameManager.clear_boss()
+	GameManager.boss_grit_drop()   # Grit: 100 → 80. Lamp dims — the forest takes its toll.
 	GameManager.score += 200
 	GameManager.show_score_popup(position - Vector2(0, 40), 200, Color(0.85, 0.50, 1.0))
 	_drop_powerup()

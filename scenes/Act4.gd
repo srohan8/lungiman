@@ -4,23 +4,33 @@ extends "res://scenes/BaseAct.gd"
 ## Rain-drenched mangroves. Karinkanni floats at y~315 (above tree crowns at y~350).
 ## MUST be on a tree crown to hit her with coconuts.
 
-const NEXT_SCENE    := "res://scenes/Act5.tscn"
+const NEXT_SCENE    := "res://scenes/Pathalam.tscn"   # IV.5 interlude before the finale
 const ACT_TRIGGER_X := 7800.0
 
 const ZONE_TREES   := 22
 const ZONE_X_FROM  := 200.0
 const ZONE_X_TO    := 7600.0
-const ZONE_H       := 210.0   # crown y≈350 — tall mangroves; Karinkanni floats just above
+const ZONE_H       := 350.0   # crown y≈350 (GROUND_Y now 700, trunk longer)
 
 func _ready() -> void:
 	_next_scene  = NEXT_SCENE
 	_trigger_x   = ACT_TRIGGER_X
 	_unlocks_act = 5
-	_apply_sky(Color(0.10, 0.18, 0.30))   # rain-drenched deep blue-grey
+	_init_sprite_parallax(Color(0.06, 0.12, 0.08),   # rain-soaked mangrove dark green
+			"res://assets/backgrounds/bg_act4.png")   # rain-drenched mangroves with exposed roots + flooded water
+	_add_parallax_layers([
+		# bg_act4_props.png has CHARACTERS — intentionally skipped
+		# Full-colour scenes: MAX alpha 0.18 — any higher = muddy colour soup over the base
+		{"path": "res://assets/backgrounds/bg_act4_mountains.png",
+			"scroll": 0.10, "tile": true, "alpha": 0.15},   # mangrove village + stilt houses (far ghost)
+		{"path": "res://assets/backgrounds/bg_act4_trees.png",
+			"scroll": 0.24, "tile": true, "alpha": 0.18},   # mangrove roots in water (near ghost)
+	])
 	_spawn_trees()
 	_spawn_karinkanni()
 	_spawn_powerups()
 	_spawn_npcs()
+	_spawn_props()
 	_spawn_rising_water()
 	_spawn_rain()
 	_connect_player_to_hud()
@@ -51,15 +61,89 @@ func _spawn_powerups() -> void:
 
 func _spawn_npcs() -> void:
 	var thoma: Node2D = preload("res://scenes/BrotherThoma.tscn").instantiate()
-	thoma.position = Vector2(200.0, GROUND_Y - 10.0)
+	thoma.position = Vector2(200.0, GROUND_Y)
 	add_child(thoma)
 	var soniya: Node2D = preload("res://scenes/SoniyaChechi.tscn").instantiate()
-	soniya.position = Vector2(500.0, GROUND_Y - 10.0)
+	soniya.position = Vector2(500.0, GROUND_Y)
 	add_child(soniya)
 	# Sr. Devi — Bell of Bhadrakali quest giver (Phase 5 quest, NPC present now)
 	var devi: Node2D = preload("res://scenes/SrDevi.tscn").instantiate()
-	devi.position = Vector2(1400.0, GROUND_Y - 10.0)
+	devi.position = Vector2(1400.0, GROUND_Y)
 	add_child(devi)
+
+func _spawn_props() -> void:
+	_build_raft(200.0)          # Thoma's half-built escape raft
+	_build_flooded_hut(500.0)   # Soniya's flooded hut (chai still on)
+	_build_shrine(1400.0)       # Sr. Devi's riverside shrine
+
+## Thoma's escape raft — planks lashed together, rope visible
+func _build_raft(x: float) -> void:
+	# Main plank body
+	var raft := ColorRect.new()
+	raft.size     = Vector2(82.0, 12.0)
+	raft.position = Vector2(x - 41.0, GROUND_Y - 12.0)
+	raft.color    = Color(0.42, 0.28, 0.12, 1.0)
+	raft.z_index  = 1
+	add_child(raft)
+	# Plank groove lines
+	for i: int in 4:
+		var groove := ColorRect.new()
+		groove.size     = Vector2(2.0, 12.0)
+		groove.position = Vector2(x - 30.0 + float(i) * 18.0, GROUND_Y - 12.0)
+		groove.color    = Color(0.28, 0.18, 0.07, 0.70)
+		groove.z_index  = 2
+		add_child(groove)
+	# Rope binding on edge
+	var rope := ColorRect.new()
+	rope.size     = Vector2(6.0, 4.0)
+	rope.position = Vector2(x + 37.0, GROUND_Y - 16.0)
+	rope.color    = Color(0.76, 0.62, 0.36, 1.0)
+	rope.z_index  = 2
+	add_child(rope)
+
+## Soniya's flooded hut — walls + palm-leaf roof + water stain mark
+func _build_flooded_hut(x: float) -> void:
+	# Hut back wall
+	var wall := ColorRect.new()
+	wall.size     = Vector2(80.0, 68.0)
+	wall.position = Vector2(x - 40.0, GROUND_Y - 68.0)
+	wall.color    = Color(0.28, 0.20, 0.12, 1.0)
+	wall.z_index  = 1
+	add_child(wall)
+	# Left roof slope
+	var roof_l := ColorRect.new()
+	roof_l.size     = Vector2(50.0, 14.0)
+	roof_l.position = Vector2(x - 48.0, GROUND_Y - 82.0)
+	roof_l.color    = Color(0.26, 0.36, 0.12, 1.0)
+	roof_l.z_index  = 2
+	add_child(roof_l)
+	# Right roof slope
+	var roof_r := ColorRect.new()
+	roof_r.size     = Vector2(50.0, 14.0)
+	roof_r.position = Vector2(x - 2.0, GROUND_Y - 82.0)
+	roof_r.color    = Color(0.26, 0.36, 0.12, 1.0)
+	roof_r.z_index  = 2
+	add_child(roof_r)
+	# Door
+	var door := ColorRect.new()
+	door.size     = Vector2(22.0, 34.0)
+	door.position = Vector2(x - 11.0, GROUND_Y - 34.0)
+	door.color    = Color(0.18, 0.12, 0.06, 1.0)
+	door.z_index  = 2
+	add_child(door)
+	# Flood waterline stain on lower wall
+	var stain := ColorRect.new()
+	stain.size     = Vector2(80.0, 16.0)
+	stain.position = Vector2(x - 40.0, GROUND_Y - 16.0)
+	stain.color    = Color(0.22, 0.42, 0.70, 0.40)
+	stain.z_index  = 3
+	add_child(stain)
+
+## Sr. Devi's riverside shrine — Scenario.gg sprite (shrine_sheet.png).
+## image 4800×3584; scale 0.030 → content bottom 48px below sprite centre.
+func _build_shrine(x: float) -> void:
+	_prop_sprite("res://assets/sprites/shrine_sheet.png",
+			x, GROUND_Y - 48.0, 0.030, 1)
 
 ## Rising water visual — cosmetic pressure. Water line creeps up over 90 seconds.
 func _spawn_rising_water() -> void:

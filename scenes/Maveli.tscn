@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://dmaveli00001"]
+
+[ext_resource type="Script" path="res://scenes/Maveli.gd" id="1_maveli"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
+size = Vector2(160, 200)
+
+[node name="Maveli" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_maveli")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -80)
+shape = SubResource("RectangleShape2D_trigger")
+
+[node name="Label" type="Label" parent="."]
+offset_left = -200.0
+offset_top = -270.0
+offset_right = 200.0
+offset_bottom = -130.0
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+visible = false

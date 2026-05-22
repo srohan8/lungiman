@@ -1,14 +1,15 @@
 extends Area2D
 
-## Biju Ettan — Village elder. Prologue NPC. Introduces the world.
-## Gives the player their first coconut and warns about the forest.
+## Captain Biju — Houseboat captain. Prologue NPC. Introduces the world.
+## Ex-fighter. Retired the day he transported timber out of the sacred grove.
+## Helps LungiMan without explaining why. He owes this to someone.
 
 const DIALOGUES := [
-	"Son, the forest is stirring.\nTake this coconut. 🥥",
-	"Kanjiravanam was peaceful\nonce. Before the spirits woke.",
-	"Stay on the trees at night.\nThe ground belongs to them.",
-	"You're still here?\nThe village needs you, machane.",
-	"🐟 Fish fry is ready!\nEat — it will strengthen you.",
+	"Machane... take this.\nThe forest is restless again. 🥥",
+	"Kanjiravanam was peaceful once.\nI know exactly when it changed.",
+	"Stay on the trees at night.\nThe ground belongs to them now.",
+	"You're still going?\nGood. Don't stop.",
+	"🐟 Fish fry is ready.\nEat. You'll need your strength.",
 ]
 
 var _stage:        int  = 0
@@ -24,30 +25,21 @@ func _ready() -> void:
 
 func _build_sprite() -> void:
 	const PATH := "res://assets/sprites/biju_sheet.png"
+	const TARGET_H := 110.0
 	var spr := AnimatedSprite2D.new()
-	spr.position = Vector2(0, -32)
-	var sf := SpriteFrames.new()
-	for anim: String in ["idle", "talk"]:
-		sf.add_animation(anim)
-		sf.set_animation_loop(anim, true)
-		sf.set_animation_speed(anim, 2.0)
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		for i: int in 2:
-			var at := AtlasTexture.new()
-			at.atlas  = sheet
-			at.region = Rect2(i * 648, 0, 648, 1152)   # 36×64 SVG × scale 18
-			sf.add_frame("idle" if i == 0 else "talk", at)
-	else:
-		for anim: String in ["idle", "talk"]:
-			var img := Image.create(36, 64, false, Image.FORMAT_RGBA8)
-			img.fill(Color(0.72, 0.55, 0.35))
-			sf.add_frame(anim, ImageTexture.create_from_image(img))
-	spr.sprite_frames = sf
-	spr.scale         = Vector2(64.0 / 1152.0, 64.0 / 1152.0)
+	spr.position = Vector2(0, -TARGET_H * 0.5)
+	spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 2, 1, [
+		{"name": "idle", "frames": [0], "fps": 2.0, "loop": true},
+		{"name": "talk", "frames": [1], "fps": 2.0, "loop": true},
+	], Color(0.72, 0.55, 0.35, 1.0))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	spr.scale = Vector2(s, s)
 	spr.play("idle")
 	add_child(spr)
 	set_meta("_spr", spr)
+	# Hide the placeholder ColorRect from the .tscn template
+	var vis := get_node_or_null("Visual")
+	if vis: vis.hide()
 
 func _on_body_entered(body: Node) -> void:
 	if not body.is_in_group("player"):
@@ -67,7 +59,12 @@ func _on_body_entered(body: Node) -> void:
 		get_parent().call_deferred("add_child", pu)
 		var qm := get_node_or_null("/root/QuestManager")
 		if qm != null: qm.activate_quest("fish_fry_for_gods")
-	# 5th meeting: fish fry reward — double HP regen flag + complete quest
+	# Second meeting: launch the fishing mini-game (quest must be ACTIVE and not yet won)
+	if _stage == 2 and not _quest_done:
+		var qm := get_node_or_null("/root/QuestManager")
+		if qm != null and qm.get_state("fish_fry_for_gods") == 1:   # ACTIVE = 1
+			get_tree().create_timer(3.7).timeout.connect(_launch_fishing_game)
+	# 5th meeting fallback: fish fry reward if fishing mini-game was skipped / never won
 	if _stage == 5 and not _quest_done:
 		_quest_done = true
 		var qm := get_node_or_null("/root/QuestManager")
@@ -79,4 +76,13 @@ func _on_body_entered(body: Node) -> void:
 	get_tree().create_timer(3.5).timeout.connect(func() -> void:
 		$Label.visible = false
 		spr.play("idle")
+	)
+
+## Spawn the fishing mini-game and listen for result.
+func _launch_fishing_game() -> void:
+	var game: Node = preload("res://scenes/FishingGame.tscn").instantiate()
+	get_tree().root.add_child(game)
+	(game as Node).call("start")
+	game.fishing_done.connect(func(won: bool) -> void:
+		if won: _quest_done = true
 	)

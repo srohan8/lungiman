@@ -45,30 +45,18 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/odiyan_sheet.png"
+	const TARGET_H := 110.0
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -70.0 * 0.5)
-	var sf := SpriteFrames.new()
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		var anims := [["human", [0], 2.0, true], ["transform", [0,1,2,3,4], 12.0, false],
-					  ["bull", [1,2], 4.0, true], ["dog", [3,4], 6.0, true]]
-		for a: Array in anims:
-			sf.add_animation(a[0])
-			sf.set_animation_loop(a[0], a[3])
-			sf.set_animation_speed(a[0], a[2])
-			for fi: int in a[1]:
-				var at := AtlasTexture.new()
-				at.atlas  = sheet
-				at.region = Rect2(fi * ODIYAN_FRAME_W, 0, ODIYAN_FRAME_W, ODIYAN_FRAME_H)
-				sf.add_frame(a[0], at)
-	else:
-		sf.add_animation("human")
-		sf.set_animation_loop("human", true)
-		var img := Image.create(int(ODIYAN_FRAME_W), int(ODIYAN_FRAME_H), false, Image.FORMAT_RGBA8)
-		img.fill(Color(0.75, 0.75, 0.75))
-		sf.add_frame("human", ImageTexture.create_from_image(img))
-	_spr.sprite_frames = sf
-	_spr.scale = Vector2(70.0 / ODIYAN_FRAME_H, 70.0 / ODIYAN_FRAME_H)
+	_spr.position = Vector2(0, -TARGET_H * 0.5)
+	# Sheet: 3 cells horizontal — human | bull | dog
+	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 3, 1, [
+		{"name": "human",     "frames": [0],       "fps": 2.0,  "loop": true},
+		{"name": "transform", "frames": [0, 1, 2], "fps": 4.0,  "loop": false},
+		{"name": "bull",      "frames": [1],       "fps": 4.0,  "loop": true},
+		{"name": "dog",       "frames": [2],       "fps": 6.0,  "loop": true},
+	], Color(0.75, 0.75, 0.75, 1.0))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	_spr.scale = Vector2(s, s)
 	_spr.play("human")
 	add_child(_spr)
 	$ColorRect.visible = false
@@ -133,6 +121,31 @@ func _apply_form_visual() -> void:
 func reveal_weakness() -> void:
 	weakness_revealed = true
 
+## Pre-boss tease — fires when the player finds hoof-print #3.
+## Odiyan briefly appears in dog form, charges toward the player, then flees.
+## No HP damage is dealt — this is a glimpse, not the real fight.
+## If already in TRANSFORM/BULL/DOG from the boss-fight cycle, does nothing.
+func lunge_tease(target_pos: Vector2) -> void:
+	if form != Form.HUMAN: return   # real fight already underway
+	form       = Form.DOG
+	form_timer = 0.80
+	dir        = int(sign(target_pos.x - global_position.x))
+	_apply_form_visual()
+	# After 0.85s: flee in the opposite direction, then return to idle
+	get_tree().create_timer(0.85).timeout.connect(func() -> void:
+		if not is_instance_valid(self): return
+		if form != Form.DOG: return   # fight started meanwhile — don't interfere
+		dir        = -dir
+		form_timer = 1.6
+		get_tree().create_timer(1.6).timeout.connect(func() -> void:
+			if not is_instance_valid(self): return
+			if form == Form.DOG:   # still in flee (not in real fight)
+				form       = Form.HUMAN
+				form_timer = CYCLE_HUMAN
+				_apply_form_visual()
+		)
+	)
+
 func take_damage(dmg: int) -> void:
 	if form != Form.TRANSFORM: return
 	hp -= dmg
@@ -143,6 +156,7 @@ func take_damage(dmg: int) -> void:
 
 func _die() -> void:
 	GameManager.clear_boss()
+	GameManager.boss_grit_drop()   # Grit: 60 → 40. Low → Flicker.
 	GameManager.score += 220
 	GameManager.show_score_popup(position + Vector2(0, -50), 220, Color(0.5, 0.8, 0.3))
 	_drop_powerup()

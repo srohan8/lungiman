@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://b3m8se3kxkhwe"]
+
+[ext_resource type="Script" uid="uid://1njf32v81fo5" path="res://scenes/FishingGame.gd" id="1_0nxus"]
+
+[node name="FishingGame" type="CanvasLayer" unique_id=388248997]
+script = ExtResource("1_0nxus")

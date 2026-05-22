@@ -3,6 +3,8 @@ extends CharacterBody2D
 ## Pey Komban — Act V Finale Boss. Ground charge is fatal. Safe only on trees.
 ## Phase 2 (hp <= 3): faster charge. Rage (hp <= 1): alternating L+R charges.
 
+signal defeat   ## Emitted just before queue_free — Act5.gd intercepts to run mundu cinematic.
+
 const MAX_HP           := 5
 const GRAVITY          := 1800.0
 const PATROL_SPEED     := 55.0
@@ -43,29 +45,17 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/peykomban_sheet.png"
+	const TARGET_H := 180.0   # PeyKomban is massive — dwarfs the player
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -110.0 * 0.5)
-	var sf := SpriteFrames.new()
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		var anims := [["patrol", [0,1], 3.0, true], ["windup", [2], 4.0, false], ["charge", [3], 8.0, true]]
-		for a: Array in anims:
-			sf.add_animation(a[0])
-			sf.set_animation_loop(a[0], a[3])
-			sf.set_animation_speed(a[0], a[2])
-			for fi: int in a[1]:
-				var at := AtlasTexture.new()
-				at.atlas  = sheet
-				at.region = Rect2(fi * PK_FRAME_W, 0, PK_FRAME_W, PK_FRAME_H)
-				sf.add_frame(a[0], at)
-	else:
-		sf.add_animation("patrol")
-		sf.set_animation_loop("patrol", true)
-		var img := Image.create(int(PK_FRAME_W), int(PK_FRAME_H), false, Image.FORMAT_RGBA8)
-		img.fill(Color(0.20, 0.12, 0.08, 1.0))
-		sf.add_frame("patrol", ImageTexture.create_from_image(img))
-	_spr.sprite_frames = sf
-	_spr.scale = Vector2(110.0 / PK_FRAME_H, 110.0 / PK_FRAME_H)
+	_spr.position = Vector2(0, -TARGET_H * 0.5)
+	# Sheet: 3 cells horizontal — patrol | windup | charge
+	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 3, 1, [
+		{"name": "patrol", "frames": [0], "fps": 3.0, "loop": true},
+		{"name": "windup", "frames": [1], "fps": 4.0, "loop": false},
+		{"name": "charge", "frames": [2], "fps": 8.0, "loop": true},
+	], Color(0.20, 0.12, 0.08, 1.0))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	_spr.scale = Vector2(s, s)
 	_spr.play("patrol")
 	add_child(_spr)
 	$ColorRect.visible = false
@@ -143,8 +133,8 @@ func _die() -> void:
 	GameManager.clear_boss()
 	GameManager.score += 500
 	GameManager.show_score_popup(position - Vector2(0, 60), 500, Color(1.0, 0.84, 0.0))
-	GameManager.win_game()
 	_drop_powerup()
+	defeat.emit()   # Act5._mundu_cinematic() runs; IT calls GameManager.win_game() at the end
 	queue_free()
 
 func _drop_powerup() -> void:

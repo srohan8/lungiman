@@ -34,25 +34,15 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/ghost_sheet.png"
+	const TARGET_H := 90.0
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -60.0 * 0.5)
-	var sf := SpriteFrames.new()
-	sf.add_animation("float")
-	sf.set_animation_loop("float", true)
-	sf.set_animation_speed("float", 4.0)
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		for i: int in 2:
-			var at := AtlasTexture.new()
-			at.atlas  = sheet
-			at.region = Rect2(i * GHOST_FRAME_W, 0, GHOST_FRAME_W, GHOST_FRAME_H)
-			sf.add_frame("float", at)
-	else:
-		var img := Image.create(int(GHOST_FRAME_W), int(GHOST_FRAME_H), false, Image.FORMAT_RGBA8)
-		img.fill(Color(0.4, 0.4, 1.0, 0.65))
-		sf.add_frame("float", ImageTexture.create_from_image(img))
-	_spr.sprite_frames = sf
-	_spr.scale = Vector2(60.0 / GHOST_FRAME_H, 60.0 / GHOST_FRAME_H)
+	_spr.position = Vector2(0, -TARGET_H * 0.5)
+	# Sheet: 2 cells horizontal — float1 | float2 (subtle drift)
+	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 2, 1, [
+		{"name": "float", "frames": [0, 1], "fps": 3.0, "loop": true},
+	], Color(0.4, 0.4, 1.0, 0.65))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	_spr.scale = Vector2(s, s)
 	_spr.play("float")
 	# Real = slightly opaque; fake = more transparent with pulse
 	_spr.modulate = Color(1.0, 0.85, 1.0, 0.88) if is_real else Color(0.7, 0.7, 1.0, 0.65)

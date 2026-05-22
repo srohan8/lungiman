@@ -6,9 +6,9 @@ const MAX_HP        := 40
 const PATROL_LEFT   := 100.0
 const PATROL_RIGHT  := 2780.0
 const CONTACT_DMG   := 15
-const CRAB_SHEET_COLS := 8
-const CRAB_FRAME_W    := 250
-const CRAB_FRAME_H    := 125
+const CRAB_SHEET_COLS := 5
+const CRAB_FRAME_W    := 400
+const CRAB_FRAME_H    := 256
 
 var hp:           int   = MAX_HP
 var dir:          int   = 1
@@ -22,26 +22,34 @@ func _ready() -> void:
 	$Hitbox.collision_mask  = 2
 	_build_anim()
 
+const CRAB_SHEET_PATH := "res://assets/sprites/crab_sheet.png"
+const CRAB_TARGET_H   := 38.0   # in-game pixel height for the crab
+
 func _build_anim() -> void:
-	const PATH := "res://assets/sprites/crab_sheet.png"
 	var sf := SpriteFrames.new()
 	sf.add_animation("walk")
 	sf.set_animation_loop("walk", true)
 	sf.set_animation_speed("walk", 10.0)
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
+
+	if not GameManager.USE_PLACEHOLDER_SPRITES and ResourceLoader.exists(CRAB_SHEET_PATH):
+		var sheet: Texture2D = load(CRAB_SHEET_PATH)
 		for i: int in CRAB_SHEET_COLS:
 			var at := AtlasTexture.new()
 			at.atlas  = sheet
 			at.region = Rect2(i * CRAB_FRAME_W, 0, CRAB_FRAME_W, CRAB_FRAME_H)
 			sf.add_frame("walk", at)
+		var s := CRAB_TARGET_H / float(CRAB_FRAME_H)
+		$AnimatedSprite2D.scale    = Vector2(s, s)
+		$AnimatedSprite2D.position = Vector2(0, -CRAB_TARGET_H * 0.5)
 	else:
+		# Fallback placeholder
 		var img := Image.create(50, 28, false, Image.FORMAT_RGBA8)
 		img.fill(Color(0.90, 0.45, 0.10))
 		sf.add_frame("walk", ImageTexture.create_from_image(img))
+		$AnimatedSprite2D.scale    = Vector2.ONE
+		$AnimatedSprite2D.position = Vector2(0, -14)
+
 	$AnimatedSprite2D.sprite_frames = sf
-	$AnimatedSprite2D.scale    = Vector2(28.0 / CRAB_FRAME_H, 28.0 / CRAB_FRAME_H)
-	$AnimatedSprite2D.position = Vector2(0, -14)
 	$AnimatedSprite2D.play("walk")
 
 func _physics_process(delta: float) -> void:

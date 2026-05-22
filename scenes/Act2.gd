@@ -10,12 +10,12 @@ const ACT_TRIGGER_X := 7800.0
 const ZONE1_TREES  := 10
 const ZONE1_X_FROM := 300.0
 const ZONE1_X_TO   := 3800.0
-const ZONE1_H      := 130.0   # crown y≈430 — carnival scrubland, short trees
+const ZONE1_H      := 270.0   # crown y≈430 (GROUND_Y now 700, trunk longer)
 
 const ZONE2_TREES  := 10
 const ZONE2_X_FROM := 4000.0
 const ZONE2_X_TO   := 7500.0
-const ZONE2_H      := 130.0   # crown y≈430
+const ZONE2_H      := 270.0   # crown y≈430 (GROUND_Y now 700, trunk longer)
 
 var _fire_rain_running := false
 
@@ -23,7 +23,24 @@ func _ready() -> void:
 	_next_scene  = NEXT_SCENE
 	_trigger_x   = ACT_TRIGGER_X
 	_unlocks_act = 3
-	_apply_sky(Color(0.18, 0.08, 0.05))   # deep ember-red carnival night
+	# bg_act2_scene: proper side-scrolling carnival (regenerate with: python generate_sprites.py --sheet bg_act2_scene)
+	# Fallback to bg_act2_mountains if not yet generated (isometric, but better than nothing)
+	const _BG2 := "res://assets/backgrounds/bg_act2_scene.png"
+	const _BG2_FALLBACK := "res://assets/backgrounds/bg_act2_mountains.png"
+	_init_sprite_parallax(Color(0.18, 0.06, 0.02),
+			_BG2 if ResourceLoader.exists(_BG2) else _BG2_FALLBACK)
+	_add_parallax_layers([
+		# All three strips regenerated 2026-05-21 — proper side-scrolling silhouettes
+		{"path": "res://assets/backgrounds/bg_act2_mountains.png",
+			"scroll": 0.12, "tile": true, "alpha": 0.45,
+			"remove_white": false},   # carnival ruins skyline strip — amber glow intentional (far)
+		{"path": "res://assets/backgrounds/bg_act2_trees.png",
+			"scroll": 0.26, "tile": true,
+			"remove_white": true},    # scorched palm silhouettes on white → transparent (mid)
+		{"path": "res://assets/backgrounds/bg_act2_props.png",
+			"scroll": 0.38, "tile": true,
+			"remove_white": true},    # ferris wheel + tent + torn flag on white → transparent (near)
+	])
 	_spawn_trees()
 	_spawn_fire_hazards()
 	_spawn_carnival_bell()
@@ -32,6 +49,7 @@ func _ready() -> void:
 	_spawn_kuttichathan()
 	_spawn_powerups()
 	_spawn_npcs()
+	_spawn_props()
 	_spawn_embers()
 	_connect_player_to_hud()
 	_queue_hint("💥 Clones EXPLODE when hit — find the real one first!", 2.0, 6.0)
@@ -278,14 +296,90 @@ func _spawn_powerups() -> void:
 
 func _spawn_npcs() -> void:
 	var thoma: Node2D = preload("res://scenes/BrotherThoma.tscn").instantiate()
-	thoma.position = Vector2(200.0, GROUND_Y - 10.0)
+	thoma.position = Vector2(200.0, GROUND_Y)
 	add_child(thoma)
-	# Aniyandi Ravi — Phase 3 swing race reappears here too
+	# Mundakkal Ravi — Phase 3 swing race reappears here too
 	var ravi: Node2D = preload("res://scenes/AniyandyRavi.tscn").instantiate()
-	ravi.position = Vector2(2200.0, GROUND_Y - 10.0)
+	ravi.position = Vector2(2200.0, GROUND_Y)
 	add_child(ravi)
 	# Stop fire rain when boss dies (game_won / next scene fires)
 	GameManager.game_won.connect(func() -> void: _fire_rain_running = false)
+
+func _spawn_props() -> void:
+	_build_fallen_cart(2200.0)   # Ravi's toddy cart — overturned in the carnival chaos
+	_build_burnt_chapel(3800.0)  # Brother Thoma's shelter in the ruins
+
+## Ravi's toddy cart — tipped over, toddy puddled on the road
+func _build_fallen_cart(x: float) -> void:
+	# Tilted cart body
+	var body := ColorRect.new()
+	body.size     = Vector2(62.0, 26.0)
+	body.position = Vector2(x - 31.0, GROUND_Y - 22.0)
+	body.color    = Color(0.32, 0.20, 0.10, 1.0)
+	body.z_index  = 1
+	add_child(body)
+	# Upright wheel (still attached)
+	var wheel_up := ColorRect.new()
+	wheel_up.size     = Vector2(20.0, 20.0)
+	wheel_up.position = Vector2(x - 40.0, GROUND_Y - 20.0)
+	wheel_up.color    = Color(0.15, 0.10, 0.06, 1.0)
+	wheel_up.z_index  = 2
+	add_child(wheel_up)
+	# Fallen wheel — flat on road
+	var wheel_flat := ColorRect.new()
+	wheel_flat.size     = Vector2(22.0, 8.0)
+	wheel_flat.position = Vector2(x + 18.0, GROUND_Y - 8.0)
+	wheel_flat.color    = Color(0.15, 0.10, 0.06, 1.0)
+	wheel_flat.z_index  = 2
+	add_child(wheel_flat)
+	# Spilled toddy puddle — dark amber
+	var spill := ColorRect.new()
+	spill.size     = Vector2(56.0, 6.0)
+	spill.position = Vector2(x - 8.0, GROUND_Y - 6.0)
+	spill.color    = Color(0.72, 0.40, 0.10, 0.65)
+	spill.z_index  = 0
+	add_child(spill)
+	# Pot rolling away
+	var pot := ColorRect.new()
+	pot.size     = Vector2(12.0, 12.0)
+	pot.position = Vector2(x + 34.0, GROUND_Y - 12.0)
+	pot.color    = Color(0.70, 0.30, 0.10, 1.0)
+	pot.z_index  = 2
+	add_child(pot)
+
+## Burnt chapel ruins — Thoma's shelter, scorched walls
+func _build_burnt_chapel(x: float) -> void:
+	# Left scorched wall fragment
+	var wall_l := ColorRect.new()
+	wall_l.size     = Vector2(14.0, 80.0)
+	wall_l.position = Vector2(x - 50.0, GROUND_Y - 80.0)
+	wall_l.color    = Color(0.18, 0.12, 0.08, 1.0)
+	wall_l.z_index  = 1
+	add_child(wall_l)
+	# Right scorched wall fragment
+	var wall_r := ColorRect.new()
+	wall_r.size     = Vector2(14.0, 60.0)
+	wall_r.position = Vector2(x + 36.0, GROUND_Y - 60.0)
+	wall_r.color    = Color(0.18, 0.12, 0.08, 1.0)
+	wall_r.z_index  = 1
+	add_child(wall_r)
+	# Charred ground inside
+	var floor := ColorRect.new()
+	floor.size     = Vector2(86.0, 8.0)
+	floor.position = Vector2(x - 43.0, GROUND_Y - 8.0)
+	floor.color    = Color(0.12, 0.08, 0.06, 0.80)
+	floor.z_index  = 0
+	add_child(floor)
+	# Ember glow in rubble
+	var glow := ColorRect.new()
+	glow.size     = Vector2(16.0, 6.0)
+	glow.position = Vector2(x - 8.0, GROUND_Y - 12.0)
+	glow.color    = Color(1.0, 0.40, 0.05, 0.55)
+	glow.z_index  = 2
+	add_child(glow)
+	var tw := glow.create_tween().set_loops()
+	tw.tween_property(glow, "modulate:a", 0.20, 0.9)
+	tw.tween_property(glow, "modulate:a", 1.00, 0.7)
 
 ## Screen-space CPUParticles2D ember drift — CanvasLayer so it follows the camera.
 func _spawn_embers() -> void:

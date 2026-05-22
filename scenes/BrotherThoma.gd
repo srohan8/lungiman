@@ -14,29 +14,22 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/thoma_sheet.png"
+	const TARGET_H := 110.0
+	# Sheet is 4800×3584 in a 4-col × 3-row grid (same format as hero sheets).
+	# idle = cols 0-1 (holding bible), talk = cols 2-3 (hand raised in blessing).
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -32)
-	var sf := SpriteFrames.new()
-	for anim_name: String in ["idle", "talk"]:
-		sf.add_animation(anim_name)
-		sf.set_animation_loop(anim_name, true)
-		sf.set_animation_speed(anim_name, 2.0)
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		for i: int in 2:
-			var at := AtlasTexture.new()
-			at.atlas  = sheet
-			at.region = Rect2(i * 2048, 0, 2048, 4096)   # 32×64 SVG × scale 64
-			sf.add_frame("idle" if i == 0 else "talk", at)
-	else:
-		for anim_name: String in ["idle", "talk"]:
-			var img := Image.create(32, 64, false, Image.FORMAT_RGBA8)
-			img.fill(Color(0.9, 0.9, 0.85))
-			sf.add_frame(anim_name, ImageTexture.create_from_image(img))
-	_spr.sprite_frames = sf
-	_spr.scale = Vector2(64.0 / 4096.0, 64.0 / 4096.0)
+	_spr.position = Vector2(0, -TARGET_H * 0.5)
+	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 4, 3, [
+		{"name": "idle", "frames": [0, 1, 4, 5], "fps": 3.0, "loop": true},
+		{"name": "talk", "frames": [2, 3, 6, 7], "fps": 5.0, "loop": true},
+	], Color(0.9, 0.9, 0.85, 1.0))
+	var s: float = GameManager.grid_sheet_scale(PATH, 3, TARGET_H)
+	_spr.scale = Vector2(s, s)
 	_spr.play("idle")
 	add_child(_spr)
+	# Hide the placeholder ColorRect that comes from the .tscn template
+	var vis := get_node_or_null("Visual")
+	if vis: vis.hide()
 
 func _on_body_entered(body: Node) -> void:
 	if _blessed or not body.is_in_group("player"):

@@ -1,5 +1,15 @@
 extends Node
 
+# ── Sprite pipeline gate ──────────────────────────────────────────────────────
+## Scenario.gg-generated sheets are now live. Set true again only to force
+## coloured-rectangle fallbacks for debug. Each character script gates its sheet
+## load behind this flag:
+##   `if not GameManager.USE_PLACEHOLDER_SPRITES and ResourceLoader.exists(PATH):`
+const USE_PLACEHOLDER_SPRITES := false
+
+# ── One-shot tutorial flags (persist across scene resets within a session) ────
+var hint_first_perch_seen: bool = false   # set when the rope-throw hint has been shown once
+
 # ── Player stats ──────────────────────────────────────────────────────────────
 var score:   int = 0
 var hp:      int = 100
@@ -7,6 +17,7 @@ var max_hp:  int = 100
 var ammo:    int = 6
 var max_ammo: int = 14
 var has_resurrection: bool = false
+var maveli_blessed:   bool = false   ## Set true in Pathalam after Maveli's blessing. Persists for Act V. Golden lamp + golden tint on player.
 
 # ── Status effects ────────────────────────────────────────────────────────────
 var slow_mo_active: bool  = false
@@ -23,12 +34,21 @@ var fish_fry_active: bool  = false   # Fish Fry quest reward: HP regen 2× per r
 var fish_fry_timer:  float = 0.0
 
 # ── Boss HP ───────────────────────────────────────────────────────────────────
-var boss_hp:     int = 0
-var boss_max_hp: int = 0
+var boss_hp:      int  = 0
+var boss_max_hp:  int  = 0
+var boss_visible: bool = false   ## true only after first hit — suppresses bar on scene load
 
 # ── Progress (persists across resets within a session) ────────────────────────
 var acts_unlocked: int = 0   # 0 = prologue only; 1 = Act I unlocked; etc.
 var high_score:    int = 0   # best score ever, never reset
+
+# ── Grit — cumulative journey wear ────────────────────────────────────────────
+## HP goes up and down with combat. Grit only ever goes down (−20 per boss).
+## Only Maveli's blessing restores it to 100. Drives the Nilavilakku lamp + sprite tints.
+## Schedule:  start=100 → Yakshi −20 → Kuttichathan −20 → Odiyan −20 → Karinkanni −20
+##             → Pathalam: Maveli restores 100 + sets maveli_blessed → Act V (stays gold)
+var grit: int = 100
+var bike_undamaged: bool = false   ## True if the player cleared the Act II bike ride without any hits → Ravi's Act V callback
 
 # ── Mobile input ──────────────────────────────────────────────────────────────
 var climb_press_pending: bool = false
@@ -39,6 +59,7 @@ signal ammo_changed(new_ammo: int)
 @warning_ignore("unused_signal")
 signal score_changed(new_score: int)
 signal boss_hp_changed(new_hp: int)
+signal grit_changed(new_grit: int)
 signal player_died
 signal game_won
 
@@ -141,16 +162,19 @@ func activate_paralysis(duration: float = 2.0) -> void:
 	paralysis_timer  = duration
 
 func set_boss(new_max_hp: int) -> void:
-	boss_hp     = new_max_hp
-	boss_max_hp = new_max_hp
+	boss_hp      = new_max_hp
+	boss_max_hp  = new_max_hp
+	boss_visible = false   # hidden until first hit
 	boss_hp_changed.emit(boss_hp)
 
 func clear_boss() -> void:
-	boss_hp     = 0
-	boss_max_hp = 0
+	boss_hp      = 0
+	boss_max_hp  = 0
+	boss_visible = false
 	boss_hp_changed.emit(0)
 
 func boss_take_damage(amount: int) -> void:
+	boss_visible = true   # reveal bar on first damage
 	boss_hp = maxi(0, boss_hp - amount)
 	boss_hp_changed.emit(boss_hp)
 
@@ -177,16 +201,101 @@ func win_game() -> void:
 		if sm != null: sm.save_game()
 	game_won.emit()
 
+## Called by each boss _die() after clear_boss(). Drops grit by 20 (min 0).
+## The Nilavilakku lamp and sprite wear tints read this value.
+func boss_grit_drop() -> void:
+	grit = maxi(0, grit - 20)
+	grit_changed.emit(grit)
+
+## Called in Pathalam when Maveli places his hand on LungiMan's chest.
+## Restores HP to full, resets grit to 100, locks maveli_blessed permanently.
+func maveli_restore() -> void:
+	hp = max_hp
+	hp_changed.emit(hp)
+	grit = 100
+	maveli_blessed = true
+	grit_changed.emit(grit)
+
 func reset() -> void:
 	score            = 0
 	hp               = max_hp
 	ammo             = 6
 	has_resurrection = false
-	slow_mo_active   = false
-	rage_active      = false
-	hypnosis_active  = false
-	paralysis_active = false
+	reset_status_effects()
 	boss_hp          = 0
 	boss_max_hp      = 0
-	toddy_active     = false
+	boss_visible     = false
 	Engine.time_scale = 1.0
+
+## Clear all timed status effects between scenes — called by SceneManager on every transition.
+## Does NOT touch hp/ammo/score/resurrection so carry-over progression is preserved.
+func reset_status_effects() -> void:
+	slow_mo_active   = false
+	slow_mo_timer    = 0.0
+	rage_active      = false
+	rage_timer       = 0.0
+	hypnosis_active  = false
+	hypnosis_timer   = 0.0
+	paralysis_active = false
+	paralysis_timer  = 0.0
+	toddy_active     = false
+	toddy_timer      = 0.0
+	fish_fry_active  = false
+	fish_fry_timer   = 0.0
+	boss_hp          = 0
+	boss_max_hp      = 0
+	boss_visible     = false
+	Engine.time_scale = 1.0
+
+# ── Sprite helper for character grid sheets ───────────────────────────────────
+## Builds a SpriteFrames from a horizontal grid sheet (Scenario.gg-generated).
+## Each `anim_specs` entry: {name, frames: [cell_indices], fps, loop}.
+## Falls back to coloured rects if USE_PLACEHOLDER_SPRITES or sheet missing.
+func build_grid_sheet_frames(path: String, cols: int, rows: int,
+		anim_specs: Array, fallback_color: Color = Color(0.7, 0.7, 0.7, 1.0)) -> SpriteFrames:
+	var sf := SpriteFrames.new()
+	var sheet: Texture2D = null
+	var fw: int = 0
+	var fh: int = 0
+	if not USE_PLACEHOLDER_SPRITES and ResourceLoader.exists(path):
+		sheet = load(path)
+		if sheet != null:
+			@warning_ignore("integer_division")
+			fw = int(sheet.get_width())  / cols
+			@warning_ignore("integer_division")
+			fh = int(sheet.get_height()) / rows
+	for spec_v: Variant in anim_specs:
+		var spec: Dictionary = spec_v
+		var anim_name: String = spec["name"]
+		sf.add_animation(anim_name)
+		sf.set_animation_loop(anim_name, bool(spec.get("loop", true)))
+		sf.set_animation_speed(anim_name, float(spec.get("fps", 8.0)))
+		var frame_indices: Array = spec["frames"]
+		for idx_v: Variant in frame_indices:
+			var idx: int = int(idx_v)
+			if sheet != null:
+				@warning_ignore("integer_division")
+				var col: int = idx % cols
+				@warning_ignore("integer_division")
+				var row: int = idx / cols
+				var at := AtlasTexture.new()
+				at.atlas  = sheet
+				at.region = Rect2(col * fw, row * fh, fw, fh)
+				sf.add_frame(anim_name, at)
+			else:
+				var img := Image.create(32, 64, false, Image.FORMAT_RGBA8)
+				img.fill(fallback_color)
+				sf.add_frame(anim_name, ImageTexture.create_from_image(img))
+	return sf
+
+## Compute the sprite scale that fits the grid-sheet cell to target_h game pixels.
+## Returns 1.0 in placeholder mode (so coloured rects missing or sheet missing).
+func grid_sheet_scale(path: String, rows: int, target_h: float) -> float:
+	if USE_PLACEHOLDER_SPRITES or not ResourceLoader.exists(path):
+		return 1.0
+	var sheet: Texture2D = load(path)
+	if sheet == null:
+		return 1.0
+	@warning_ignore("integer_division")
+	var fh: float = float(int(sheet.get_height()) / rows)
+	return target_h / fh

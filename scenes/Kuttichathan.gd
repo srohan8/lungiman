@@ -49,29 +49,17 @@ func _add_eye() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/kuttichathan_sheet.png"
+	const TARGET_H := 75.0
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -60.0 * 0.5)
-	var sf := SpriteFrames.new()
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		var anims := [["idle", [0,1], 4.0, true], ["spawn", [2], 6.0, false], ["ride", [3], 8.0, true]]
-		for a: Array in anims:
-			sf.add_animation(a[0])
-			sf.set_animation_loop(a[0], a[3])
-			sf.set_animation_speed(a[0], a[2])
-			for fi: int in a[1]:
-				var at := AtlasTexture.new()
-				at.atlas  = sheet
-				at.region = Rect2(fi * KUTTI_FRAME_W, 0, KUTTI_FRAME_W, KUTTI_FRAME_H)
-				sf.add_frame(a[0], at)
-	else:
-		sf.add_animation("idle")
-		sf.set_animation_loop("idle", true)
-		var img := Image.create(int(KUTTI_FRAME_W), int(KUTTI_FRAME_H), false, Image.FORMAT_RGBA8)
-		img.fill(Color(1.0, 0.45, 0.05, 0.95))
-		sf.add_frame("idle", ImageTexture.create_from_image(img))
-	_spr.sprite_frames = sf
-	_spr.scale = Vector2(60.0 / KUTTI_FRAME_H, 60.0 / KUTTI_FRAME_H)
+	_spr.position = Vector2(0, -TARGET_H * 0.5)
+	# Sheet: 2 cells horizontal — idle | spawn (also used for "ride" state)
+	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 2, 1, [
+		{"name": "idle",  "frames": [0], "fps": 4.0, "loop": true},
+		{"name": "spawn", "frames": [1], "fps": 6.0, "loop": false},
+		{"name": "ride",  "frames": [1], "fps": 8.0, "loop": true},
+	], Color(1.0, 0.45, 0.05, 0.95))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	_spr.scale = Vector2(s, s)
 	_spr.play("idle")
 	add_child(_spr)
 	$ColorRect.visible = false
@@ -148,6 +136,7 @@ func take_damage(dmg: int) -> void:
 
 func _die() -> void:
 	GameManager.clear_boss()
+	GameManager.boss_grit_drop()   # Grit: 80 → 60. Steady → Low.
 	GameManager.score += 250
 	GameManager.show_score_popup(position - Vector2(0, 40), 250, Color(1.0, 0.55, 0.10))
 	_drop_powerup()

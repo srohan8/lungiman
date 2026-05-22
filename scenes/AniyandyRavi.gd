@@ -1,14 +1,16 @@
 extends Area2D
 
-## Aniyandi Ravi — Toddy stall owner. Swing-off Race quest giver.
+## Mundakkal Ravi — Toddy stall owner. Swing-off Race quest giver.
 ## Acts I and II. Drops toddy on first meeting.
+## Built his shop with timber from the sacred grove. Never stops talking.
+## Terrified of the silence at 2am when the shop is empty.
 
 const DIALOGUES := [
 	"Old Monk? HANG on that\ntree 5 seconds first! 🏺",
 	"🏺 Here — earned it.\nDon't blame me for the wobble.",
-	"You still alive?\nThat's surprising.",
+	"You still alive? Ha!\nThat's more than I expected.",
 	"Want to race me across\nthose trees? First to 5 wins.",
-	"I've been here since\nyour grandfather's time, boy.",
+	"Mundakkal family's been\nhere forever. We know things.",
 ]
 
 var _stage:       int  = 0
@@ -25,29 +27,20 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/ravi_sheet.png"
+	const TARGET_H := 110.0
 	_spr = AnimatedSprite2D.new()
-	_spr.position = Vector2(0, -32)
-	var sf := SpriteFrames.new()
-	for anim_name: String in ["idle", "talk"]:
-		sf.add_animation(anim_name)
-		sf.set_animation_loop(anim_name, true)
-		sf.set_animation_speed(anim_name, 2.0)
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		for i: int in 2:
-			var at := AtlasTexture.new()
-			at.atlas  = sheet
-			at.region = Rect2(i * 648, 0, 648, 1152)   # 36×64 SVG × scale 18
-			sf.add_frame("idle" if i == 0 else "talk", at)
-	else:
-		for anim_name: String in ["idle", "talk"]:
-			var img := Image.create(36, 64, false, Image.FORMAT_RGBA8)
-			img.fill(Color(0.75, 0.55, 0.25))   # warm Kerala brown
-			sf.add_frame(anim_name, ImageTexture.create_from_image(img))
-	_spr.sprite_frames = sf
-	_spr.scale = Vector2(64.0 / 1152.0, 64.0 / 1152.0)
+	_spr.position = Vector2(0, -TARGET_H * 0.5)
+	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 2, 1, [
+		{"name": "idle", "frames": [0], "fps": 2.0, "loop": true},
+		{"name": "talk", "frames": [1], "fps": 2.0, "loop": true},
+	], Color(0.75, 0.55, 0.25, 1.0))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	_spr.scale = Vector2(s, s)
 	_spr.play("idle")
 	add_child(_spr)
+	# Hide the placeholder ColorRect from the .tscn template
+	var vis := get_node_or_null("Visual")
+	if vis: vis.hide()
 
 func _on_body_entered(body: Node) -> void:
 	if not body.is_in_group("player"):

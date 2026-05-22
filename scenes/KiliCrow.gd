@@ -26,29 +26,17 @@ func _ready() -> void:
 
 func _build_visual() -> void:
 	const PATH := "res://assets/sprites/kili_sheet.png"
-	const FRAME_W := 280.0   # 20 SVG units × scale 14
-	const FRAME_H := 504.0   # 36 SVG units × scale 14
+	const TARGET_H := 40.0
 	var spr := AnimatedSprite2D.new()
-	spr.position = Vector2(0, -18)
-	var sf := SpriteFrames.new()
-	for anim_name: String in ["perch", "caw"]:
-		sf.add_animation(anim_name)
-		sf.set_animation_loop(anim_name, true)
-		sf.set_animation_speed(anim_name, 4.0)
-	if ResourceLoader.exists(PATH):
-		var sheet: Texture2D = load(PATH)
-		for i: int in 2:
-			var at := AtlasTexture.new()
-			at.atlas  = sheet
-			at.region = Rect2(i * FRAME_W, 0, FRAME_W, FRAME_H)
-			sf.add_frame("perch" if i == 0 else "caw", at)
-	else:
-		for anim_name: String in ["perch", "caw"]:
-			var img := Image.create(20, 18, false, Image.FORMAT_RGBA8)
-			img.fill(Color(0.08, 0.08, 0.10))
-			sf.add_frame(anim_name, ImageTexture.create_from_image(img))
-	spr.sprite_frames = sf
-	spr.scale = Vector2(36.0 / 504.0, 36.0 / 504.0)
+	spr.position = Vector2(0, -TARGET_H * 0.5)
+	# Sheet has 3 cells: perch | fly | caw
+	spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 3, 1, [
+		{"name": "perch", "frames": [0], "fps": 4.0, "loop": true},
+		{"name": "fly",   "frames": [1], "fps": 8.0, "loop": true},
+		{"name": "caw",   "frames": [2], "fps": 4.0, "loop": true},
+	], Color(0.08, 0.08, 0.10, 1.0))
+	var s: float = GameManager.grid_sheet_scale(PATH, 1, TARGET_H)
+	spr.scale = Vector2(s, s)
 	spr.play("perch")
 	add_child(spr)
 
