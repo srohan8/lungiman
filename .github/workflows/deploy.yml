@@ -32,6 +32,7 @@ jobs:
           unzip -q "${GODOT_FILENAME}.zip"
           mv "${GODOT_FILENAME}" /usr/local/bin/godot
           chmod +x /usr/local/bin/godot
+          godot --version
 
       # ── 3. Install export templates ──────────────────────────────────────────
       - name: Install export templates
@@ -42,28 +43,38 @@ jobs:
           wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
           unzip -q "${TPZ}" -d /tmp/godot_templates
           mv /tmp/godot_templates/templates/* "${TEMPLATE_DIR}/"
+          echo "Templates installed:"
+          ls "${TEMPLATE_DIR}" | grep web
 
-      # ── 4. Export ────────────────────────────────────────────────────────────
+      # ── 4. Import project (builds .godot/ cache — required before export) ────
+      # The .godot/ folder is git-ignored so CI starts without it.
+      # Running the editor once in headless mode creates the import cache;
+      # without this step the export always fails with "configuration errors".
+      - name: Import project assets
+        run: |
+          godot --headless --editor --quit 2>&1 || true
+          echo "Import done"
+
+      # ── 5. Export ────────────────────────────────────────────────────────────
       - name: Export Web build
         run: |
           mkdir -p build/web
-          godot --headless --export-release "Web" build/web/index.html 2>&1
+          godot --headless --verbose --export-release "Web" "$(pwd)/build/web/index.html" 2>&1
 
-      # ── 5. Inject CORS service worker ────────────────────────────────────────
+      # ── 6. Inject CORS service worker ────────────────────────────────────────
       # GitHub Pages doesn't send COOP/COEP headers; this JS workaround adds them
       # so SharedArrayBuffer (required by Godot 4 threads) works correctly.
       - name: Inject CORS service worker
         run: |
           cp web/coi-serviceworker.js build/web/coi-serviceworker.js
-          # Insert the registration snippet just before </head>
           SW_SNIPPET='<script>if("serviceWorker"in navigator){navigator.serviceWorker.register("coi-serviceworker.js").then(r=>{if(!navigator.serviceWorker.controller)location.reload()})}</script>'
           sed -i "s|</head>|${SW_SNIPPET}\n</head>|" build/web/index.html
 
-      # ── 6. Add .nojekyll so GitHub Pages serves .wasm files correctly ────────
+      # ── 7. Add .nojekyll so GitHub Pages serves .wasm files correctly ────────
       - name: Add .nojekyll
         run: touch build/web/.nojekyll
 
-      # ── 7. Deploy to gh-pages branch ─────────────────────────────────────────
+      # ── 8. Deploy to gh-pages branch ─────────────────────────────────────────
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
