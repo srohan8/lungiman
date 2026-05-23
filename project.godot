@@ -35,6 +35,12 @@ window/size/viewport_height=270
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[rendering]
+
+# Use Compatibility (WebGL2) renderer for web export only.
+# Desktop and mobile keep Forward Plus — this line only affects the web build.
+renderer/rendering_method.web="gl_compatibility"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
