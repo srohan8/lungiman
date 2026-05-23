@@ -6,6 +6,7 @@ var _blessed := false
 var _spr: AnimatedSprite2D = null
 
 func _ready() -> void:
+	z_index = 6   # render in front of ground tile (z=5)
 	collision_layer = 0
 	collision_mask  = 2
 	body_entered.connect(_on_body_entered)
@@ -14,7 +15,7 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/thoma_sheet.png"
-	const TARGET_H := 110.0
+	const TARGET_H := 72.0
 	# Sheet is 4800×3584 in a 4-col × 3-row grid (same format as hero sheets).
 	# idle = cols 0-1 (holding bible), talk = cols 2-3 (hand raised in blessing).
 	_spr = AnimatedSprite2D.new()

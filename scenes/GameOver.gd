@@ -2,6 +2,8 @@ extends CanvasLayer
 
 func _ready() -> void:
 	visible = false
+	# Must process while paused so the Retry / Menu buttons receive click events.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	GameManager.player_died.connect(show_game_over)
 
 func show_game_over() -> void:

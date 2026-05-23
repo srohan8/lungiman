@@ -1,10 +1,11 @@
 extends CharacterBody2D
 
 # ── Physics ───────────────────────────────────────────────────────────────────
-const GRAVITY          := 1800.0
-const JUMP_VELOCITY    := -780.0
-const SPEED            := 294.0
-const AIR_SPEED        := 186.0
+const GRAVITY               := 1800.0
+const JUMP_VELOCITY         := -480.0   # single hop — short, grounded feel
+const DOUBLE_JUMP_VELOCITY  := -760.0   # second press in air — reaches current height
+const SPEED                 := 294.0
+const AIR_SPEED             := 186.0
 
 # ── Platformer feel ───────────────────────────────────────────────────────────
 const COYOTE_TIME       := 0.10
@@ -15,14 +16,13 @@ const MAX_FALL_SPEED    := 900.0
 
 # ── Tree climbing & catapult slingshot ───────────────────────────────────────
 const CLIMB_DURATION       := 0.55    # time to climb trunk (DK side-climb)
-const HERO_HALF_H          := -30.0   # body offset below crown when perched
-## Catapult: hold [jump] at crown → tree bends → release → launch to next tree
-const CATAPULT_CHARGE_TIME := 1.80    # seconds from 0→full charge
+const HERO_HALF_H          := -70.0   # body offset below crown (head clears leaf bunch)
+## Catapult: hold [jump] → charge OSCILLATES 0→1→0→1 — player must time the release at peak.
+## Releasing early (low charge) = weak hop; releasing at peak (charge≈1) = full fling.
+const CATAPULT_CHARGE_TIME := 1.40    # half-period seconds (0→peak); full cycle = 2.80 s
 const CATAPULT_SPEED_X     := 560.0   # max horizontal speed at full charge
-const CATAPULT_MIN_SPEED_Y := -360.0  # vertical at min viable charge
-const CATAPULT_MAX_SPEED_Y := -680.0  # vertical at full charge
-const CATAPULT_MIN_CHARGE  := 0.15    # below this → abort (just drop)
-const CATAPULT_AUTO_FIRE   := 2.50    # auto-release to prevent endless hold
+const CATAPULT_MIN_SPEED_Y := -260.0  # vertical at charge 0 (barely lifts off)
+const CATAPULT_MAX_SPEED_Y := -700.0  # vertical at charge 1 (full launch)
 
 # ── River / water ─────────────────────────────────────────────────────────────
 const WADE_SPEED_MULT    := 0.55
@@ -92,8 +92,9 @@ var face         := 1
 var _catapult_charge: float = 0.0   # 0.0–1.0, builds while jump held at crown
 var _catapult_held:   float = 0.0   # seconds since jump first pressed at crown
 
-var coyote_timer  := 0.0
-var jump_buffer   := 0.0
+var coyote_timer      := 0.0
+var jump_buffer       := 0.0
+var _can_double_jump  := false   # armed after first jump, consumed by second
 
 var sword_phase   := 0
 var sword_t       := 0.0
@@ -143,6 +144,7 @@ signal climb_prompt_changed(is_visible: bool)
 
 func _ready() -> void:
 	add_to_group("player")
+	z_index = 6   # render in front of ground tile (z=5)
 	collision_layer = 2
 	collision_mask  = 1
 	_qm = get_node_or_null("/root/QuestManager")
@@ -279,7 +281,8 @@ func _physics_process(delta: float) -> void:
 
 func _process_none(delta: float, do_climb: bool) -> void:
 	if is_on_floor():
-		coyote_timer = COYOTE_TIME
+		coyote_timer     = COYOTE_TIME
+		_can_double_jump = false   # reset on landing
 		if velocity.y > 0.0: velocity.y = 0.0
 	else:
 		coyote_timer = maxf(0.0, coyote_timer - delta)
@@ -292,9 +295,16 @@ func _process_none(delta: float, do_climb: bool) -> void:
 	else:
 		jump_buffer = maxf(0.0, jump_buffer - delta)
 	if jump_buffer > 0.0 and coyote_timer > 0.0:
-		velocity.y   = JUMP_VELOCITY
-		jump_buffer  = 0.0
-		coyote_timer = 0.0
+		# First jump (ground or coyote window)
+		velocity.y       = JUMP_VELOCITY
+		jump_buffer      = 0.0
+		coyote_timer     = 0.0
+		_can_double_jump = true    # arm double-jump
+	elif Input.is_action_just_pressed("jump") and _can_double_jump:
+		# Double jump — second press while airborne
+		velocity.y       = DOUBLE_JUMP_VELOCITY
+		_can_double_jump = false
+		jump_buffer      = 0.0
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
 		velocity.y *= JUMP_RELEASE_MULT
 	var move_dir := Input.get_axis("move_left", "move_right")
@@ -325,7 +335,7 @@ func _process_climbing(delta: float) -> void:
 	var t    := minf(climb_t, 1.0)
 	# DK style: phase 1 (0–20%) slide to trunk side; phase 2 (20–100%) climb straight up
 	var trunk_x := climb_tree.position.x - float(face) * 14.0
-	var crown_y := (climb_tree.get_crown_position() - Vector2(0.0, HERO_HALF_H)).y
+	var crown_y: float = (climb_tree.get_crown_position() - Vector2(0.0, HERO_HALF_H)).y
 	if t < 0.20:
 		position.x = lerpf(climb_start.x, trunk_x, t / 0.20)
 		position.y = climb_start.y
@@ -353,19 +363,17 @@ func _process_perched(delta: float, do_climb: bool) -> void:
 		tree_state = TreeState.NONE
 		climb_tree = null
 		return
-	# Hold [jump] → charge the catapult, tree bends in facing direction
+	# Hold [jump] → charge oscillates 0→1→0→1; release at peak for a full-power launch.
+	# Releasing at a trough = weak hop. Holding longer = more chances to hit the peak.
 	if Input.is_action_pressed("jump"):
 		_catapult_held  += delta
-		_catapult_charge = minf(_catapult_held / CATAPULT_CHARGE_TIME, 1.0)
+		# (1 − cos θ) / 2  gives a smooth 0→1→0→1 wave with period = 2 × CATAPULT_CHARGE_TIME
+		var angle := _catapult_held * PI / CATAPULT_CHARGE_TIME
+		_catapult_charge = (1.0 - cos(angle)) * 0.5
 		if climb_tree != null and climb_tree.has_method("set_catapult_bend"):
 			climb_tree.set_catapult_bend(_catapult_charge, face)
-		if _catapult_held >= CATAPULT_AUTO_FIRE:
-			_fire_catapult()   # auto-fire at max charge
 	elif Input.is_action_just_released("jump"):
-		if _catapult_charge >= CATAPULT_MIN_CHARGE:
-			_fire_catapult()
-		else:
-			_abort_catapult()
+		_fire_catapult()   # always launch — charge level determines power
 
 func _process_flying(delta: float) -> void:
 	# Appam Glide (quest reward): hold jump while falling to slow descent

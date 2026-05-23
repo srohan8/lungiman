@@ -499,7 +499,7 @@ func _apply_background(bg_path: String, sky_color: Color,
 		tile.centered = false
 		tile.region_enabled = true
 		var tile_h: float = float(tile_tex.get_height())
-		var target_h: float = 60.0   # taller strip; PNG top is now flush content (no transparent padding)
+		var target_h: float = 90.0   # taller ground strip; characters at z=6 render in front of tile (z=5)
 		var s: float = target_h / tile_h
 		tile.scale = Vector2(s, s)
 		var world_w: float = 8200.0 / s
@@ -581,7 +581,7 @@ func _init_sprite_parallax(sky_color: Color, sky_path: String = "") -> void:
 		tile.centered       = false
 		tile.region_enabled = true
 		var tile_h:  float = float(tile_tex.get_height())
-		var target_h:float = 60.0   # taller strip; PNG top is now flush content (no transparent padding)
+		var target_h:float = 90.0   # taller ground strip; characters at z=6 render in front of tile (z=5)
 		var s: float       = target_h / tile_h
 		tile.scale         = Vector2(s, s)
 		var world_w: float = 8200.0 / s
