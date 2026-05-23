@@ -19,6 +19,7 @@ var _race_started: bool = false
 var _spr: AnimatedSprite2D = null
 
 func _ready() -> void:
+	z_index = 6   # render in front of ground tile (z=5)
 	collision_layer = 0
 	collision_mask  = 2
 	body_entered.connect(_on_body_entered)
@@ -27,7 +28,7 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/ravi_sheet.png"
-	const TARGET_H := 110.0
+	const TARGET_H := 72.0
 	_spr = AnimatedSprite2D.new()
 	_spr.position = Vector2(0, -TARGET_H * 0.5)
 	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 2, 1, [

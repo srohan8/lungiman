@@ -1,7 +1,10 @@
 # Godot
 .godot/
 *.import
-export_presets.cfg
+# export_presets.cfg is intentionally tracked — needed for CI web export
+
+# Build output (never commit)
+build/
 
 # OS
 .DS_Store
@@ -9,3 +12,21 @@ Thumbs.db
 
 # Editor
 .vscode/
+
+# Secrets — NEVER commit
+.env
+*.env
+.env.*
+
+# Claude / MCP workspace
+.claude/
+addons/godot_mcp/cache/
+
+# Scratch / test screenshots
+sc_*.png
+screenshot_*.png
+test_run*.png
+style_compare.py
+
+# Uploaded originals that aren't game assets
+"assets/backgrounds/ChatGPT Image*"

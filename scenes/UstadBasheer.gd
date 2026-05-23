@@ -14,6 +14,7 @@ var _stage: int = 0
 var _spr: AnimatedSprite2D = null
 
 func _ready() -> void:
+	z_index = 6   # render in front of ground tile (z=5)
 	collision_layer = 0
 	collision_mask  = 2
 	body_entered.connect(_on_body_entered)
@@ -22,7 +23,7 @@ func _ready() -> void:
 
 func _load_sprite() -> void:
 	const PATH := "res://assets/sprites/basheer_sheet.png"
-	const TARGET_H := 110.0
+	const TARGET_H := 72.0
 	_spr = AnimatedSprite2D.new()
 	_spr.position = Vector2(0, -TARGET_H * 0.5)
 	_spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 2, 1, [
@@ -45,6 +46,10 @@ func _on_body_entered(body: Node) -> void:
 	$Label.visible = true
 	if _spr != null: _spr.play("talk")
 	_stage += 1
+	# First meeting — activate Odiyan's Tracks quest so hoof-print markers wake up
+	if _stage == 1:
+		var qm := get_node_or_null("/root/QuestManager")
+		if qm != null: qm.activate_quest("odiyan_tracks")
 	get_tree().create_timer(3.5).timeout.connect(func() -> void:
 		$Label.visible = false
 		if _spr != null: _spr.play("idle")

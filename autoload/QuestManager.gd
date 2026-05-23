@@ -17,7 +17,7 @@ const QUEST_DATA := {
 	},
 	"swing_off_race": {
 		"title":       "Swing-off Race",
-		"desc":        "Race Aniyandi Ravi crown-to-crown across 5 trees before he does.",
+		"desc":        "Race Mundakkal Ravi crown-to-crown across 5 trees before he does.",
 		"act":         1,
 		"total_steps": 1,
 		"reward":      "Unlocks Appam Glide — slow your fall mid-air",
@@ -50,7 +50,7 @@ var _progress: Dictionary = {}   # quest_id → int (steps completed)
 
 signal quest_updated(quest_id: String, new_state: int)
 
-const DEV_ALL_QUESTS_DONE := true   # set false for production
+const DEV_ALL_QUESTS_DONE := false  # true = all quests pre-completed (dev skip mode)
 
 func _ready() -> void:
 	for id: String in QUEST_DATA:

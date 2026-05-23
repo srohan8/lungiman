@@ -5,7 +5,7 @@ extends Area2D
 ## Helps LungiMan without explaining why. He owes this to someone.
 
 const DIALOGUES := [
-	"Machane... take this.\nThe forest is restless again. 🥥",
+	"Machane... take this. 🥥\nCan you help me catch fish\nfor the forest spirits?",
 	"Kanjiravanam was peaceful once.\nI know exactly when it changed.",
 	"Stay on the trees at night.\nThe ground belongs to them now.",
 	"You're still going?\nGood. Don't stop.",
@@ -17,6 +17,7 @@ var _gave_coconut: bool = false
 var _quest_done:   bool = false
 
 func _ready() -> void:
+	z_index = 6   # render in front of ground tile (z=5)
 	collision_layer = 0
 	collision_mask  = 2
 	body_entered.connect(_on_body_entered)
@@ -25,7 +26,7 @@ func _ready() -> void:
 
 func _build_sprite() -> void:
 	const PATH := "res://assets/sprites/biju_sheet.png"
-	const TARGET_H := 110.0
+	const TARGET_H := 72.0
 	var spr := AnimatedSprite2D.new()
 	spr.position = Vector2(0, -TARGET_H * 0.5)
 	spr.sprite_frames = GameManager.build_grid_sheet_frames(PATH, 2, 1, [

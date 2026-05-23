@@ -364,12 +364,12 @@ func _build_burnt_chapel(x: float) -> void:
 	wall_r.z_index  = 1
 	add_child(wall_r)
 	# Charred ground inside
-	var floor := ColorRect.new()
-	floor.size     = Vector2(86.0, 8.0)
-	floor.position = Vector2(x - 43.0, GROUND_Y - 8.0)
-	floor.color    = Color(0.12, 0.08, 0.06, 0.80)
-	floor.z_index  = 0
-	add_child(floor)
+	var ground_ash := ColorRect.new()
+	ground_ash.size     = Vector2(86.0, 8.0)
+	ground_ash.position = Vector2(x - 43.0, GROUND_Y - 8.0)
+	ground_ash.color    = Color(0.12, 0.08, 0.06, 0.80)
+	ground_ash.z_index  = 0
+	add_child(ground_ash)
 	# Ember glow in rubble
 	var glow := ColorRect.new()
 	glow.size     = Vector2(16.0, 6.0)

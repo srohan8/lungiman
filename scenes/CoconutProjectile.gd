@@ -10,20 +10,31 @@ func _ready() -> void:
 	collision_layer = 16  # layer 5 — lets bells/targets detect the coconut
 	collision_mask  = 4   # hits Enemies (layer 3)
 	body_entered.connect(_on_body_entered)
-	# Visual: dark brown coconut with lighter husk ring
-	$Visual.color = Color(0.28, 0.16, 0.05)
-	# Husk highlight ring
-	var ring := ColorRect.new()
-	ring.color    = Color(0.55, 0.38, 0.18)
-	ring.size     = Vector2(8, 8)
-	ring.position = Vector2(-4, -4)
-	$Visual.add_child(ring)
+	# ── Coconut sprite — real image, spins while airborne ─────────────────────
+	const COCO_PATH := "res://assets/sprites/COCNUT.png"
+	$Visual.color = Color(0, 0, 0, 0)   # hide the placeholder ColorRect
+	if ResourceLoader.exists(COCO_PATH):
+		var tex := load(COCO_PATH) as Texture2D
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		# Scale to 36px tall — visible from across the screen, not overwhelming
+		var scale_f := 36.0 / maxf(tex.get_height(), 1.0)
+		spr.scale = Vector2(scale_f, scale_f)
+		$Visual.add_child(spr)
+	else:
+		# Fallback if asset missing — restore plain brown shape
+		$Visual.color = Color(0.28, 0.16, 0.05)
+		var ring := ColorRect.new()
+		ring.color    = Color(0.55, 0.38, 0.18)
+		ring.size     = Vector2(8, 8)
+		ring.position = Vector2(-4, -4)
+		$Visual.add_child(ring)
 	# ── Bhadrakali blessing glow ──────────────────────────────────────────────
 	# The coconut carries the goddess's mark. Sacred gold aura, always visible.
 	var glow := ColorRect.new()
 	glow.color         = Color(1.0, 0.72, 0.08, 0.38)
-	glow.size          = Vector2(26.0, 26.0)
-	glow.position      = Vector2(-13.0, -13.0)
+	glow.size          = Vector2(44.0, 44.0)
+	glow.position      = Vector2(-22.0, -22.0)
 	glow.z_index       = -1
 	$Visual.add_child(glow)
 	# Pulse the glow — it breathes like a living blessing
@@ -67,28 +78,41 @@ func _hit_enemy(enemy: Node) -> void:
 ## Bhadrakali impact burst — sacred red-gold particles where the coconut lands.
 ## Visual language: this is not a normal hit. The goddess's power makes contact.
 func _spawn_blessing_burst() -> void:
+	# ── Bright impact flash — confirms the hit instantly ──────────────────────
+	var flash := ColorRect.new()
+	flash.color    = Color(1.0, 0.85, 0.20, 0.85)   # hot gold
+	flash.size     = Vector2(48.0, 48.0)
+	flash.position = Vector2(-24.0, -24.0)
+	flash.z_index  = 20
+	get_parent().add_child(flash)
+	flash.global_position = global_position + Vector2(-24.0, -24.0)
+	var flash_tw := flash.create_tween()
+	flash_tw.tween_property(flash, "modulate:a", 0.0, 0.18)
+	flash_tw.tween_callback(flash.queue_free)
+
+	# ── Gold → vermillion particle spray ─────────────────────────────────────
 	var burst := CPUParticles2D.new()
-	burst.emitting              = true
-	burst.one_shot              = true
-	burst.amount                = 10
-	burst.lifetime              = 0.45
-	burst.emission_shape        = CPUParticles2D.EMISSION_SHAPE_SPHERE
-	burst.emission_sphere_radius = 4.0
-	burst.direction             = Vector2(0.0, -1.0)
-	burst.spread                = 180.0
-	burst.gravity               = Vector2(0.0, 120.0)
-	burst.initial_velocity_min  = 55.0
-	burst.initial_velocity_max  = 110.0
-	burst.scale_amount_min      = 3.0
-	burst.scale_amount_max      = 6.0
-	burst.color                 = Color(1.0, 0.75, 0.10, 1.0)   # sacred gold
-	burst.global_position       = global_position
+	burst.emitting               = true
+	burst.one_shot               = true
+	burst.amount                 = 18
+	burst.lifetime               = 0.55
+	burst.emission_shape         = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	burst.emission_sphere_radius = 5.0
+	burst.direction              = Vector2(0.0, -1.0)
+	burst.spread                 = 180.0
+	burst.gravity                = Vector2(0.0, 160.0)
+	burst.initial_velocity_min   = 70.0
+	burst.initial_velocity_max   = 140.0
+	burst.scale_amount_min       = 3.0
+	burst.scale_amount_max       = 7.0
+	burst.color                  = Color(1.0, 0.75, 0.10, 1.0)   # sacred gold
+	burst.global_position        = global_position
 	get_parent().add_child(burst)
-	# Red flash on the burst peak — Bhadrakali's vermillion
+	# Shift to Bhadrakali's vermillion at burst peak
 	get_tree().create_timer(0.08).timeout.connect(func() -> void:
 		if is_instance_valid(burst):
 			burst.color = Color(0.88, 0.12, 0.05, 0.80)
 	)
-	get_tree().create_timer(0.55).timeout.connect(func() -> void:
+	get_tree().create_timer(0.65).timeout.connect(func() -> void:
 		if is_instance_valid(burst): burst.queue_free()
 	)

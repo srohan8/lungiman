@@ -9,8 +9,8 @@ const HUMAN_SPEED      := 0.0
 const BULL_SPEED       := 200.0
 const DOG_SPEED        := 140.0
 const CYCLE_HUMAN      := 2.5
-const TRANSFORM_WINDOW := 0.6   # vulnerable window (base)
-const TRANSFORM_WINDOW_REVEALED := 0.9
+const TRANSFORM_WINDOW := 2.5          # vulnerable window (base) — 2.5s to react
+const TRANSFORM_WINDOW_REVEALED := 3.5 # extended by Odiyan's Tracks quest
 const BULL_CHARGE_DUR  := 1.2
 const DOG_BITE_DUR     := 0.5
 const BULL_DMG         := 30
@@ -28,6 +28,7 @@ var _flash_timer:     float = 0.0
 var hit_cooldown:     float = 0.0
 var _player: Node2D         = null
 var _spr: AnimatedSprite2D  = null
+var _pulse_tween:     Tween = null   # looping transform pulse — killed when form changes
 
 const ODIYAN_FRAME_W := 672.0   # 56 SVG units × scale 12
 const ODIYAN_FRAME_H := 816.0   # 68 SVG units × scale 12
@@ -67,7 +68,14 @@ func _physics_process(delta: float) -> void:
 	if _flash_timer > 0.0:
 		_flash_timer -= delta
 		if _flash_timer <= 0.0:
-			_apply_form_visual()
+			# Hit-flash done — if still in TRANSFORM, resume the pulse tween
+			if form == Form.TRANSFORM:
+				if _pulse_tween != null:
+					_pulse_tween.play()
+				else:
+					_apply_form_visual()
+			else:
+				_apply_form_visual()
 
 	form_timer -= delta
 	match form:
@@ -105,14 +113,29 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _apply_form_visual() -> void:
+	# Kill any existing pulse tween whenever form changes
+	if _pulse_tween != null:
+		_pulse_tween.kill()
+		_pulse_tween = null
+
 	modulate = Color.WHITE
 	if _spr == null: return
 	match form:
 		Form.HUMAN:
 			if _spr.animation != "human": _spr.play("human")
 		Form.TRANSFORM:
-			modulate = Color(1.0, 1.0, 0.2, 1.0)   # bright flash overlay
 			if _spr.animation != "transform": _spr.play("transform")
+			# ── Visible pulsing flash — player must know NOW is the moment ──
+			# Rapid yellow ↔ white pulse so there's no way to miss the window.
+			_pulse_tween = create_tween().set_loops()
+			_pulse_tween.tween_property(self, "modulate",
+					Color(1.0, 1.0, 0.10, 1.0), 0.12).set_trans(Tween.TRANS_SINE)
+			_pulse_tween.tween_property(self, "modulate",
+					Color(1.0, 1.0, 1.0, 1.0), 0.12).set_trans(Tween.TRANS_SINE)
+			# HUD hint — only on first transform (hint label may not exist yet)
+			var hud: Node = get_tree().get_first_node_in_group("hud")
+			if hud and hud.has_method("show_hint"):
+				hud.show_hint("⚡ ATTACK NOW — hit Odiyan during the flash!", 2.0)
 		Form.BULL:
 			if _spr.animation != "bull": _spr.play("bull")
 		Form.DOG:
@@ -151,7 +174,9 @@ func take_damage(dmg: int) -> void:
 	hp -= dmg
 	GameManager.boss_take_damage(dmg)
 	_flash_timer = FLASH_DURATION
-	modulate     = Color(1.0, 0.3, 0.3, 1.0)
+	# Pause the pulse tween briefly while showing the hit-flash (red)
+	if _pulse_tween != null: _pulse_tween.pause()
+	modulate = Color(1.0, 0.3, 0.3, 1.0)
 	if hp <= 0: _die()
 
 func _die() -> void:

@@ -1,0 +1,72 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:   # lets you trigger manually from the GitHub Actions tab
+
+permissions:
+  contents: write    # needed to push to gh-pages branch
+
+env:
+  GODOT_VERSION: "4.6"
+  GODOT_RELEASE: "stable"
+
+jobs:
+  export-web:
+    name: Export & Deploy Web Build
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # ── 2. Install Godot ─────────────────────────────────────────────────────
+      - name: Install Godot ${{ env.GODOT_VERSION }}
+        run: |
+          GODOT_FILENAME="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${GODOT_FILENAME}.zip"
+          unzip -q "${GODOT_FILENAME}.zip"
+          mv "${GODOT_FILENAME}" /usr/local/bin/godot
+          chmod +x /usr/local/bin/godot
+
+      # ── 3. Install export templates ──────────────────────────────────────────
+      - name: Install export templates
+        run: |
+          TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
+          mkdir -p "${TEMPLATE_DIR}"
+          TPZ="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
+          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
+          unzip -q "${TPZ}" -d /tmp/godot_templates
+          mv /tmp/godot_templates/templates/* "${TEMPLATE_DIR}/"
+
+      # ── 4. Export ────────────────────────────────────────────────────────────
+      - name: Export Web build
+        run: |
+          mkdir -p build/web
+          godot --headless --export-release "Web" build/web/index.html 2>&1
+
+      # ── 5. Inject CORS service worker ────────────────────────────────────────
+      # GitHub Pages doesn't send COOP/COEP headers; this JS workaround adds them
+      # so SharedArrayBuffer (required by Godot 4 threads) works correctly.
+      - name: Inject CORS service worker
+        run: |
+          cp web/coi-serviceworker.js build/web/coi-serviceworker.js
+          # Insert the registration snippet just before </head>
+          SW_SNIPPET='<script>if("serviceWorker"in navigator){navigator.serviceWorker.register("coi-serviceworker.js").then(r=>{if(!navigator.serviceWorker.controller)location.reload()})}</script>'
+          sed -i "s|</head>|${SW_SNIPPET}\n</head>|" build/web/index.html
+
+      # ── 6. Add .nojekyll so GitHub Pages serves .wasm files correctly ────────
+      - name: Add .nojekyll
+        run: touch build/web/.nojekyll
+
+      # ── 7. Deploy to gh-pages branch ─────────────────────────────────────────
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web
+          force_orphan: true   # keeps gh-pages branch clean (no build history)

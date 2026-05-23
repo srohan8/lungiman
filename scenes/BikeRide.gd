@@ -33,7 +33,7 @@ const OBSTACLE_DMG     := 34       # ~3 hits to stall (34×3 = 102)
 const IFRAME_DURATION  := 0.9      # invincibility after a hit
 
 # ── Ride distance ──────────────────────────────────────────────────────────────
-const RIDE_DIST        := 7200.0   # world units before end-sequence fires
+const RIDE_DIST        := 10000.0  # world units before end-sequence fires
 const END_DECEL        := 95.0     # px s⁻² deceleration during end-sequence
 
 # ── Parallax speeds (fraction of scroll speed) ────────────────────────────────
@@ -76,6 +76,17 @@ const SPAWN_SCHEDULE := [
 	[5900.0, "firecracker"],
 	[6300.0, "crowd"],
 	[6700.0, "pothole"],
+	# Post-midpoint — Kanjiravanam forest section (carnival lights gone, jungle closing in)
+	[7100.0, "goat"],
+	[7450.0, "cart"],
+	[7800.0, "firecracker"],
+	[8100.0, "crowd"],
+	[8450.0, "pothole"],
+	[8750.0, "goat"],
+	[9000.0, "cart"],
+	[9300.0, "firecracker"],
+	[9600.0, "crowd"],
+	[9850.0, "pothole"],
 ]
 
 # ── State ──────────────────────────────────────────────────────────────────────
@@ -92,20 +103,25 @@ var _end_timer      := 0.0
 var _intro_timer    := 0.0
 var _spawn_idx      := 0        # next index in SPAWN_SCHEDULE to check
 var _obstacles      := []       # active obstacle ColorRects + screen_x metadata
-var _did_end_quote  := false
+var _did_end_quote      := false
+var _dismount_prompt    : CanvasLayer = null   # "[E] Walk" overlay
 
 # ── Visual nodes (built in _ready) ────────────────────────────────────────────
-var _bike_rect      : ColorRect = null
+var _bike_rect      : ColorRect = null   # fallback only — replaced by _bike_spr when texture exists
 var _wheel_f        : ColorRect = null
 var _wheel_r        : ColorRect = null
-var _rider_body     : ColorRect = null
-var _rider_head     : ColorRect = null
+var _rider_body     : ColorRect = null   # fallback rider body
+var _rider_head     : ColorRect = null   # fallback rider head
+var _bike_spr       : Sprite2D  = null   # generated sprite (ride frame / jump frame)
 var _engine_bar     : ColorRect = null
 var _engine_label   : Label     = null
 var _hud_layer      : CanvasLayer = null
 var _dialogue_label : Label       = null
-var _parallax_rects : Array       = []    # [[ColorRect, ColorRect], ...]  tile pairs per layer
+var _parallax_rects : Array       = []    # [[Node, Node], ...]  tile pairs per layer (TextureRect or ColorRect)
 var _tree_pairs     : Array       = []    # [[crown_rect, trunk_rect], ...] — jungle treeline
+var _bg_act1_tiles  : Array       = []    # two TextureRects for act1 bg scroll
+var _bg_act2_tiles  : Array       = []    # two TextureRects for act2 bg (shown at midpoint)
+var _act2_visible   := false              # guard so act2 bg only fades in once
 
 # ── Ravi handover NPC (screen-space, visible only during intro) ───────────────
 const RAVI_SCREEN_X := BIKE_X + 56.0   # stands to the right of the bike
@@ -129,14 +145,51 @@ func _ready() -> void:
 # ─────────────────────────────────────────────────────────────────────────────
 
 func _build_scene() -> void:
-	# Sky background — festival twilight
-	var sky := ColorRect.new()
-	sky.size     = Vector2(VIEWPORT_W, VIEWPORT_H)
-	sky.position = Vector2.ZERO
-	sky.color    = Color(0.10, 0.04, 0.12, 1.0)   # deep purple-black
-	sky.z_index  = -10
-	add_child(sky)
-	_sky_rect = sky   # saved for forest transition
+	# ── Background layer: Act I scene (scrolling TextureRect tiles) ────────────
+	const ACT1_BG := "res://assets/backgrounds/bg_act1_sky.png"
+	const ACT2_BG := "res://assets/backgrounds/bg_act2_scene.png"
+
+	if ResourceLoader.exists(ACT1_BG):
+		# Two tiles side-by-side so one always covers the viewport while the other wraps
+		for t: int in 2:
+			var tr := TextureRect.new()
+			tr.texture           = load(ACT1_BG)
+			tr.stretch_mode      = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			tr.size              = Vector2(VIEWPORT_W, VIEWPORT_H)
+			tr.position          = Vector2(VIEWPORT_W * float(t), 0.0)
+			tr.z_index           = -10
+			add_child(tr)
+			_bg_act1_tiles.append(tr)
+		# Fallback sky colour sits behind the texture (invisible if texture loads)
+		var sky := ColorRect.new()
+		sky.size     = Vector2(VIEWPORT_W, VIEWPORT_H)
+		sky.position = Vector2.ZERO
+		sky.color    = Color(0.04, 0.07, 0.16, 1.0)
+		sky.z_index  = -11
+		add_child(sky)
+		_sky_rect = sky
+	else:
+		# Pure colour fallback (no bg image generated yet)
+		var sky := ColorRect.new()
+		sky.size     = Vector2(VIEWPORT_W, VIEWPORT_H)
+		sky.position = Vector2.ZERO
+		sky.color    = Color(0.04, 0.07, 0.16, 1.0)   # Act I nightfall — deep indigo blue
+		sky.z_index  = -10
+		add_child(sky)
+		_sky_rect = sky
+
+	# Prepare Act 2 background tiles — hidden until midpoint transition
+	if ResourceLoader.exists(ACT2_BG):
+		for t: int in 2:
+			var tr2 := TextureRect.new()
+			tr2.texture           = load(ACT2_BG)
+			tr2.stretch_mode      = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+			tr2.size              = Vector2(VIEWPORT_W, VIEWPORT_H)
+			tr2.position          = Vector2(VIEWPORT_W * float(t), 0.0)
+			tr2.z_index           = -9   # in front of act1 tiles; shown over them
+			tr2.modulate.a        = 0.0  # start fully transparent
+			add_child(tr2)
+			_bg_act2_tiles.append(tr2)
 
 	# Festival light dots in the sky — static, scattered amber sparks
 	var rng := RandomNumberGenerator.new()
@@ -145,7 +198,8 @@ func _build_scene() -> void:
 		var dot := ColorRect.new()
 		dot.size     = Vector2(rng.randf_range(2.0, 5.0), rng.randf_range(1.0, 3.0))
 		dot.position = Vector2(rng.randf_range(0.0, VIEWPORT_W), rng.randf_range(5.0, 120.0))
-		dot.color    = Color(rng.randf_range(0.85, 1.0), rng.randf_range(0.50, 0.80), 0.10, rng.randf_range(0.4, 0.9))
+		# Act I night sky — cool white-blue stars, not amber festival lights
+		dot.color    = Color(rng.randf_range(0.75, 1.0), rng.randf_range(0.80, 1.0), rng.randf_range(0.90, 1.0), rng.randf_range(0.25, 0.65))
 		dot.z_index  = -8
 		add_child(dot)
 		_festival_dots.append(dot)   # saved for forest transition fade-out
@@ -189,36 +243,49 @@ func _build_scene() -> void:
 		dash.set_meta("base_x", float(seg) * 70.0)
 		add_child(dash)
 
-	# ── Bike (Royal Enfield Bullet silhouette) ──────────────────────────────
-	# Rear wheel
-	_wheel_r = ColorRect.new()
-	_wheel_r.size     = Vector2(18.0, 18.0)
-	_wheel_r.color    = Color(0.12, 0.10, 0.08, 1.0)
-	add_child(_wheel_r)
+	# ── Bike + Rider — sprite if available, ColorRect fallback ─────────────────
+	const BIKE_TEX := "res://assets/sprites/bike_rider_sheet.png"
+	if ResourceLoader.exists(BIKE_TEX):
+		# Sprite sheet: 2 frames wide (ride | jump), each 400×200 at generation size.
+		# We use a single Sprite2D with hframes=2 and swap frame on jump.
+		var tex: Texture2D = load(BIKE_TEX)
+		_bike_spr           = Sprite2D.new()
+		_bike_spr.texture   = tex
+		_bike_spr.hframes   = 2
+		_bike_spr.frame     = 0   # "ride" frame
+		# Scale so the sprite height fits the bike height (~40px) in 270px viewport
+		var native_h: float = tex.get_height()
+		var target_h: float = 42.0
+		var sc: float       = target_h / native_h
+		_bike_spr.scale     = Vector2(sc, sc)
+		_bike_spr.z_index   = 2
+		add_child(_bike_spr)
+	else:
+		# ── ColorRect fallback — rendered when sprite hasn't been generated yet ──
+		_wheel_r = ColorRect.new()
+		_wheel_r.size  = Vector2(18.0, 18.0)
+		_wheel_r.color = Color(0.12, 0.10, 0.08, 1.0)
+		add_child(_wheel_r)
 
-	# Front wheel
-	_wheel_f = ColorRect.new()
-	_wheel_f.size     = Vector2(18.0, 18.0)
-	_wheel_f.color    = Color(0.12, 0.10, 0.08, 1.0)
-	add_child(_wheel_f)
+		_wheel_f = ColorRect.new()
+		_wheel_f.size  = Vector2(18.0, 18.0)
+		_wheel_f.color = Color(0.12, 0.10, 0.08, 1.0)
+		add_child(_wheel_f)
 
-	# Fuel tank / frame body — dark green classic Bullet
-	_bike_rect = ColorRect.new()
-	_bike_rect.size  = Vector2(54.0, 18.0)
-	_bike_rect.color = Color(0.15, 0.28, 0.15, 1.0)   # deep forest green
-	add_child(_bike_rect)
+		_bike_rect = ColorRect.new()
+		_bike_rect.size  = Vector2(54.0, 18.0)
+		_bike_rect.color = Color(0.15, 0.28, 0.15, 1.0)
+		add_child(_bike_rect)
 
-	# Rider torso — white mundu visible (he IS lungi man after all)
-	_rider_body = ColorRect.new()
-	_rider_body.size  = Vector2(16.0, 24.0)
-	_rider_body.color = Color(0.88, 0.86, 0.80, 1.0)
-	add_child(_rider_body)
+		_rider_body = ColorRect.new()
+		_rider_body.size  = Vector2(16.0, 24.0)
+		_rider_body.color = Color(0.88, 0.86, 0.80, 1.0)
+		add_child(_rider_body)
 
-	# Rider head
-	_rider_head = ColorRect.new()
-	_rider_head.size  = Vector2(12.0, 12.0)
-	_rider_head.color = Color(0.72, 0.55, 0.38, 1.0)
-	add_child(_rider_head)
+		_rider_head = ColorRect.new()
+		_rider_head.size  = Vector2(12.0, 12.0)
+		_rider_head.color = Color(0.72, 0.55, 0.38, 1.0)
+		add_child(_rider_head)
 
 	_position_bike(BIKE_REST_Y)
 	_build_ravi_handover()
@@ -249,8 +316,8 @@ func _build_scene() -> void:
 
 	# ── Dialogue label ──────────────────────────────────────────────────────
 	_dialogue_label           = Label.new()
-	_dialogue_label.position  = Vector2(8.0, VIEWPORT_H - 44.0)
-	_dialogue_label.size      = Vector2(VIEWPORT_W - 16.0, 40.0)
+	_dialogue_label.position  = Vector2(8.0, VIEWPORT_H - 54.0)
+	_dialogue_label.size      = Vector2(VIEWPORT_W - 16.0, 52.0)
 	_dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD
 	_dialogue_label.add_theme_font_size_override("font_size", 9)
 	_dialogue_label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.70, 1.0))
@@ -292,72 +359,100 @@ func _build_tree_skyline() -> void:
 
 func _position_bike(cy: float) -> void:
 	# cy = centre y of bike body
-	_bike_rect.position    = Vector2(BIKE_X - 27.0, cy - 9.0)
-	_wheel_r.position      = Vector2(BIKE_X - 30.0, cy + 4.0)
-	_wheel_f.position      = Vector2(BIKE_X + 18.0, cy + 4.0)
-	_rider_body.position   = Vector2(BIKE_X - 4.0,  cy - 30.0)
-	_rider_head.position   = Vector2(BIKE_X - 2.0,  cy - 42.0)
+	if _bike_spr != null:
+		# Centre the sprite on the bike's ride position
+		_bike_spr.position = Vector2(BIKE_X, cy - 8.0)
+		# Swap animation frame based on air state
+		_bike_spr.frame    = 0 if _on_ground else 1
+	else:
+		# ColorRect fallback
+		if _bike_rect  != null: _bike_rect.position  = Vector2(BIKE_X - 27.0, cy - 9.0)
+		if _wheel_r    != null: _wheel_r.position    = Vector2(BIKE_X - 30.0, cy + 4.0)
+		if _wheel_f    != null: _wheel_f.position    = Vector2(BIKE_X + 18.0, cy + 4.0)
+		if _rider_body != null: _rider_body.position = Vector2(BIKE_X - 4.0,  cy - 30.0)
+		if _rider_head != null: _rider_head.position = Vector2(BIKE_X - 2.0,  cy - 42.0)
 
 ## Mundakkal Ravi standing next to the bike for the handover — screen-space, visible only during intro.
 ## He holds a golden key toward LungiMan. When the ride phase starts he's tweened off-screen right.
 func _build_ravi_handover() -> void:
 	var ry := BIKE_REST_Y   # ground y
+	const RAVI_TEX := "res://assets/sprites/ravi_sheet.png"
 
-	# Mundu (white lower garment)
-	var mundu := ColorRect.new()
-	mundu.size     = Vector2(14.0, 16.0)
-	mundu.position = Vector2(RAVI_SCREEN_X - 7.0, ry - 16.0)
-	mundu.color    = Color(0.92, 0.90, 0.85, 1.0)
-	mundu.z_index  = 5
-	add_child(mundu)
-	_ravi_pieces.append(mundu)
+	if ResourceLoader.exists(RAVI_TEX):
+		# ── Real Ravi sprite — 2 frames: idle (0) | talk (1) ─────────────────
+		var tex    := load(RAVI_TEX) as Texture2D
+		var spr    := Sprite2D.new()
+		spr.texture = tex
+		spr.hframes = 2
+		spr.frame   = 0   # idle while key is being offered
+		# Scale so sprite is 72px tall; center origin means feet land at ROAD_Y
+		var target_h := 72.0
+		var scale_f  := target_h / tex.get_height()
+		spr.scale    = Vector2(scale_f, scale_f)
+		spr.position = Vector2(RAVI_SCREEN_X, ROAD_Y - target_h * 0.5)
+		spr.flip_h   = true   # faces left toward the hero
+		spr.z_index  = 5
+		add_child(spr)
+		_ravi_pieces.append(spr)
+		# Switch to talk frame when the dialogue line starts
+		get_tree().create_timer(0.5).timeout.connect(func() -> void:
+			if is_instance_valid(spr): spr.frame = 1
+		)
+		# _arm_piece stays null — wave is not needed; sprite slide handles the goodbye
+	else:
+		# ── ColorRect fallback ────────────────────────────────────────────────
+		var mundu := ColorRect.new()
+		mundu.size     = Vector2(14.0, 16.0)
+		mundu.position = Vector2(RAVI_SCREEN_X - 7.0, ry - 16.0)
+		mundu.color    = Color(0.92, 0.90, 0.85, 1.0)
+		mundu.z_index  = 5
+		add_child(mundu)
+		_ravi_pieces.append(mundu)
 
-	# Shirt / torso
-	var torso := ColorRect.new()
-	torso.size     = Vector2(14.0, 14.0)
-	torso.position = Vector2(RAVI_SCREEN_X - 7.0, ry - 30.0)
-	torso.color    = Color(0.55, 0.30, 0.15, 1.0)   # brown kurta
-	torso.z_index  = 5
-	add_child(torso)
-	_ravi_pieces.append(torso)
+		var torso := ColorRect.new()
+		torso.size     = Vector2(14.0, 14.0)
+		torso.position = Vector2(RAVI_SCREEN_X - 7.0, ry - 30.0)
+		torso.color    = Color(0.55, 0.30, 0.15, 1.0)
+		torso.z_index  = 5
+		add_child(torso)
+		_ravi_pieces.append(torso)
 
-	# Head
-	var head := ColorRect.new()
-	head.size     = Vector2(10.0, 10.0)
-	head.position = Vector2(RAVI_SCREEN_X - 5.0, ry - 42.0)
-	head.color    = Color(0.68, 0.50, 0.32, 1.0)
-	head.z_index  = 5
-	add_child(head)
-	_ravi_pieces.append(head)
+		var head := ColorRect.new()
+		head.size     = Vector2(10.0, 10.0)
+		head.position = Vector2(RAVI_SCREEN_X - 5.0, ry - 42.0)
+		head.color    = Color(0.68, 0.50, 0.32, 1.0)
+		head.z_index  = 5
+		add_child(head)
+		_ravi_pieces.append(head)
 
-	# Extended arm holding the key (toward LungiMan = leftward)
-	var arm := ColorRect.new()
-	arm.size     = Vector2(12.0, 4.0)
-	arm.position = Vector2(RAVI_SCREEN_X - 18.0, ry - 26.0)
-	arm.color    = Color(0.68, 0.50, 0.32, 1.0)
-	arm.z_index  = 5
-	add_child(arm)
-	_ravi_pieces.append(arm)
-	_arm_piece = arm   # saved for wave gesture on dismiss
+		var arm := ColorRect.new()
+		arm.size     = Vector2(12.0, 4.0)
+		arm.position = Vector2(RAVI_SCREEN_X - 18.0, ry - 26.0)
+		arm.color    = Color(0.68, 0.50, 0.32, 1.0)
+		arm.z_index  = 5
+		add_child(arm)
+		_ravi_pieces.append(arm)
+		_arm_piece = arm
 
-	# Key — small golden shape at the tip of his arm
+	# ── Golden key — separate overlay so it can float to the hero ────────────
+	# Positioned at the left edge of Ravi's sprite (toward the hero)
 	var key := ColorRect.new()
 	key.size     = Vector2(7.0, 4.0)
-	key.position = Vector2(RAVI_SCREEN_X - 22.0, ry - 28.0)
+	key.position = Vector2(RAVI_SCREEN_X - 24.0, ROAD_Y - 28.0)
 	key.color    = Color(0.92, 0.76, 0.18, 1.0)
 	key.z_index  = 6
 	add_child(key)
 	_ravi_pieces.append(key)
-	_key_piece = key   # saved so we can animate the handover
+	_key_piece = key
 	# Key bobs gently toward LungiMan — "here, take it"
 	_key_tween = key.create_tween().set_loops()
-	_key_tween.tween_property(key, "position:x", RAVI_SCREEN_X - 24.0, 0.35).set_trans(Tween.TRANS_SINE)
-	_key_tween.tween_property(key, "position:x", RAVI_SCREEN_X - 20.0, 0.35).set_trans(Tween.TRANS_SINE)
+	_key_tween.tween_property(key, "position:x", RAVI_SCREEN_X - 26.0, 0.35).set_trans(Tween.TRANS_SINE)
+	_key_tween.tween_property(key, "position:x", RAVI_SCREEN_X - 22.0, 0.35).set_trans(Tween.TRANS_SINE)
 
 	# Name label above his head
 	var lbl := Label.new()
 	lbl.text     = "Ravi"
-	lbl.position = Vector2(RAVI_SCREEN_X - 10.0, ry - 56.0)
+	lbl.position = Vector2(RAVI_SCREEN_X - 10.0, ROAD_Y - 88.0)
 	lbl.add_theme_font_size_override("font_size", 7)
 	lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.50, 0.85))
 	lbl.z_index  = 6
@@ -395,7 +490,11 @@ func _start_intro() -> void:
 	_intro_timer = 0.0
 	# Bike barely creeps during intro — engine idling while keys are handed over
 	_speed = MIN_SPEED * 0.25
-	_show_dialogue("Mundakkal Ravi: \"Take my bike, machane.\nBut when the trees start — you walk.\"")
+	_show_dialogue(
+		"Mundakkal Ravi: \"The carnival grounds are 2km down —\n" +
+		"take my bike, machane. But when the trees start, you walk.\n" +
+		"The Bullet won't go where the spirits live.\"",
+		4.8)
 
 func _show_dialogue(text: String, duration: float = 3.2) -> void:
 	_dialogue_label.text    = text
@@ -413,10 +512,11 @@ func _show_dialogue(text: String, duration: float = 3.2) -> void:
 
 func _process(delta: float) -> void:
 	match _phase:
-		"intro":   _tick_intro(delta)
-		"ride":    _tick_ride(delta)
-		"end":     _tick_end(delta)
-		"done":    pass
+		"intro":          _tick_intro(delta)
+		"ride":           _tick_ride(delta)
+		"end":            _tick_end(delta)
+		"wait_dismount":  _tick_dismount(delta)
+		"done":           pass
 
 func _tick_intro(delta: float) -> void:
 	_intro_timer += delta
@@ -426,8 +526,8 @@ func _tick_intro(delta: float) -> void:
 	if not _key_taken and _intro_timer >= 2.3:
 		_key_taken = true
 		_hero_takes_key()
-	# t=3.5s — Ravi steps back and waves as the bike rides away
-	if _intro_timer >= 3.5:
+	# t=5.0s — Ravi steps back and waves as the bike rides away (after full 3-line dialogue)
+	if _intro_timer >= 5.0:
 		_dismiss_ravi()
 		_speed = MIN_SPEED       # throttle opens
 		_phase = "ride"
@@ -480,13 +580,19 @@ func _tick_ride(delta: float) -> void:
 	# iframe countdown
 	if _iframe_timer > 0.0:
 		_iframe_timer -= delta
-		# Flash the rider
+		# Flash the rider / bike sprite
 		var vis := int(_iframe_timer * 10) % 2 == 0
-		_rider_body.visible = vis
-		_rider_head.visible = vis
+		if _bike_spr != null:
+			_bike_spr.visible = vis
+		else:
+			if _rider_body != null: _rider_body.visible = vis
+			if _rider_head != null: _rider_head.visible = vis
 	else:
-		_rider_body.visible = true
-		_rider_head.visible = true
+		if _bike_spr != null:
+			_bike_spr.visible = true
+		else:
+			if _rider_body != null: _rider_body.visible = true
+			if _rider_head != null: _rider_head.visible = true
 
 	# Spawn obstacles
 	_check_spawns()
@@ -501,8 +607,11 @@ func _tick_ride(delta: float) -> void:
 	if not _forest_transition_done and _scroll_x >= RIDE_DIST * 0.5:
 		_begin_forest_transition()
 
-	# Transition to end sequence
+	# Transition to end sequence — reached end of road, OR engine stalled bike to a full stop
 	if _scroll_x >= RIDE_DIST:
+		_begin_end_sequence()
+	elif _engine_hp <= 0 and _speed <= 0.0:
+		# Engine dead and bike has completely stopped — the forest won.
 		_begin_end_sequence()
 
 func _tick_end(delta: float) -> void:
@@ -518,9 +627,9 @@ func _tick_end(delta: float) -> void:
 		_show_dialogue("Ravi: \"The Bullet won't go where the spirits live.\"", 3.5)
 		_spawn_burning_trees()
 
-	# Exit — wait for dialogue + full stop
+	# Bike has fully stopped — hand control back to the player to dismount
 	if _end_timer >= 5.0 and _speed <= 0.0:
-		_finish()
+		_begin_dismount()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Scrolling helpers
@@ -561,6 +670,18 @@ func _scroll_scene(spd: float, delta: float) -> void:
 			crown.position.x   += 960.0
 			trunk_r.position.x += 960.0
 
+	# Background image tiles — slow parallax (0.10 scroll factor for deep sky feel)
+	for tile_v: Variant in _bg_act1_tiles:
+		var tile: TextureRect = tile_v as TextureRect
+		tile.position.x -= dx * 0.10
+		if tile.position.x + VIEWPORT_W < 0.0:
+			tile.position.x += VIEWPORT_W * 2.0
+	for tile_v2: Variant in _bg_act2_tiles:
+		var tile2: TextureRect = tile_v2 as TextureRect
+		tile2.position.x -= dx * 0.10
+		if tile2.position.x + VIEWPORT_W < 0.0:
+			tile2.position.x += VIEWPORT_W * 2.0
+
 	# Road dashes — faster (near layer)
 	for child: Node in get_children():
 		if child is ColorRect and child.has_meta("dash"):
@@ -583,11 +704,24 @@ func _begin_forest_transition() -> void:
 	_forest_transition_done = true
 	const DUR := 2.2   # seconds for the full cross-fade
 
-	# 1. Sky: festival purple-black → deep forest ember-black
-	if is_instance_valid(_sky_rect):
+	# 1. Background cross-fade: Act I scene → Act II carnival scene
+	if not _bg_act2_tiles.is_empty():
+		# Fade in Act 2 bg tiles (they overlay Act 1)
+		for tile_v: Variant in _bg_act2_tiles:
+			var tile2: TextureRect = tile_v as TextureRect
+			var ttw := tile2.create_tween()
+			ttw.tween_property(tile2, "modulate:a", 1.0, DUR).set_trans(Tween.TRANS_SINE)
+		# Fade out Act 1 bg tiles behind it
+		for tile_v: Variant in _bg_act1_tiles:
+			var tile1: TextureRect = tile_v as TextureRect
+			var ttw2 := tile1.create_tween()
+			ttw2.tween_property(tile1, "modulate:a", 0.0, DUR).set_trans(Tween.TRANS_SINE)
+		_act2_visible = true
+	elif is_instance_valid(_sky_rect):
+		# No texture — fall back to colour transition
 		var tw := _sky_rect.create_tween()
 		tw.tween_property(_sky_rect, "color",
-				Color(0.06, 0.04, 0.02, 1.0), DUR).set_trans(Tween.TRANS_SINE)
+				Color(0.20, 0.07, 0.02, 1.0), DUR).set_trans(Tween.TRANS_SINE)
 
 	# 2. Festival light dots — the village lights disappear behind you
 	for dot_v: Variant in _festival_dots:
@@ -596,13 +730,13 @@ func _begin_forest_transition() -> void:
 		var dtw := dot.create_tween()
 		dtw.tween_property(dot, "color:a", 0.0, DUR * 0.65).set_trans(Tween.TRANS_SINE)
 
-	# 3. Far parallax (layer 0) warm orange glow → faint ember mist
+	# 3. Far parallax (layer 0) night blue glow → bright carnival orange (festival lights ahead)
 	if _parallax_rects.size() > 0 and not _parallax_rects[0].is_empty():
 		for r_v: Variant in _parallax_rects[0]:
 			var r: ColorRect = r_v as ColorRect
 			var rtw := r.create_tween()
 			rtw.tween_property(r, "color",
-					Color(0.25, 0.08, 0.02, 0.15), DUR).set_trans(Tween.TRANS_SINE)
+					Color(0.90, 0.50, 0.10, 0.35), DUR).set_trans(Tween.TRANS_SINE)
 
 	# 4. Tree silhouettes — darken into dense Kanjiravanam canopy
 	for pair_v: Variant in _tree_pairs:
@@ -656,8 +790,8 @@ func _begin_forest_transition() -> void:
 		dftw.tween_property(ff, "position:y", base_y - drift, ddur).set_trans(Tween.TRANS_SINE)
 		dftw.tween_property(ff, "position:y", base_y,         ddur).set_trans(Tween.TRANS_SINE)
 
-	# 7. Subtitle — the moment the forest swallows the road
-	_show_dialogue("The trees are watching...\nKanjiravanam forest.", 3.2)
+	# 7. Subtitle — carnival lights ahead, forest closes in behind
+	_show_dialogue("Carnival grounds ahead...\nThe forest is watching from behind.", 3.2)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Obstacle system
@@ -763,11 +897,13 @@ func _take_hit(_type: String, r: ColorRect) -> void:
 	tw.tween_property(flash, "color:a", 0.0,  0.30)
 	tw.tween_callback(cl.queue_free)
 
-	# Shake bike
-	var stw := _bike_rect.create_tween()
-	stw.tween_property(_bike_rect, "position:x", _bike_rect.position.x - 4.0, 0.06)
-	stw.tween_property(_bike_rect, "position:x", _bike_rect.position.x + 4.0, 0.06)
-	stw.tween_property(_bike_rect, "position:x", _bike_rect.position.x,       0.06)
+	# Shake bike — guard for sprite vs ColorRect mode
+	var shake_node: Node2D = _bike_spr if _bike_spr != null else _bike_rect
+	if shake_node != null:
+		var stw := shake_node.create_tween()
+		stw.tween_property(shake_node, "position:x", shake_node.position.x - 4.0, 0.06)
+		stw.tween_property(shake_node, "position:x", shake_node.position.x + 4.0, 0.06)
+		stw.tween_property(shake_node, "position:x", shake_node.position.x,       0.06)
 
 	# Hide the struck obstacle
 	r.visible = false
@@ -824,9 +960,122 @@ func _spawn_burning_trees() -> void:
 		tw.tween_property(glow, "modulate:a", 0.45, 0.18)
 		tw.tween_property(glow, "modulate:a", 1.00, 0.22)
 
+## Bike has stopped at the forest edge — ask the player to dismount on their own terms.
+func _begin_dismount() -> void:
+	if _phase == "wait_dismount" or _phase == "dismounting" or _phase == "done": return
+	_phase = "wait_dismount"
+	_dialogue_label.visible = false
+
+	# ── Persistent dismount overlay ───────────────────────────────────────────
+	_dismount_prompt       = CanvasLayer.new()
+	_dismount_prompt.layer = 12
+	add_child(_dismount_prompt)
+
+	# Dark pill background
+	var bg       := ColorRect.new()
+	bg.color      = Color(0.04, 0.09, 0.04, 0.86)
+	bg.size       = Vector2(230.0, 44.0)
+	bg.position   = Vector2((VIEWPORT_W - 230.0) * 0.5, VIEWPORT_H * 0.5 - 22.0)
+	_dismount_prompt.add_child(bg)
+
+	# "The forest won't let the Bullet through."
+	var msg       := Label.new()
+	msg.text       = "The forest won't let the Bullet through."
+	msg.add_theme_font_size_override("font_size", 8)
+	msg.add_theme_color_override("font_color", Color(0.95, 0.88, 0.60, 1.0))
+	msg.size       = Vector2(222.0, 14.0)
+	msg.position   = Vector2(bg.position.x + 4.0, bg.position.y + 5.0)
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_dismount_prompt.add_child(msg)
+
+	# [E] key box
+	var key_box   := ColorRect.new()
+	key_box.color  = Color(0.88, 0.78, 0.22, 1.0)   # gold key cap
+	key_box.size   = Vector2(16.0, 13.0)
+	key_box.position = Vector2(bg.position.x + 42.0, bg.position.y + 24.0)
+	_dismount_prompt.add_child(key_box)
+
+	var key_lbl   := Label.new()
+	key_lbl.text   = "E"
+	key_lbl.add_theme_font_size_override("font_size", 9)
+	key_lbl.add_theme_color_override("font_color", Color(0.05, 0.05, 0.05, 1.0))
+	key_lbl.position = Vector2(key_box.position.x + 4.0, key_box.position.y + 1.0)
+	_dismount_prompt.add_child(key_lbl)
+
+	# "Walk into the forest" text beside key box
+	var walk_lbl   := Label.new()
+	walk_lbl.text   = "Walk into the forest"
+	walk_lbl.add_theme_font_size_override("font_size", 8)
+	walk_lbl.add_theme_color_override("font_color", Color(0.72, 0.95, 0.55, 1.0))
+	walk_lbl.position = Vector2(key_box.position.x + 20.0, key_box.position.y + 1.0)
+	walk_lbl.size     = Vector2(130.0, 14.0)
+	_dismount_prompt.add_child(walk_lbl)
+
+	# Pulse the key box — draw the eye
+	var pulse := key_box.create_tween().set_loops()
+	pulse.tween_property(key_box, "modulate:a", 0.45, 0.42).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(key_box, "modulate:a", 1.00, 0.42).set_trans(Tween.TRANS_SINE)
+
+func _tick_dismount(_delta: float) -> void:
+	# Accept E key, space/enter, or mobile confirm button
+	var pressed := (Input.is_action_just_pressed("ui_accept")
+				or  Input.is_action_just_pressed("jump")
+				or  Input.is_key_just_pressed(KEY_E))
+	if pressed:
+		_do_dismount()
+
+func _do_dismount() -> void:
+	_phase = "dismounting"   # lock out re-entry; _finish() checks "done" so keep distinct
+
+	# Remove the prompt overlay
+	if is_instance_valid(_dismount_prompt):
+		_dismount_prompt.queue_free()
+		_dismount_prompt = null
+
+	# Fade out / hide the bike
+	if _bike_spr != null:
+		var tw := _bike_spr.create_tween()
+		tw.tween_property(_bike_spr, "modulate:a", 0.0, 0.28)
+		tw.tween_callback(_bike_spr.queue_free)
+	else:
+		for node_v: Variant in [_bike_rect, _wheel_f, _wheel_r]:
+			var n := node_v as Node2D
+			if n != null and is_instance_valid(n):
+				var tw2 := n.create_tween()
+				tw2.tween_property(n, "modulate:a", 0.0, 0.28)
+
+	# Small walker figure strides from bike position into the forest (right)
+	var body        := ColorRect.new()
+	body.size        = Vector2(10.0, 22.0)
+	body.color       = Color(0.92, 0.90, 0.82, 1.0)   # white mundu
+	body.z_index     = 4
+	body.position    = Vector2(BIKE_X - 5.0, BIKE_REST_Y - 22.0)
+	add_child(body)
+
+	var head        := ColorRect.new()
+	head.size        = Vector2(9.0, 9.0)
+	head.color       = Color(0.70, 0.52, 0.35, 1.0)
+	head.z_index     = 4
+	head.position    = Vector2(BIKE_X - 4.5, BIKE_REST_Y - 33.0)
+	add_child(head)
+
+	# Walk into the right edge (into the forest), then transition
+	var dist   := VIEWPORT_W - BIKE_X + 24.0
+	var dur    := 1.4
+	var walk_b := body.create_tween()
+	walk_b.tween_property(body, "position:x", body.position.x + dist, dur).set_trans(Tween.TRANS_SINE)
+	walk_b.tween_callback(_finish)
+
+	var walk_h := head.create_tween()
+	walk_h.tween_property(head, "position:x", head.position.x + dist, dur).set_trans(Tween.TRANS_SINE)
+
+	# Brief closing line as he walks
+	_show_dialogue("Into Kanjiravanam...", 1.8)
+
 func _finish() -> void:
 	if _phase == "done": return
 	_phase = "done"
+	# (also covers the "dismounting" walk-anim path)
 
 	# Save undamaged flag — Ravi's Act V callback reads this
 	GameManager.bike_undamaged = _undamaged

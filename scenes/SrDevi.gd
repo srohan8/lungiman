@@ -15,6 +15,7 @@ var _stage: int = 0
 var _spr: AnimatedSprite2D = null
 
 func _ready() -> void:
+	z_index = 6   # render in front of ground tile (z=5)
 	collision_layer = 0
 	collision_mask  = 2
 	body_entered.connect(_on_body_entered)

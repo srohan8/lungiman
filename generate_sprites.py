@@ -898,6 +898,38 @@ SPRITE_DB: dict = {
                 },
             ],
         },
+
+        "bike_rider_sheet": {
+            "desc": "LungiMan riding Royal Enfield Bullet — BikeRide scene",
+            "frame_w": 400, "frame_h": 200, "model": MODEL_RECRAFT,
+            "recraft_style": "digital_illustration",
+            "frames": [
+                {
+                    "name": "ride",
+                    "prompt": (
+                        "Kerala coconut tapper man riding 1990s Royal Enfield Bullet 350 motorcycle, "
+                        "side view strict profile facing right, "
+                        "white mundu tucked up at waist, aviator sunglasses, thick black mustache, "
+                        "muscular warm brown South Indian man leaning forward on handlebars, "
+                        "deep forest green petrol tank, chrome exhaust pipe, spoked chrome wheels, "
+                        "flat 2D Kerala mural art style, bold black outlines, jewel-tone fills, "
+                        "pure white background, no text, no border"
+                    ),
+                },
+                {
+                    "name": "jump",
+                    "prompt": (
+                        "Kerala coconut tapper man on Royal Enfield Bullet 350 mid-jump, "
+                        "side view strict profile facing right, "
+                        "white mundu tucked up, aviator sunglasses, thick black mustache, "
+                        "front wheel lifted off ground, wheelie jump pose, arms gripping handlebars, "
+                        "deep forest green petrol tank, chrome exhaust, spoked wheels, "
+                        "flat 2D Kerala mural art style, bold black outlines, jewel-tone fills, "
+                        "pure white background, no text, no border"
+                    ),
+                },
+            ],
+        },
     },
 
     # ── Backgrounds — 5-layer parallax system ────────────────────────────────
