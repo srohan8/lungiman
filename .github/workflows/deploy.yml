@@ -103,14 +103,35 @@ jobs:
           echo "=== editor settings (after patch) ==="
           cat "$SETTINGS"
 
-      # ── 8. Export debug APK ───────────────────────────────────────────────────
+      # ── 8. Ensure debug keystore exists ─────────────────────────────────────
+      # Godot headless writes the keystore path to editor settings but never
+      # actually creates the file. Without it the export validator fails silently.
+      - name: Ensure debug keystore exists
+        run: |
+          KEYSTORE_DIR="$HOME/.local/share/godot/keystores"
+          KEYSTORE_PATH="$KEYSTORE_DIR/debug.keystore"
+          mkdir -p "$KEYSTORE_DIR"
+          if [ -f "$KEYSTORE_PATH" ]; then
+            echo "Keystore already exists: $(ls -lh "$KEYSTORE_PATH")"
+          else
+            echo "Keystore missing — generating..."
+            keytool -genkey -v -keystore "$KEYSTORE_PATH" \
+              -storepass android -alias androiddebugkey -keypass android \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "C=US, O=Android, CN=Android Debug"
+            echo "Keystore created: $(ls -lh "$KEYSTORE_PATH")"
+          fi
+
+      # ── 9. Export debug APK ───────────────────────────────────────────────────
       - name: Export debug APK
         run: |
           TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
           echo "=== android_debug.apk at export time ==="
           ls -lh "${TEMPLATE_DIR}/android_debug.apk" && echo "TEMPLATE OK" || echo "TEMPLATE MISSING"
-          echo "=== android_sdk_path in settings ==="
-          grep android_sdk_path "$HOME/.config/godot/editor_settings-4.6.tres" || echo "NOT SET"
+          echo "=== debug keystore ==="
+          ls -lh "$HOME/.local/share/godot/keystores/debug.keystore" && echo "KEYSTORE OK" || echo "KEYSTORE MISSING"
+          echo "=== build-tools ==="
+          ls "$ANDROID_HOME/build-tools/"
           mkdir -p build/android
           godot --headless --verbose --export-debug "Android" "$PWD/build/android/Lungiman-debug.apk" 2>&1
 
