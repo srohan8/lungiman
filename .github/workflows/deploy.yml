@@ -28,7 +28,8 @@ jobs:
       - name: Install Godot ${{ env.GODOT_VERSION }}
         run: |
           GODOT_FILENAME="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
-          wget --fail -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${GODOT_FILENAME}.zip"
+          curl -fsSL -o "${GODOT_FILENAME}.zip" \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${GODOT_FILENAME}.zip"
           unzip -q "${GODOT_FILENAME}.zip"
           mv "${GODOT_FILENAME}" /usr/local/bin/godot
           chmod +x /usr/local/bin/godot
@@ -40,7 +41,8 @@ jobs:
           TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
           mkdir -p "${TEMPLATE_DIR}"
           TPZ="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
-          wget --fail -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
+          curl -fsSL -o "${TPZ}" \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
           unzip -q "${TPZ}" -d /tmp/godot_templates
           mv /tmp/godot_templates/templates/* "${TEMPLATE_DIR}/"
           echo "=== Installed templates ==="
