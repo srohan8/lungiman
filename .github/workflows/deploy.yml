@@ -1,30 +1,18 @@
-name: Deploy to GitHub Pages
+name: Build Android APK
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 env:
   GODOT_VERSION: "4.6"
   GODOT_RELEASE: "stable"
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
 jobs:
-  export-web:
-    name: Export & Deploy Web Build
+  build-apk:
+    name: Build Debug APK
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
 
     steps:
       # ── 1. Checkout ──────────────────────────────────────────────────────────
@@ -54,54 +42,57 @@ jobs:
             "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
           unzip -q "${TPZ}" -d /tmp/godot_templates
           mv /tmp/godot_templates/templates/* "${TEMPLATE_DIR}/"
-          echo "=== Installed templates ==="
-          ls "${TEMPLATE_DIR}"
-          echo "=== Version ==="
-          cat "${TEMPLATE_DIR}/version.txt"
-          echo "=== Web templates ==="
-          ls "${TEMPLATE_DIR}" | grep web || echo "WARNING: no web templates found!"
+          echo "=== Android templates ==="
+          ls "${TEMPLATE_DIR}" | grep android || echo "WARNING: no android templates found!"
 
-      # ── 4. Strip MCP plugin for CI ───────────────────────────────────────────
-      # The godot_mcp editor plugin tries to connect to a local WebSocket server
-      # that doesn't exist in CI. Leaving it active during headless export can
-      # stall the export pipeline. We strip it from project.godot for this run
-      # only — the file is never committed back.
+      # ── 4. Set up Android SDK ────────────────────────────────────────────────
+      # ubuntu-latest has Android SDK pre-installed at $ANDROID_HOME.
+      # We just need platforms;android-34 and build-tools for APK signing.
+      - name: Set up Android SDK packages
+        run: |
+          echo "Android SDK: $ANDROID_HOME"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-34" \
+            "build-tools;34.0.0" \
+            2>/dev/null | grep -E "^(Installed|Nothing|Warning)" || true
+
+      # ── 5. Configure Godot editor settings (Android SDK path) ────────────────
+      - name: Configure Godot Android editor settings
+        run: |
+          mkdir -p ~/.config/godot
+          cat > ~/.config/godot/editor_settings-4.tres << EOF
+[gd_resource type="EditorSettings" format=3]
+
+[resource]
+export/android/android_sdk_path = "$ANDROID_HOME"
+export/android/debug_keystore = ""
+export/android/debug_keystore_user = "androiddebugkey"
+export/android/debug_keystore_pass = "android"
+EOF
+
+      # ── 6. Disable MCP plugin for CI ─────────────────────────────────────────
       - name: Disable MCP plugin for CI
         run: |
           sed -i '/godot_mcp/d' project.godot
           sed -i '/\[editor_plugins\]/{ n; /^$/d }' project.godot
-          echo "project.godot after strip:"
-          grep -A2 "editor_plugins" project.godot || echo "(editor_plugins section removed)"
 
-      # ── 5. Import project assets ─────────────────────────────────────────────
+      # ── 7. Import project assets ─────────────────────────────────────────────
       - name: Import project assets
         run: godot --headless --editor --quit 2>&1 || true
 
-      # ── 6. Export ────────────────────────────────────────────────────────────
-      - name: Export Web build
+      # ── 8. Export debug APK ───────────────────────────────────────────────────
+      - name: Export debug APK
         run: |
-          mkdir -p build/web
-          godot --headless --export-release "Web" build/web/index.html 2>&1
+          mkdir -p build/android
+          godot --headless --export-debug "Android" "$PWD/build/android/Lungiman-debug.apk" 2>&1
 
-      # ── 7. Inject CORS service worker ────────────────────────────────────────
-      - name: Inject CORS service worker
-        run: |
-          cp web/coi-serviceworker.js build/web/coi-serviceworker.js
-          SW_SNIPPET='<script>if("serviceWorker"in navigator){navigator.serviceWorker.register("coi-serviceworker.js").then(r=>{if(!navigator.serviceWorker.controller)location.reload()})}</script>'
-          sed -i "s|</head>|${SW_SNIPPET}\n</head>|" build/web/index.html
-
-      # ── 8. Add .nojekyll ─────────────────────────────────────────────────────
-      - name: Add .nojekyll
-        run: touch build/web/.nojekyll
-
-      # ── 9. Upload artifact ───────────────────────────────────────────────────
-      # Uploads directly to GitHub Pages storage — no git commit, no 100 MB limit.
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      # ── 9. Upload APK artifact ────────────────────────────────────────────────
+      # Download from the workflow run page → Artifacts section.
+      # The APK is a debug build — enable "Install unknown apps" on your phone
+      # and sideload it directly (no Play Store needed).
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          path: build/web
-
-      # ── 10. Deploy ───────────────────────────────────────────────────────────
-      - name: Deploy to GitHub Pages
-        id: deploy
-        uses: actions/deploy-pages@v4
+          name: Lungiman-debug-${{ github.sha }}
+          path: build/android/Lungiman-debug.apk
+          retention-days: 30
