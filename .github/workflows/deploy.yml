@@ -49,11 +49,20 @@ jobs:
       # ubuntu-latest has Android SDK pre-installed at $ANDROID_HOME.
       - name: Set up Android SDK packages
         run: |
-          echo "Android SDK: $ANDROID_HOME"
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+          echo "=== ANDROID_HOME: $ANDROID_HOME ==="
+          echo "=== Pre-installed build-tools ==="
+          ls "$ANDROID_HOME/build-tools/" || echo "none"
+          # Accept all licenses then install required packages (full output, no suppression)
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses 2>&1 | tail -5
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-34" \
-            "build-tools;34.0.0" \
-            2>/dev/null | grep -E "^(Installed|Nothing|Warning)" || true
+            "build-tools;34.0.0" 2>&1
+          echo "=== build-tools after install ==="
+          ls "$ANDROID_HOME/build-tools/"
+          echo "=== aapt2 present? ==="
+          ls "$ANDROID_HOME/build-tools/34.0.0/aapt2" && echo "aapt2 OK" || echo "aapt2 NOT FOUND"
+          echo "=== Java ==="
+          java -version 2>&1 || echo "java not found"
 
       # ── 5. Disable MCP plugin for CI ─────────────────────────────────────────
       - name: Disable MCP plugin for CI
@@ -98,8 +107,12 @@ jobs:
       # ── 8. Export debug APK ───────────────────────────────────────────────────
       - name: Export debug APK
         run: |
+          echo "=== Editor settings at export time ==="
+          cat "$HOME/.config/godot/editor_settings-4.tres" || echo "FILE MISSING"
+          echo "=== All files in ~/.config/godot/ ==="
+          ls -la "$HOME/.config/godot/" || echo "dir missing"
           mkdir -p build/android
-          godot --headless --export-debug "Android" "$PWD/build/android/Lungiman-debug.apk" 2>&1
+          godot --headless --verbose --export-debug "Android" "$PWD/build/android/Lungiman-debug.apk" 2>&1
 
       # ── 9. Upload APK artifact ────────────────────────────────────────────────
       # Download from the Actions run page → Artifacts section.
