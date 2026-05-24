@@ -47,7 +47,6 @@ jobs:
 
       # ── 4. Set up Android SDK ────────────────────────────────────────────────
       # ubuntu-latest has Android SDK pre-installed at $ANDROID_HOME.
-      # We just need platforms;android-34 and build-tools for APK signing.
       - name: Set up Android SDK packages
         run: |
           echo "Android SDK: $ANDROID_HOME"
@@ -56,30 +55,45 @@ jobs:
             "build-tools;34.0.0" \
             2>/dev/null | grep -E "^(Installed|Nothing|Warning)" || true
 
-      # ── 5. Configure Godot editor settings (Android SDK path) ────────────────
-      - name: Configure Godot Android editor settings
-        run: |
-          mkdir -p ~/.config/godot
-          printf '%s\n' \
-            '[gd_resource type="EditorSettings" format=3]' \
-            '' \
-            '[resource]' \
-            "export/android/android_sdk_path = \"$ANDROID_HOME\"" \
-            > ~/.config/godot/editor_settings-4.tres
-          echo "=== editor_settings-4.tres ==="
-          cat ~/.config/godot/editor_settings-4.tres
-          echo "=== ANDROID_HOME contents ==="
-          ls "$ANDROID_HOME" || echo "ANDROID_HOME not found: $ANDROID_HOME"
-
-      # ── 6. Disable MCP plugin for CI ─────────────────────────────────────────
+      # ── 5. Disable MCP plugin for CI ─────────────────────────────────────────
       - name: Disable MCP plugin for CI
         run: |
           sed -i '/godot_mcp/d' project.godot
           sed -i '/\[editor_plugins\]/{ n; /^$/d }' project.godot
 
-      # ── 7. Import project assets ─────────────────────────────────────────────
+      # ── 6. Import project assets ─────────────────────────────────────────────
+      # Run the editor headless so it imports assets and creates its own
+      # editor_settings file. We patch the SDK path AFTER this step so
+      # Godot cannot overwrite our value.
       - name: Import project assets
         run: godot --headless --editor --quit 2>&1 || true
+
+      # ── 7. Inject Android SDK path into editor settings ───────────────────────
+      # Godot creates editor_settings-4.tres during the import step above.
+      # We append/patch the Android SDK path now so it survives into export.
+      - name: Set Android SDK path in editor settings
+        run: |
+          SETTINGS="$HOME/.config/godot/editor_settings-4.tres"
+          echo "=== ANDROID_HOME: $ANDROID_HOME ==="
+          ls "$ANDROID_HOME" | head -10 || echo "WARNING: ANDROID_HOME not found"
+          if [ -f "$SETTINGS" ]; then
+            echo "=== editor settings (before patch) ==="
+            cat "$SETTINGS"
+            # Remove any existing android_sdk_path line, then append the correct one
+            sed -i '/export\/android\/android_sdk_path/d' "$SETTINGS"
+            echo "export/android/android_sdk_path = \"$ANDROID_HOME\"" >> "$SETTINGS"
+          else
+            echo "No editor settings file found — creating one"
+            mkdir -p "$(dirname "$SETTINGS")"
+            printf '%s\n' \
+              '[gd_resource type="EditorSettings" format=3]' \
+              '' \
+              '[resource]' \
+              "export/android/android_sdk_path = \"$ANDROID_HOME\"" \
+              > "$SETTINGS"
+          fi
+          echo "=== editor settings (after patch) ==="
+          cat "$SETTINGS"
 
       # ── 8. Export debug APK ───────────────────────────────────────────────────
       - name: Export debug APK
@@ -88,9 +102,8 @@ jobs:
           godot --headless --export-debug "Android" "$PWD/build/android/Lungiman-debug.apk" 2>&1
 
       # ── 9. Upload APK artifact ────────────────────────────────────────────────
-      # Download from the workflow run page → Artifacts section.
-      # The APK is a debug build — enable "Install unknown apps" on your phone
-      # and sideload it directly (no Play Store needed).
+      # Download from the Actions run page → Artifacts section.
+      # Enable "Install unknown apps" on your phone and sideload directly.
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
