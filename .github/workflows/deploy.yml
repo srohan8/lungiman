@@ -3,10 +3,10 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-  workflow_dispatch:   # lets you trigger manually from the GitHub Actions tab
+  workflow_dispatch:
 
 permissions:
-  contents: write    # needed to push to gh-pages branch
+  contents: write
 
 env:
   GODOT_VERSION: "4.6"
@@ -28,7 +28,7 @@ jobs:
       - name: Install Godot ${{ env.GODOT_VERSION }}
         run: |
           GODOT_FILENAME="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
-          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${GODOT_FILENAME}.zip"
+          wget --fail -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${GODOT_FILENAME}.zip"
           unzip -q "${GODOT_FILENAME}.zip"
           mv "${GODOT_FILENAME}" /usr/local/bin/godot
           chmod +x /usr/local/bin/godot
@@ -40,44 +40,53 @@ jobs:
           TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
           mkdir -p "${TEMPLATE_DIR}"
           TPZ="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
-          wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
+          wget --fail -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
           unzip -q "${TPZ}" -d /tmp/godot_templates
           mv /tmp/godot_templates/templates/* "${TEMPLATE_DIR}/"
-          echo "Templates installed:"
-          ls "${TEMPLATE_DIR}" | grep web
+          echo "=== Installed templates ==="
+          ls "${TEMPLATE_DIR}"
+          echo "=== Version ==="
+          cat "${TEMPLATE_DIR}/version.txt"
+          echo "=== Web templates ==="
+          ls "${TEMPLATE_DIR}" | grep web || echo "WARNING: no web templates found!"
 
-      # ── 4. Import project (builds .godot/ cache — required before export) ────
-      # The .godot/ folder is git-ignored so CI starts without it.
-      # Running the editor once in headless mode creates the import cache;
-      # without this step the export always fails with "configuration errors".
-      - name: Import project assets
+      # ── 4. Strip MCP plugin for CI ───────────────────────────────────────────
+      # The godot_mcp editor plugin tries to connect to a local WebSocket server
+      # that doesn't exist in CI. Leaving it active during headless export can
+      # stall the export pipeline. We strip it from project.godot for this run
+      # only — the file is never committed back.
+      - name: Disable MCP plugin for CI
         run: |
-          godot --headless --editor --quit 2>&1 || true
-          echo "Import done"
+          sed -i '/godot_mcp/d' project.godot
+          sed -i '/\[editor_plugins\]/{ n; /^$/d }' project.godot
+          echo "project.godot after strip:"
+          grep -A2 "editor_plugins" project.godot || echo "(editor_plugins section removed)"
 
-      # ── 5. Export ────────────────────────────────────────────────────────────
+      # ── 5. Import project assets ─────────────────────────────────────────────
+      - name: Import project assets
+        run: godot --headless --editor --quit 2>&1 || true
+
+      # ── 6. Export ────────────────────────────────────────────────────────────
       - name: Export Web build
         run: |
           mkdir -p build/web
-          godot --headless --verbose --export-release "Web" "$(pwd)/build/web/index.html" 2>&1
+          godot --headless --export-release "Web" build/web/index.html 2>&1
 
-      # ── 6. Inject CORS service worker ────────────────────────────────────────
-      # GitHub Pages doesn't send COOP/COEP headers; this JS workaround adds them
-      # so SharedArrayBuffer (required by Godot 4 threads) works correctly.
+      # ── 7. Inject CORS service worker ────────────────────────────────────────
       - name: Inject CORS service worker
         run: |
           cp web/coi-serviceworker.js build/web/coi-serviceworker.js
           SW_SNIPPET='<script>if("serviceWorker"in navigator){navigator.serviceWorker.register("coi-serviceworker.js").then(r=>{if(!navigator.serviceWorker.controller)location.reload()})}</script>'
           sed -i "s|</head>|${SW_SNIPPET}\n</head>|" build/web/index.html
 
-      # ── 7. Add .nojekyll so GitHub Pages serves .wasm files correctly ────────
+      # ── 8. Add .nojekyll ─────────────────────────────────────────────────────
       - name: Add .nojekyll
         run: touch build/web/.nojekyll
 
-      # ── 8. Deploy to gh-pages branch ─────────────────────────────────────────
+      # ── 9. Deploy ────────────────────────────────────────────────────────────
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: build/web
-          force_orphan: true   # keeps gh-pages branch clean (no build history)
+          force_orphan: true
