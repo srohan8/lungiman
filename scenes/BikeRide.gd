@@ -1315,14 +1315,16 @@ func _begin_game_over() -> void:
 ## Any confirm input restarts the scene — phone tap, spacebar, or R key.
 func _tick_game_over(_delta: float) -> void:
 	if (Input.is_action_just_pressed("ui_accept")
-			or Input.is_action_just_pressed("jump")
-			or Input.is_key_just_pressed(KEY_R)):
+			or Input.is_action_just_pressed("jump")):
 		get_tree().reload_current_scene()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Mobile jump button — BtnUp / ui_accept
 # ─────────────────────────────────────────────────────────────────────────────
 
-func _input(_event: InputEvent) -> void:
-	# MobileButtons fires "jump" action — handled in _tick_ride via Input.is_action_just_pressed
-	pass
+func _input(event: InputEvent) -> void:
+	# MobileButtons fires "jump" action — handled in _tick_ride via Input.is_action_just_pressed.
+	# R key restarts the scene during game over (desktop convenience).
+	if _phase == "game_over" and event is InputEventKey:
+		if event.pressed and not event.echo and event.keycode == KEY_R:
+			get_tree().reload_current_scene()
