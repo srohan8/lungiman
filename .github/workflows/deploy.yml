@@ -78,11 +78,11 @@ jobs:
         run: godot --headless --editor --quit 2>&1 || true
 
       # ── 7. Inject Android SDK path into editor settings ───────────────────────
-      # Godot creates editor_settings-4.tres during the import step above.
+      # Godot creates editor_settings-4.6.tres during the import step above.
       # We append/patch the Android SDK path now so it survives into export.
       - name: Set Android SDK path in editor settings
         run: |
-          SETTINGS="$HOME/.config/godot/editor_settings-4.tres"
+          SETTINGS="$HOME/.config/godot/editor_settings-4.6.tres"
           echo "=== ANDROID_HOME: $ANDROID_HOME ==="
           ls "$ANDROID_HOME" | head -10 || echo "WARNING: ANDROID_HOME not found"
           if [ -f "$SETTINGS" ]; then
@@ -108,7 +108,7 @@ jobs:
       - name: Export debug APK
         run: |
           echo "=== Editor settings at export time ==="
-          cat "$HOME/.config/godot/editor_settings-4.tres" || echo "FILE MISSING"
+          cat "$HOME/.config/godot/editor_settings-4.6.tres" || echo "FILE MISSING"
           echo "=== All files in ~/.config/godot/ ==="
           ls -la "$HOME/.config/godot/" || echo "dir missing"
           mkdir -p build/android
