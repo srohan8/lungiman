@@ -65,9 +65,6 @@ jobs:
             '' \
             '[resource]' \
             "export/android/android_sdk_path = \"$ANDROID_HOME\"" \
-            'export/android/debug_keystore = ""' \
-            'export/android/debug_keystore_user = "androiddebugkey"' \
-            'export/android/debug_keystore_pass = "android"' \
             > ~/.config/godot/editor_settings-4.tres
 
       # ── 6. Disable MCP plugin for CI ─────────────────────────────────────────
