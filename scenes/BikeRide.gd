@@ -23,9 +23,9 @@ const BIKE_X           := 152.0    # fixed screen x
 const BIKE_REST_Y      := 178.0    # bike centre y on ground
 const JUMP_V           := -380.0   # initial upward velocity on jump
 const GRAVITY          := 980.0    # px s⁻²
-const MIN_SPEED        := 180.0    # px s⁻¹ (idle scroll)
-const MAX_SPEED        := 320.0    # px s⁻¹ (full throttle)
-const ACCEL_RATE       := 9.0      # px s⁻³
+const MIN_SPEED        := 150.0    # px s⁻¹ (idle scroll)
+const MAX_SPEED        := 260.0    # px s⁻¹ (full throttle)
+const ACCEL_RATE       := 7.0      # px s⁻³
 
 # ── Engine health ──────────────────────────────────────────────────────────────
 const ENGINE_MAX       := 100
@@ -33,7 +33,7 @@ const OBSTACLE_DMG     := 34       # ~3 hits to stall (34×3 = 102)
 const IFRAME_DURATION  := 0.9      # invincibility after a hit
 
 # ── Ride distance ──────────────────────────────────────────────────────────────
-const RIDE_DIST        := 10000.0  # world units before end-sequence fires
+const RIDE_DIST        := 20000.0  # world units before end-sequence fires
 const END_DECEL        := 95.0     # px s⁻² deceleration during end-sequence
 
 # ── Parallax speeds (fraction of scroll speed) ────────────────────────────────
@@ -50,11 +50,13 @@ const TILE_WIDTHS: Array[float]   = [480.0, 240.0, 160.0]
 
 # ── Obstacle definitions [type, w, h, anim?] ──────────────────────────────────
 const OBS_DEFS := {
-	"pothole":     {"w": 36.0,  "h": 8.0,   "color": Color(0.10, 0.08, 0.06), "ground": true},
-	"crowd":       {"w": 28.0,  "h": 64.0,  "color": Color(0.70, 0.45, 0.20), "ground": false},
-	"goat":        {"w": 24.0,  "h": 28.0,  "color": Color(0.82, 0.80, 0.75), "ground": false},
-	"cart":        {"w": 56.0,  "h": 36.0,  "color": Color(0.55, 0.38, 0.15), "ground": false},
-	"firecracker": {"w": 14.0,  "h": 14.0,  "color": Color(1.00, 0.70, 0.10), "ground": false},
+	"pothole":     {"w": 36.0,  "h": 8.0,   "color": Color(0.10, 0.08, 0.06), "ground": true,  "collect": false},
+	"crowd":       {"w": 28.0,  "h": 64.0,  "color": Color(0.70, 0.45, 0.20), "ground": false, "collect": false},
+	"goat":        {"w": 24.0,  "h": 28.0,  "color": Color(0.82, 0.80, 0.75), "ground": false, "collect": false},
+	"cart":        {"w": 56.0,  "h": 36.0,  "color": Color(0.55, 0.38, 0.15), "ground": false, "collect": false},
+	"firecracker": {"w": 14.0,  "h": 14.0,  "color": Color(1.00, 0.70, 0.10), "ground": false, "collect": false},
+	# Oil can — collectible, restores engine HP. Jump ONTO it or ride through it.
+	"oil_can":     {"w": 14.0,  "h": 18.0,  "color": Color(0.22, 0.72, 0.28), "ground": false, "collect": true},
 }
 # Spawn schedule: [world_x, type]
 const SPAWN_SCHEDULE := [
@@ -76,9 +78,9 @@ const SPAWN_SCHEDULE := [
 	[5900.0, "firecracker"],
 	[6300.0, "crowd"],
 	[6700.0, "pothole"],
-	# Post-midpoint — Kanjiravanam forest section (carnival lights gone, jungle closing in)
+	# ── Forest opens (40% mark ≈ 8000px) — jungle closes in, lights gone ──────
 	[7100.0, "goat"],
-	[7450.0, "cart"],
+	[7450.0, "oil_can"],    # reward for surviving — restore some engine
 	[7800.0, "firecracker"],
 	[8100.0, "crowd"],
 	[8450.0, "pothole"],
@@ -87,6 +89,36 @@ const SPAWN_SCHEDULE := [
 	[9300.0, "firecracker"],
 	[9600.0, "crowd"],
 	[9850.0, "pothole"],
+	# ── Deep forest (50–65%) — road gets worse, animals scatter ───────────────
+	[10200.0, "goat"],
+	[10550.0, "pothole"],
+	[10900.0, "firecracker"],
+	[11250.0, "cart"],
+	[11600.0, "pothole"],
+	[11950.0, "goat"],
+	[12300.0, "oil_can"],   # second oil can — engine struggling by now
+	[12650.0, "firecracker"],
+	[13000.0, "pothole"],   # mid-ride subtitle fires near here (65% ≈ 13000px)
+	[13350.0, "cart"],
+	[13700.0, "goat"],
+	[14050.0, "pothole"],
+	[14400.0, "firecracker"],
+	# ── Final third (65–90%) — deep Kanjiravanam, spirits very close ──────────
+	[14750.0, "cart"],
+	[15100.0, "pothole"],
+	[15450.0, "goat"],
+	[15800.0, "firecracker"],
+	[16100.0, "oil_can"],   # last oil can — if you make it this far, you earned it
+	[16450.0, "pothole"],
+	[16800.0, "cart"],
+	[17150.0, "goat"],
+	[17500.0, "firecracker"],
+	[17850.0, "pothole"],
+	[18200.0, "cart"],
+	[18550.0, "goat"],
+	[18900.0, "firecracker"],
+	[19250.0, "pothole"],
+	[19600.0, "cart"],      # last obstacle before end sequence
 ]
 
 # ── State ──────────────────────────────────────────────────────────────────────
@@ -104,6 +136,8 @@ var _intro_timer    := 0.0
 var _spawn_idx      := 0        # next index in SPAWN_SCHEDULE to check
 var _obstacles      := []       # active obstacle ColorRects + screen_x metadata
 var _did_end_quote      := false
+var _did_mid_quote      := false   # "Kanjiravanam is close..." subtitle at 65%
+var _near_miss_timer    := 0.0     # tracks closest obstacle this frame for near-miss flash
 var _dismount_prompt    : CanvasLayer = null   # "[E] Walk" overlay
 
 # ── Visual nodes (built in _ready) ────────────────────────────────────────────
@@ -529,6 +563,8 @@ func _tick_intro(delta: float) -> void:
 	# t=5.0s — Ravi steps back and waves as the bike rides away (after full 3-line dialogue)
 	if _intro_timer >= 5.0:
 		_dismiss_ravi()
+		AudioManager.play_clip("bike_start")          # engine catches — one-shot SFX
+		AudioManager.play_cinematic("bike_ride", true) # ride music — loops until scene ends
 		_speed = MIN_SPEED       # throttle opens
 		_phase = "ride"
 
@@ -603,9 +639,17 @@ func _tick_ride(delta: float) -> void:
 	# Remove off-screen obstacles
 	_cull_obstacles()
 
-	# Forest transition — village festival gives way to Kanjiravanam at the midpoint
-	if not _forest_transition_done and _scroll_x >= RIDE_DIST * 0.5:
+	# Forest transition — village festival gives way to Kanjiravanam at 40%
+	if not _forest_transition_done and _scroll_x >= RIDE_DIST * 0.40:
 		_begin_forest_transition()
+
+	# Mid-ride subtitle — deep in the forest, spirits are close
+	if not _did_mid_quote and _scroll_x >= RIDE_DIST * 0.65:
+		_did_mid_quote = true
+		_show_dialogue("Kanjiravanam is close...\nThe Bullet's getting nervous.", 3.2)
+
+	# Near-miss flash — reward clean dodges with a satisfying "CLOSE!" burst
+	_check_near_misses(delta)
 
 	# Transition to end sequence — reached end of road, OR engine stalled bike to a full stop
 	if _scroll_x >= RIDE_DIST:
@@ -846,8 +890,6 @@ func _spawn_obstacle(type: String) -> void:
 	_obstacles.append({"rect": r, "type": type, "hit": false})
 
 func _check_collisions() -> void:
-	if _iframe_timer > 0.0:
-		return
 	# Bike hitbox: rough rect around body + wheels
 	var bx1 := BIKE_X - 28.0
 	var bx2 := BIKE_X + 26.0
@@ -866,7 +908,11 @@ func _check_collisions() -> void:
 		# AABB overlap
 		if bx2 > rx1 and bx1 < rx2 and by2 > ry1 and by1 < ry2:
 			entry["hit"] = true
-			_take_hit(entry["type"] as String, r)
+			var def: Dictionary = OBS_DEFS.get(entry["type"], {})
+			if def.get("collect", false):
+				_collect_oil_can(r)
+			elif _iframe_timer <= 0.0:
+				_take_hit(entry["type"] as String, r)
 
 func _take_hit(_type: String, r: ColorRect) -> void:
 	_engine_hp   -= OBSTACLE_DMG
@@ -914,6 +960,95 @@ func _take_hit(_type: String, r: ColorRect) -> void:
 
 func _show_stall_warning() -> void:
 	_show_dialogue("⚠  Engine stalled — coasting to a stop!", 2.0)
+
+## Collecting an oil can restores engine HP and gives a green burst of feedback.
+func _collect_oil_can(r: ColorRect) -> void:
+	# Each can restores 28 HP — slightly less than one hit (34), keeps tension alive
+	_engine_hp = mini(_engine_hp + 28, ENGINE_MAX)
+
+	# Update engine bar colour + width
+	var ratio := float(_engine_hp) / float(ENGINE_MAX)
+	_engine_bar.size.x = ratio * 100.0
+	if ratio > 0.6:
+		_engine_bar.color = Color(0.20, 0.72, 0.28, 1.0)
+	elif ratio > 0.3:
+		_engine_bar.color = Color(0.95, 0.62, 0.10, 1.0)
+	else:
+		_engine_bar.color = Color(0.90, 0.15, 0.10, 1.0)
+
+	# Floating "+OIL" text rises above the bike
+	var popup       := Label.new()
+	popup.text       = "+OIL"
+	popup.add_theme_font_size_override("font_size", 11)
+	popup.add_theme_color_override("font_color", Color(0.22, 0.95, 0.40, 1.0))
+	popup.z_index    = 20
+	popup.position   = Vector2(BIKE_X - 14.0, _bike_y - 36.0)
+	add_child(popup)
+	var ptw := popup.create_tween()
+	ptw.tween_property(popup, "position:y", popup.position.y - 22.0, 0.70).set_trans(Tween.TRANS_SINE)
+	ptw.parallel().tween_property(popup, "modulate:a", 0.0, 0.70)
+	ptw.tween_callback(popup.queue_free)
+
+	# Green screen flash — affirming juice
+	var cl    := CanvasLayer.new()
+	cl.layer   = 14
+	var flash  := ColorRect.new()
+	flash.color = Color(0.10, 0.90, 0.35, 0.0)
+	flash.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cl.add_child(flash)
+	add_child(cl)
+	var ftw := flash.create_tween()
+	ftw.tween_property(flash, "color:a", 0.28, 0.07)
+	ftw.tween_property(flash, "color:a", 0.0,  0.22)
+	ftw.tween_callback(cl.queue_free)
+
+	# Hide the can immediately; _cull_obstacles frees the entry when it scrolls off-screen
+	r.visible = false
+
+## Detects obstacles that just narrowly cleared the bike hitbox — flashes "CLOSE!" for juice.
+## Near-miss: obstacle right edge passed bike left edge within the last 16 px AND was vertically
+## within 12 px of actually hitting. Suppressed by _near_miss_timer to avoid spam.
+func _check_near_misses(delta: float) -> void:
+	if _near_miss_timer > 0.0:
+		_near_miss_timer -= delta
+		return
+
+	var bx1 := BIKE_X - 28.0
+	var by1 := _bike_y - 14.0
+	var by2 := _bike_y + 14.0
+
+	for entry: Dictionary in _obstacles:
+		if entry["hit"]:
+			continue
+		var t: String = entry["type"]
+		if t == "oil_can" or t == "tree" or t == "tree_fire":
+			continue   # collectibles and scenery don't count as near-misses
+		var r: ColorRect = entry["rect"]
+		var rx2 := r.position.x + r.size.x
+		var ry1 := r.position.y
+		var ry2 := ry1 + r.size.y
+
+		# Obstacle right edge just cleared the bike's left edge (0–16 px gap)
+		if rx2 >= bx1 - 16.0 and rx2 < bx1:
+			# Positive vert_gap = clear air gap; negative = overlap (should have been a hit)
+			var vert_gap := maxf(ry1 - by2, by1 - ry2)
+			if vert_gap < 12.0:
+				_near_miss_timer = 1.8   # suppress for 1.8 s
+				_spawn_near_miss_flash()
+				return   # one flash per scan pass is enough
+
+func _spawn_near_miss_flash() -> void:
+	var lbl := Label.new()
+	lbl.text = "CLOSE!"
+	lbl.add_theme_font_size_override("font_size", 14)
+	lbl.add_theme_color_override("font_color", Color(1.0, 0.90, 0.20, 1.0))
+	lbl.z_index  = 20
+	lbl.position = Vector2(VIEWPORT_W * 0.5 - 24.0, VIEWPORT_H * 0.30)
+	add_child(lbl)
+	var ltw := lbl.create_tween()
+	ltw.tween_property(lbl, "position:y", lbl.position.y - 16.0, 0.50).set_trans(Tween.TRANS_SINE)
+	ltw.parallel().tween_property(lbl, "modulate:a", 0.0, 0.50)
+	ltw.tween_callback(lbl.queue_free)
 
 func _cull_obstacles() -> void:
 	var i := _obstacles.size() - 1
@@ -1017,10 +1152,10 @@ func _begin_dismount() -> void:
 	pulse.tween_property(key_box, "modulate:a", 1.00, 0.42).set_trans(Tween.TRANS_SINE)
 
 func _tick_dismount(_delta: float) -> void:
-	# Accept E key, space/enter, or mobile confirm button
-	var pressed := (Input.is_action_just_pressed("ui_accept")
+	# Accept E (climb action), space/enter, or mobile confirm button
+	var pressed: bool = (Input.is_action_just_pressed("ui_accept")
 				or  Input.is_action_just_pressed("jump")
-				or  Input.is_key_just_pressed(KEY_E))
+				or  Input.is_action_just_pressed("climb"))
 	if pressed:
 		_do_dismount()
 
@@ -1076,6 +1211,9 @@ func _finish() -> void:
 	if _phase == "done": return
 	_phase = "done"
 	# (also covers the "dismounting" walk-anim path)
+
+	# Stop ride music before transitioning — SceneManager crossfades to Act 2 BGM
+	AudioManager.stop_cinematic()
 
 	# Save undamaged flag — Ravi's Act V callback reads this
 	GameManager.bike_undamaged = _undamaged
