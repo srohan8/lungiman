@@ -21,6 +21,9 @@ MAIN MENU
     │               ACT III — Odiyan's Hunt
     │                    │
     │                    ▼
+    │          ✦ DISCO HALLUCINATION ✦   ← poison interlude, not a real stage
+    │                    │
+    │                    ▼
     │               ACT IV — Karinkanni's Curse
     │                    │
     │                    ▼
@@ -135,6 +138,26 @@ MAIN MENU
 **Boss phases:**
 1. Human (immune) → Flash (vulnerable) → Bull (charge) → Dog (fast bite)
 2. Below 1 HP → window shrinks to 0.4 s, faster cycle
+
+---
+
+## ✦ DISCO HALLUCINATION — "Odiyan's Venom"
+`DiscoHallucination.tscn` · Auto-triggered after Odiyan death · Not replayable from Level Select
+
+**Not a real stage — a poison dream.** Odiyan's final dog-form bite injects a hallucination venom. The hero walks a few steps after the boss fight, then collapses. He wakes inside his own fevered mind.
+
+| Phase | Duration | What Happens |
+|---|---|---|
+| **Collapse** | ~8 s | Hero stumbles mid-walk. *"Something feels… wrong…"* Screen tilts. Heartbeat. Black. |
+| **Disorientation** | ~10 s | Neon flood. 80s disco. Crowd in bell-bottoms and coloured lungis dancing in sync. Hero stands in the middle in his mundu, completely lost. An NPC grabs his hand: *"DANCE! Follow the steps!"* |
+| **Dance minigame** | ~60–90 s | DDR-style arrow prompts scroll down to a target line. Press A/D/W/S/Space in time. Crowd reacts — cheers for hits, laughs for misses. No fail state; sequence always completes. Score saved as `disco_score`. |
+| **The Turn** | ~5 s | Player loses input. Music pitch drops. All eyes go red. Silence — then the crowd lunges. Chromatic aberration activates. |
+| **Fight phase** | ~90 s | Normal combat (sword, coconut) but screen has RGB split + red vignette pulsing with the beat. A **Clarity bar** drains automatically at 8/sec (kill enemies for +3 each). Clarity hitting 0 forces the scripted collapse — the player cannot win this fight by design. |
+| **Wake-up** | ~15 s | White flash. Real world. Ravi crouching over him: *"You were out for an hour. Kept shouting 'left! right! left!'"* HP restored to 40%. |
+
+**Disco enemies:** Recoloured versions of existing enemy types — same AI, red eyes, neon outfits.  
+**Trigger:** `GameManager.trigger_hallucination()` called from `Odiyan._die()` after a 2 s delay.  
+**Full design doc:** `docs/disco-hallucination-design.md`
 
 ---
 

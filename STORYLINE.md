@@ -228,6 +228,41 @@ The fourth hoof-print triggers the bull charge — Odiyan comes directly at Lung
 
 When Odiyan falls, he collapses into an oil puddle in the fog. The fog lifts. Stars visible for the first time in decades over this highland. Three groves freed.
 
+LungiMan walks forward. Victorious. Three steps, four steps. Something in his ankle burns — the dog bite, in the final moment before Odiyan dissolved. He didn't feel it then.
+
+He feels it now.
+
+---
+
+### Interlude: Odiyan's Venom — The Disco Dream
+*Inside his own poisoned mind.*
+
+He wakes up somewhere that has no business existing. An 80s Kerala disco-cabaret — neon lights, rotating disco ball, everyone in bell-bottoms and coloured lungis doing synchronized moves. A nadaswaram plays over a Roland TR-808 beat. He is standing in the centre, still in his mundu, his arivaal at his belt, his aviators the only thing that feels real.
+
+He has no idea where he is. The crowd does not notice he doesn't belong. Someone grabs his hand and pulls him into the dance circle. *"DANCE, machane! Follow the steps!"*
+
+So he dances. Because what else do you do?
+
+The crowd teaches him the steps — left, right, up, down, jump — and he follows because his body is smarter than his brain in a crisis. For a while, he is genuinely dancing in a neon fever dream, and there is something absurd and almost joyful about it.
+
+Then the music warps. The pitch drops. The disco ball keeps spinning but the light it throws goes wrong — too red, too slow. Every face in the crowd turns toward him at the same moment. Their eyes are red. All of them.
+
+The crowd that was dancing with him charges him.
+
+He fights. Of course he fights. The arivaal is still at his belt and these things — whatever they are — want to hurt him. He takes them down, one after another, and the score climbs, and the neon smears and the floor tilts, and eventually his legs stop working in the way legs stop working when the poison gets into the blood, and he goes down.
+
+White flash.
+
+*"Machane."*
+
+He opens his eyes. Real world. Ravi is crouching over him. The highland fog. Real stars. *"You were out for almost an hour. You kept shouting something about left and right. What happened in there?"*
+
+LungiMan sits up slowly. *"There was music,"* he says. *"And dancing. And then it went wrong."*
+
+*"Odiyan's venom,"* Ravi says. *"Old shapeshifter trick. They call it* kanavum kaadum *— the dream that hunts. You'll be all right. Probably."* He hands LungiMan his satchel. *"Four groves left to go. One more."*
+
+Three groves freed. One man, somewhat confused, picking up his rope.
+
 ---
 
 ### Act IV: Karinkanni's Curse

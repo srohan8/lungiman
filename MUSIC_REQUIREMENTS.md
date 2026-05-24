@@ -1,10 +1,17 @@
 # Kanjiravanam Chronicles — Music Requirements
 
-> **Generation tool:** Suno.ai (manual generation)  
+> **Creation tools:** Freesound.org samples + LMMS (free DAW) — or Suno.ai for rapid prototyping  
 > **Format:** OGG Vorbis — Godot's preferred format (not MP3/WAV)  
 > **Loop:** All act themes and ambient tracks must loop seamlessly  
-> **Style anchor:** Kerala classical + folk percussion · Hand-drawn game aesthetic (Hollow Knight, Spiritfarer)  
-> **Folder:** `res://assets/audio/`
+> **Style anchor:** Kerala classical × 80s synth fusion — *Ilaiyaraaja scored a Malayalam adventure game in 1987*  
+> **Folder:** `res://assets/audio/music/` (BGM) and `res://assets/audio/sfx/` (stings/SFX)  
+>
+> **The two layers always present in every track:**  
+> — Organic (Kerala): mridangam, veena, nadaswaram, chenda, temple bell, bansuri  
+> — Synthetic (80s): Roland TR-808 kick/snare, DX7-style synth lead, Moog bass, synth pad  
+>
+> **Reference listening:** Ilaiyaraaja 1980s Malayalam scores · A.R. Rahman *Roja* · Vangelis *Blade Runner*  
+> **Full production workflow:** `docs/music-guide.md`
 
 ---
 
@@ -34,6 +41,13 @@
 | `music_boss_karinkanni.ogg` | Karinkanni fight |
 | `music_boss_peykomban.ogg` | Pey Komban fight |
 
+### Interlude (looping during gameplay phases)
+| File | Used in | BPM | Loop length |
+|---|---|---|---|
+| `music_disco.ogg` | DiscoHallucination.tscn — dance + fight phases | 130 | 3 min |
+
+> **`music_disco.ogg` style:** nadaswaram lead over TR-808 beat + DX7 synth bass. Must feel like a 1987 Kerala film score written for a disco scene. Pitch-shift during "The Turn" phase is done in-engine (`AudioServer.set_bus_pitch_scale`) — no separate file needed.
+
 ### Cinematic / Event (one-shot)
 | File | Moment |
 |---|---|
@@ -42,6 +56,9 @@
 | `music_peykomban_reveal.ogg` | Act V — Pey Komban silhouette reveal |
 | `music_victory.ogg` | Victory screen |
 | `music_gameover.ogg` | Game Over screen |
+| `sting_disco_perfect.ogg` | Dance phase — perfect timing hit |
+| `sting_disco_miss.ogg` | Dance phase — missed prompt (trombone wah) |
+| `sting_disco_turn.ogg` | The Turn — music warp + scream swell (3 sec) |
 
 ### UI / Ambient Stings (short, one-shot)
 | File | Trigger |
@@ -420,3 +437,43 @@ Once audio files are in `res://assets/audio/`, I will build:
 - [ ] `sfx_bike_engine.ogg`
 - [ ] `sfx_bike_crash.ogg`
 - [ ] `sfx_dialogue_blip.ogg`
+
+### Disco Hallucination SFX
+- [ ] `sting_disco_perfect.ogg`
+- [ ] `sting_disco_miss.ogg`
+- [ ] `sting_disco_turn.ogg`
+- [ ] `sfx_disco_collapse.ogg`
+
+---
+
+## 🎛️ Loop Length & BPM Reference
+
+| Track | BPM | Loop length | Mood |
+|---|---|---|---|
+| `music_menu.ogg` | 72 | 90 sec | Warm, inviting. Veena lead over soft synth pad. |
+| `music_prologue.ogg` | 80 | 120 sec | Gentle mridangam, bansuri, nostalgic synth strings. |
+| `music_act1.ogg` | 95 | 90 sec | Tense bamboo groove. Slow chenda + minor veena. |
+| `music_act2.ogg` | 120 | 90 sec | Full nadaswaram + DX7 electric piano. Peak energy. |
+| `music_act3.ogg` | 75 | 120 sec | Sparse. Temple bell, low synth drone, distant bansuri. |
+| `music_act4.ogg` | 68 | 120 sec | Atmospheric. Ghatam + synth strings. Eerie and beautiful. |
+| `music_act5.ogg` | 85 | 120 sec | Chenda + distorted synth bass. Building dread. |
+| `music_disco.ogg` | 130 | 180 sec | Nadaswaram + TR-808 + DX7 synth bass. Neon Kerala 1987. |
+| `music_bike_ride.ogg` | 130 | 60 sec | Driving 808 kick + chenda. Pure forward momentum. |
+| `music_boss_yakshi.ogg` | 110 | 60 sec | Hypnotic minor. Veena tremolo + gated reverb snare. |
+| `music_boss_kuttichathan.ogg` | 140 | 60 sec | Chaotic. Nadaswaram screech + 808 fills. |
+| `music_boss_odiyan.ogg` | 125 | 60 sec | Shape-shifting meter. Bar of 3 + bar of 4 alternating. |
+| `music_boss_karinkanni.ogg` | 100 | 60 sec | Dark, hypnotic. Low mridangam + 808 + minor key synth. |
+| `music_boss_peykomban.ogg` | 150 | 60 sec | Chenda wall + orchestral synth. Earth-shaking. |
+| `music_victory.ogg` | — | 30 sec | One-shot. Rising nadaswaram fanfare. |
+| `music_gameover.ogg` | — | 10 sec | One-shot. Descending veena phrase. Melancholy. |
+
+## 🎵 Production Workflow (Freesound + LMMS)
+
+1. **Get samples** from freesound.org (filter CC0 or CC-BY):
+   - Percussion: `mridangam single stroke`, `TR-808 kick`, `chenda`, `ghatam`
+   - Melody: `veena pluck`, `nadaswaram`, `bansuri flute`
+   - 80s synth: `analog synth arpeggio`, `DX7 electric piano`, `synth bass stab`
+2. **Build in LMMS:** Beat+Bassline for drums, Song Editor for melody layers, ZynAddSubFX for synth pads
+3. **Export:** `File → Export → WAV` → convert to OGG in Audacity (quality 6)
+4. **Loop test:** End the LMMS song at exactly N bars — it will loop cleanly in Godot
+5. **Drop into** `assets/audio/music/` and tell me — I'll wire AudioManager to play it per scene
