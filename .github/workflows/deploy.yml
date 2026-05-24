@@ -42,8 +42,12 @@ jobs:
             "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZ}"
           unzip -q "${TPZ}" -d /tmp/godot_templates
           mv /tmp/godot_templates/templates/* "${TEMPLATE_DIR}/"
-          echo "=== Android templates ==="
-          ls "${TEMPLATE_DIR}" | grep android || echo "WARNING: no android templates found!"
+          echo "=== ALL template files ==="
+          ls -1 "${TEMPLATE_DIR}"
+          echo "=== Android templates specifically ==="
+          ls "${TEMPLATE_DIR}" | grep -i android || echo "WARNING: no android templates found!"
+          echo "=== android_debug.apk present? ==="
+          ls -lh "${TEMPLATE_DIR}/android_debug.apk" && echo "OK" || echo "MISSING"
 
       # ── 4. Set up Android SDK ────────────────────────────────────────────────
       # ubuntu-latest has Android SDK pre-installed at $ANDROID_HOME.
@@ -107,10 +111,11 @@ jobs:
       # ── 8. Export debug APK ───────────────────────────────────────────────────
       - name: Export debug APK
         run: |
-          echo "=== Editor settings at export time ==="
-          cat "$HOME/.config/godot/editor_settings-4.6.tres" || echo "FILE MISSING"
-          echo "=== All files in ~/.config/godot/ ==="
-          ls -la "$HOME/.config/godot/" || echo "dir missing"
+          TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
+          echo "=== android_debug.apk at export time ==="
+          ls -lh "${TEMPLATE_DIR}/android_debug.apk" && echo "TEMPLATE OK" || echo "TEMPLATE MISSING"
+          echo "=== android_sdk_path in settings ==="
+          grep android_sdk_path "$HOME/.config/godot/editor_settings-4.6.tres" || echo "NOT SET"
           mkdir -p build/android
           godot --headless --verbose --export-debug "Android" "$PWD/build/android/Lungiman-debug.apk" 2>&1
 
