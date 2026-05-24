@@ -93,10 +93,13 @@ jobs:
           sed -i '/export\/android\/android_sdk_path/d' "$SETTINGS"
           sed -i '/export\/android\/android_ndk_path/d' "$SETTINGS"
           sed -i '/export\/android\/java_sdk_path/d' "$SETTINGS"
+          sed -i '/export\/android\/debug_keystore_user/d' "$SETTINGS"
+          KEYSTORE_PATH="$HOME/.local/share/godot/keystores/debug.keystore"
           printf '%s\n' \
             "export/android/android_sdk_path = \"$ANDROID_HOME\"" \
             "export/android/android_ndk_path = \"$NDK_PATH\"" \
             "export/android/java_sdk_path = \"$JAVA_HOME\"" \
+            "export/android/debug_keystore_user = \"androiddebugkey\"" \
             >> "$SETTINGS"
           echo "=== Android settings in file ==="
           grep "export/android" "$SETTINGS"
