@@ -1,8 +1,11 @@
 name: Build Android APK
 
+# Disabled — Godot 4.6 headless Android export has a known bug where
+# validation errors are swallowed (not printed to stdout), making CI
+# builds nearly impossible to debug. Build APKs locally from the Godot
+# editor instead: Project → Export → Android → Export Project.
+# Re-enable by uncommenting the `push` trigger when 4.6 CI support matures.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 env:
