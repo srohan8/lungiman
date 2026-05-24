@@ -50,13 +50,16 @@ const TILE_WIDTHS: Array[float]   = [480.0, 240.0, 160.0]
 
 # ── Obstacle definitions [type, w, h, anim?] ──────────────────────────────────
 const OBS_DEFS := {
-	"pothole":     {"w": 36.0,  "h": 8.0,   "color": Color(0.10, 0.08, 0.06), "ground": true,  "collect": false},
-	"crowd":       {"w": 28.0,  "h": 64.0,  "color": Color(0.70, 0.45, 0.20), "ground": false, "collect": false},
-	"goat":        {"w": 24.0,  "h": 28.0,  "color": Color(0.82, 0.80, 0.75), "ground": false, "collect": false},
-	"cart":        {"w": 56.0,  "h": 36.0,  "color": Color(0.55, 0.38, 0.15), "ground": false, "collect": false},
-	"firecracker": {"w": 14.0,  "h": 14.0,  "color": Color(1.00, 0.70, 0.10), "ground": false, "collect": false},
-	# Oil can — collectible, restores engine HP. Jump ONTO it or ride through it.
+	# Sizes reduced from original to match the lower jump height (JUMP_V = -380 / GRAVITY = 980)
+	"pothole":     {"w": 26.0,  "h": 8.0,   "color": Color(0.10, 0.08, 0.06), "ground": true,  "collect": false},
+	"crowd":       {"w": 26.0,  "h": 44.0,  "color": Color(0.70, 0.45, 0.20), "ground": false, "collect": false},
+	"goat":        {"w": 22.0,  "h": 20.0,  "color": Color(0.82, 0.80, 0.75), "ground": false, "collect": false},
+	"cart":        {"w": 50.0,  "h": 30.0,  "color": Color(0.55, 0.38, 0.15), "ground": false, "collect": false},
+	"firecracker": {"w": 11.0,  "h": 11.0,  "color": Color(1.00, 0.70, 0.10), "ground": false, "collect": false},
+	# Oil can — collectible, restores engine HP.
 	"oil_can":     {"w": 14.0,  "h": 18.0,  "color": Color(0.22, 0.72, 0.28), "ground": false, "collect": true},
+	# Low branch — hangs from above. DUCK (↓ / down arrow) to pass under. Can also be jumped over.
+	"low_branch":  {"w": 68.0,  "h": 24.0,  "color": Color(0.18, 0.11, 0.04), "ground": false, "collect": false, "overhead": true},
 }
 # Spawn schedule: [world_x, type]
 const SPAWN_SCHEDULE := [
@@ -80,25 +83,29 @@ const SPAWN_SCHEDULE := [
 	[6700.0, "pothole"],
 	# ── Forest opens (40% mark ≈ 8000px) — jungle closes in, lights gone ──────
 	[7100.0, "goat"],
-	[7450.0, "oil_can"],    # reward for surviving — restore some engine
+	[7450.0, "oil_can"],     # reward for surviving — restore some engine
+	[7650.0, "low_branch"],  # ↓ duck under first forest branch
 	[7800.0, "firecracker"],
 	[8100.0, "crowd"],
 	[8450.0, "pothole"],
 	[8750.0, "goat"],
 	[9000.0, "cart"],
+	[9200.0, "low_branch"],  # ↓ duck or ↑ jump
 	[9300.0, "firecracker"],
 	[9600.0, "crowd"],
 	[9850.0, "pothole"],
 	# ── Deep forest (50–65%) — road gets worse, animals scatter ───────────────
 	[10200.0, "goat"],
 	[10550.0, "pothole"],
+	[10780.0, "low_branch"],
 	[10900.0, "firecracker"],
 	[11250.0, "cart"],
 	[11600.0, "pothole"],
 	[11950.0, "goat"],
-	[12300.0, "oil_can"],   # second oil can — engine struggling by now
+	[12300.0, "oil_can"],    # second oil can — engine struggling by now
+	[12500.0, "low_branch"],
 	[12650.0, "firecracker"],
-	[13000.0, "pothole"],   # mid-ride subtitle fires near here (65% ≈ 13000px)
+	[13000.0, "pothole"],    # mid-ride subtitle fires near here (65% ≈ 13000px)
 	[13350.0, "cart"],
 	[13700.0, "goat"],
 	[14050.0, "pothole"],
@@ -106,19 +113,22 @@ const SPAWN_SCHEDULE := [
 	# ── Final third (65–90%) — deep Kanjiravanam, spirits very close ──────────
 	[14750.0, "cart"],
 	[15100.0, "pothole"],
+	[15320.0, "low_branch"],
 	[15450.0, "goat"],
 	[15800.0, "firecracker"],
-	[16100.0, "oil_can"],   # last oil can — if you make it this far, you earned it
+	[16100.0, "oil_can"],    # last oil can — if you make it this far, you earned it
 	[16450.0, "pothole"],
 	[16800.0, "cart"],
 	[17150.0, "goat"],
+	[17350.0, "low_branch"],
 	[17500.0, "firecracker"],
 	[17850.0, "pothole"],
 	[18200.0, "cart"],
 	[18550.0, "goat"],
 	[18900.0, "firecracker"],
+	[19100.0, "low_branch"],
 	[19250.0, "pothole"],
-	[19600.0, "cart"],      # last obstacle before end sequence
+	[19600.0, "cart"],       # last obstacle before end sequence
 ]
 
 # ── State ──────────────────────────────────────────────────────────────────────
@@ -138,6 +148,8 @@ var _obstacles      := []       # active obstacle ColorRects + screen_x metadata
 var _did_end_quote      := false
 var _did_mid_quote      := false   # "Kanjiravanam is close..." subtitle at 65%
 var _near_miss_timer    := 0.0     # tracks closest obstacle this frame for near-miss flash
+var _ducking            := false   # true while move_down is held on ground
+var _touch_action_map   := {}      # touch index → action name (for simultaneous multi-touch)
 var _dismount_prompt    : CanvasLayer = null   # "[E] Walk" overlay
 
 # ── Visual nodes (built in _ready) ────────────────────────────────────────────
@@ -147,6 +159,7 @@ var _wheel_r        : ColorRect = null
 var _rider_body     : ColorRect = null   # fallback rider body
 var _rider_head     : ColorRect = null   # fallback rider head
 var _bike_spr       : Sprite2D  = null   # generated sprite (ride frame / jump frame)
+var _bike_base_scale: Vector2   = Vector2.ONE  # original scale saved for duck squish animation
 var _engine_bar     : ColorRect = null
 var _engine_label   : Label     = null
 var _hud_layer      : CanvasLayer = null
@@ -292,6 +305,7 @@ func _build_scene() -> void:
 		var target_h: float = 42.0
 		var sc: float       = target_h / native_h
 		_bike_spr.scale     = Vector2(sc, sc)
+		_bike_base_scale    = _bike_spr.scale   # saved for duck squish animation
 		_bike_spr.z_index   = 2
 		add_child(_bike_spr)
 	else:
@@ -359,6 +373,10 @@ func _build_scene() -> void:
 	_dialogue_label.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
 	_dialogue_label.visible              = false
 	_hud_layer.add_child(_dialogue_label)
+
+	# Touch-zone hints — shown on touchscreen devices so players know where to tap
+	if DisplayServer.is_touchscreen_available():
+		_build_touch_hints()
 
 ## Jungle treeline — 24 crown+trunk pairs spread over 960 px (2× viewport) for seamless wrap.
 ## Each tree has a random height and width to break the uniform silhouette.
@@ -594,11 +612,23 @@ func _tick_ride(delta: float) -> void:
 	else:
 		_speed = maxf(_speed - END_DECEL * delta, 0.0)
 
-	# Jump input
-	var jump_just := Input.is_action_just_pressed("ui_accept") or Input.is_action_just_pressed("jump")
-	if jump_just and _on_ground and _engine_hp > 0:
+	# Jump: space / X (jump action) + up arrow as extra keyboard binding
+	var jump_just := (Input.is_action_just_pressed("ui_accept")
+				or  Input.is_action_just_pressed("jump")
+				or  Input.is_key_just_pressed(KEY_UP))
+
+	# Duck: down arrow / S — crouch to avoid low branches; blocks jumping while held
+	_ducking = Input.is_action_pressed("move_down") and _on_ground
+
+	if jump_just and _on_ground and _engine_hp > 0 and not _ducking:
 		_bike_vy  = JUMP_V
 		_on_ground = false
+		_ducking   = false
+
+	# Duck squish — animate sprite Y scale when crouching so there's visual feedback
+	if _bike_spr != null and _bike_base_scale != Vector2.ZERO:
+		var target_sy := _bike_base_scale.y * (0.65 if _ducking else 1.0)
+		_bike_spr.scale.y = move_toward(_bike_spr.scale.y, target_sy, 4.0 * delta)
 
 	# Vertical physics
 	if not _on_ground:
@@ -857,7 +887,6 @@ func _spawn_obstacle(type: String) -> void:
 	var def: Dictionary = OBS_DEFS[type]
 	var w: float = float(def["w"])
 	var h: float = float(def["h"])
-	var is_ground: bool = bool(def["ground"])
 
 	var r      := ColorRect.new()
 	r.size      = Vector2(w, h)
@@ -866,25 +895,44 @@ func _spawn_obstacle(type: String) -> void:
 
 	var ox: float = VIEWPORT_W + 10.0
 	var oy: float
-	if is_ground:
-		oy = ROAD_Y + 6.0   # pothole sits on road surface
+	if def.get("overhead", false):
+		# Low branch — hangs from mid-air. Duck (↓) to pass under, or jump (↑) over.
+		# Positioned so ducked hitbox (by1 += 12) just clears the branch bottom (ry2).
+		oy = 144.0
 	else:
-		oy = ROAD_Y - h     # bottom of obstacle sits on road surface
+		# All ground-level obstacles sit with their bottom edge at ROAD_Y.
+		# Previously potholes used ROAD_Y + 6 which put them BELOW the bike hitbox — fixed.
+		oy = ROAD_Y - h
 
 	# Goat bounces: give it an upward nudge via tween
 	if type == "goat":
 		r.position = Vector2(ox, oy)
 		add_child(r)
 		var tw := r.create_tween().set_loops()
-		tw.tween_property(r, "position:y", oy - 12.0, 0.28).set_trans(Tween.TRANS_SINE)
+		tw.tween_property(r, "position:y", oy - 10.0, 0.28).set_trans(Tween.TRANS_SINE)
 		tw.tween_property(r, "position:y", oy,         0.28).set_trans(Tween.TRANS_SINE)
 	elif type == "firecracker":
 		# Flash / spark — amber, blink
-		r.position = Vector2(ox, oy - 6.0)
+		r.position = Vector2(ox, oy - 4.0)
 		add_child(r)
 		var tw2 := r.create_tween().set_loops()
 		tw2.tween_property(r, "modulate:a", 0.2, 0.12)
 		tw2.tween_property(r, "modulate:a", 1.0, 0.12)
+	elif type == "low_branch":
+		# Dangling branch — hangs from a dark trunk line at the top
+		r.position = Vector2(ox, oy)
+		add_child(r)
+		# Add a thin trunk above it for visual context
+		var trunk := ColorRect.new()
+		trunk.size     = Vector2(8.0, oy - 55.0)
+		trunk.color    = Color(0.14, 0.08, 0.03, 1.0)
+		trunk.position = Vector2(ox + (w - 8.0) * 0.5, 55.0)
+		trunk.z_index  = 2
+		add_child(trunk)
+		# Slight wobble — the branch sways in the forest air
+		var btw := r.create_tween().set_loops()
+		btw.tween_property(r, "position:y", oy + 3.0, 0.70).set_trans(Tween.TRANS_SINE)
+		btw.tween_property(r, "position:y", oy - 1.0, 0.70).set_trans(Tween.TRANS_SINE)
 	else:
 		r.position = Vector2(ox, oy)
 		add_child(r)
@@ -892,10 +940,11 @@ func _spawn_obstacle(type: String) -> void:
 	_obstacles.append({"rect": r, "type": type, "hit": false})
 
 func _check_collisions() -> void:
-	# Bike hitbox: rough rect around body + wheels
+	# Bike hitbox: rough rect around body + wheels.
+	# When ducking, the top shrinks by 12 px — just enough to clear a low_branch (ry2 = 168).
 	var bx1 := BIKE_X - 28.0
 	var bx2 := BIKE_X + 26.0
-	var by1 := _bike_y - 14.0
+	var by1 := _bike_y - 14.0 + (12.0 if _ducking else 0.0)
 	var by2 := _bike_y + 14.0
 
 	for entry: Dictionary in _obstacles:
@@ -1319,12 +1368,56 @@ func _tick_game_over(_delta: float) -> void:
 		get_tree().reload_current_scene()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Mobile jump button — BtnUp / ui_accept
+# Input — desktop keyboard + mobile multi-touch zones
 # ─────────────────────────────────────────────────────────────────────────────
 
+## Mobile touch zones — right half of screen split into jump (top) and duck (bottom).
+## Each finger tracked by its index so both actions can fire simultaneously.
+## Left half is intentionally inactive (grip / observation area).
 func _input(event: InputEvent) -> void:
-	# MobileButtons fires "jump" action — handled in _tick_ride via Input.is_action_just_pressed.
-	# R key restarts the scene during game over (desktop convenience).
+	# Desktop: R key restarts during game over
 	if _phase == "game_over" and event is InputEventKey:
 		if event.pressed and not event.echo and event.keycode == KEY_R:
 			get_tree().reload_current_scene()
+		return
+
+	# Touch zones
+	if not (event is InputEventScreenTouch): return
+	var e: InputEventScreenTouch = event
+	var win := DisplayServer.window_get_size()
+	var nx: float = e.position.x / float(maxi(win.x, 1))
+	var ny: float = e.position.y / float(maxi(win.y, 1))
+
+	if nx < 0.40: return   # left 40 % = passive grip area
+
+	if e.pressed:
+		var action: String = "jump" if ny < 0.52 else "move_down"
+		_touch_action_map[e.index] = action
+		Input.action_press(action)
+	else:
+		if _touch_action_map.has(e.index):
+			Input.action_release(_touch_action_map[e.index])
+			_touch_action_map.erase(e.index)
+
+## Faint on-screen zone hints so first-time players know where to tap.
+## Only built when a touchscreen is detected (called from _build_scene).
+func _build_touch_hints() -> void:
+	var hl        := CanvasLayer.new()
+	hl.layer       = 9
+	add_child(hl)
+
+	# Top-right zone label — jump
+	var jlbl      := Label.new()
+	jlbl.text      = "↑ TAP"
+	jlbl.add_theme_font_size_override("font_size", 7)
+	jlbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.20))
+	jlbl.position  = Vector2(VIEWPORT_W - 36.0, 8.0)
+	hl.add_child(jlbl)
+
+	# Bottom-right zone label — duck
+	var dlbl      := Label.new()
+	dlbl.text      = "↓ TAP"
+	dlbl.add_theme_font_size_override("font_size", 7)
+	dlbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.20))
+	dlbl.position  = Vector2(VIEWPORT_W - 36.0, VIEWPORT_H - 17.0)
+	hl.add_child(dlbl)
