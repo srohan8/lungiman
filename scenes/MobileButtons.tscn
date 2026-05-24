@@ -5,85 +5,95 @@
 [node name="MobileButtons" type="CanvasLayer"]
 script = ExtResource("1_mob")
 
+; ── LEFT SIDE — movement only (left thumb) ────────────────────────────────────
+
 [node name="BtnLeft" type="Button" parent="."]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 4.0
-offset_top = -32.0
-offset_right = 32.0
-offset_bottom = -4.0
-text = "◀"
-theme_override_font_sizes/font_size = 11
+offset_left = 6.0
+offset_top = -54.0
+offset_right = 54.0
+offset_bottom = -6.0
+text = "<"
+theme_override_font_sizes/font_size = 18
 
 [node name="BtnRight" type="Button" parent="."]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 36.0
-offset_top = -32.0
-offset_right = 64.0
-offset_bottom = -4.0
-text = "▶"
-theme_override_font_sizes/font_size = 11
-
-[node name="BtnUp" type="Button" parent="."]
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 68.0
-offset_top = -64.0
-offset_right = 96.0
-offset_bottom = -36.0
-text = "▲"
-theme_override_font_sizes/font_size = 11
+offset_left = 60.0
+offset_top = -54.0
+offset_right = 108.0
+offset_bottom = -6.0
+text = ">"
+theme_override_font_sizes/font_size = 18
 
 [node name="BtnDown" type="Button" parent="."]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 68.0
-offset_top = -32.0
-offset_right = 96.0
-offset_bottom = -4.0
-text = "▼"
+offset_left = 6.0
+offset_top = -108.0
+offset_right = 54.0
+offset_bottom = -60.0
+text = "v"
+theme_override_font_sizes/font_size = 14
+
+; ── RIGHT SIDE — jump + actions (right thumb) ────────────────────────────────
+
+; JUMP — large, bottom-right corner, most important
+[node name="BtnUp" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = -62.0
+offset_top = -62.0
+offset_right = -6.0
+offset_bottom = -6.0
+text = "JUMP"
 theme_override_font_sizes/font_size = 11
 
+; ATK — bottom row, left of jump
 [node name="BtnSword" type="Button" parent="."]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = -96.0
-offset_top = -32.0
+offset_left = -124.0
+offset_top = -62.0
 offset_right = -68.0
-offset_bottom = -4.0
-text = "⚔"
+offset_bottom = -6.0
+text = "ATK"
 theme_override_font_sizes/font_size = 11
 
+; NUT — above ATK
 [node name="BtnCoconut" type="Button" parent="."]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = -64.0
-offset_top = -32.0
-offset_right = -36.0
-offset_bottom = -4.0
-text = "🥥"
+offset_left = -124.0
+offset_top = -118.0
+offset_right = -68.0
+offset_bottom = -68.0
+text = "NUT"
 theme_override_font_sizes/font_size = 11
 
+; ACT — above JUMP
 [node name="BtnClimb" type="Button" parent="."]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = -32.0
-offset_top = -32.0
-offset_right = -4.0
-offset_bottom = -4.0
-text = "🌴"
+offset_left = -62.0
+offset_top = -118.0
+offset_right = -6.0
+offset_bottom = -68.0
+text = "ACT"
 theme_override_font_sizes/font_size = 11

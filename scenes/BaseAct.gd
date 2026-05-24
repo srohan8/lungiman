@@ -353,7 +353,7 @@ func _apply_sky(sky_color: Color) -> void:
 		bg.name         = "SkyBackground"
 		bg.color        = sky_color
 		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bg.size         = Vector2(480, 270)  # viewport size — anchors don't resolve before add_child
+		bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		sky_cl.add_child(bg)
 		add_child(sky_cl)
 	# Vignette CanvasLayer — persists above game world, below HUD (layer 10)
@@ -376,7 +376,7 @@ func _apply_sky(sky_color: Color) -> void:
 		grad.height    = 512
 		tex_rect.texture      = grad
 		tex_rect.stretch_mode = TextureRect.STRETCH_SCALE
-		tex_rect.size         = Vector2(480, 270)  # viewport size
+		tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		cl.add_child(tex_rect)
 		add_child(cl)
@@ -413,7 +413,7 @@ func _apply_background(bg_path: String, sky_color: Color,
 		var bg_rect := ColorRect.new()
 		bg_rect.color        = sky_color
 		bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bg_rect.size         = Vector2(480, 270)
+		bg_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		sky_cl.add_child(bg_rect)
 		# Optional sky PNG (pure sky, no foreground) at 0.0× — fully static.
 		# Scale by the LARGER of the two ratios so the image always covers the full
@@ -422,9 +422,10 @@ func _apply_background(bg_path: String, sky_color: Color,
 			var sky_spr := Sprite2D.new()
 			sky_spr.texture  = load(sky_path)
 			sky_spr.centered = false
-			var sw := float(sky_spr.texture.get_width())
-			var sh := float(sky_spr.texture.get_height())
-			var s  := maxf(480.0 / sw, 270.0 / sh)
+			var sw  := float(sky_spr.texture.get_width())
+			var sh  := float(sky_spr.texture.get_height())
+			var vp  := get_viewport().get_visible_rect().size
+			var s   := maxf(vp.x / sw, vp.y / sh)
 			sky_spr.scale    = Vector2(s, s)
 			sky_cl.add_child(sky_spr)
 		add_child(sky_cl)
@@ -445,6 +446,7 @@ func _apply_background(bg_path: String, sky_color: Color,
 		var tex_w   := float(far_tex.get_width())
 		var tex_h   := float(far_tex.get_height())
 		var s_far   := 270.0 / tex_h   # scale so full image fills 270px height
+		var vp_w    := get_viewport().get_visible_rect().size.x
 		var crop_y  := tex_h * SKY_CROP  # texture-space y where background starts
 
 		# --- Far layer (0.0× = static) — the main painterly scene, lower 65% ----
@@ -457,7 +459,7 @@ func _apply_background(bg_path: String, sky_color: Color,
 		var far_spr := Sprite2D.new()
 		far_spr.texture        = far_tex
 		far_spr.centered       = false
-		far_spr.scale          = Vector2(s_far, s_far)
+		far_spr.scale          = Vector2(maxf(vp_w / tex_w, s_far), s_far)
 		far_spr.region_enabled = true
 		far_spr.region_rect    = Rect2(0, crop_y, tex_w, tex_h - crop_y)
 		# Shift sprite down so it sits at the correct screen-space y (sky gap above)
@@ -529,7 +531,7 @@ func _apply_background(bg_path: String, sky_color: Color,
 		grad.height    = 512
 		tex_rect.texture      = grad
 		tex_rect.stretch_mode = TextureRect.STRETCH_SCALE
-		tex_rect.size         = Vector2(480, 270)
+		tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		cl.add_child(tex_rect)
 		add_child(cl)
@@ -549,15 +551,16 @@ func _init_sprite_parallax(sky_color: Color, sky_path: String = "") -> void:
 		var bg_rect := ColorRect.new()
 		bg_rect.color        = sky_color
 		bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bg_rect.size         = Vector2(480, 270)
+		bg_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		sky_cl.add_child(bg_rect)
 		if sky_path != "" and ResourceLoader.exists(sky_path):
 			var sky_spr := Sprite2D.new()
 			sky_spr.texture  = load(sky_path)
 			sky_spr.centered = false
-			var sw := float(sky_spr.texture.get_width())
-			var sh := float(sky_spr.texture.get_height())
-			var s  := maxf(480.0 / sw, 270.0 / sh)
+			var sw  := float(sky_spr.texture.get_width())
+			var sh  := float(sky_spr.texture.get_height())
+			var vp2 := get_viewport().get_visible_rect().size
+			var s   := maxf(vp2.x / sw, vp2.y / sh)
 			sky_spr.scale = Vector2(s, s)
 			sky_cl.add_child(sky_spr)
 		add_child(sky_cl)
@@ -609,7 +612,7 @@ func _init_sprite_parallax(sky_color: Color, sky_path: String = "") -> void:
 		grad.height    = 512
 		tex_rect.texture      = grad
 		tex_rect.stretch_mode = TextureRect.STRETCH_SCALE
-		tex_rect.size         = Vector2(480, 270)
+		tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		cl.add_child(tex_rect)
 		add_child(cl)
