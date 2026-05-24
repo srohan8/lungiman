@@ -550,6 +550,7 @@ func _process(delta: float) -> void:
 		"ride":           _tick_ride(delta)
 		"end":            _tick_end(delta)
 		"wait_dismount":  _tick_dismount(delta)
+		"game_over":      _tick_game_over(delta)
 		"done":           pass
 
 func _tick_intro(delta: float) -> void:
@@ -651,12 +652,13 @@ func _tick_ride(delta: float) -> void:
 	# Near-miss flash — reward clean dodges with a satisfying "CLOSE!" burst
 	_check_near_misses(delta)
 
-	# Transition to end sequence — reached end of road, OR engine stalled bike to a full stop
+	# Completed the full ride → normal end sequence → dismount
 	if _scroll_x >= RIDE_DIST:
 		_begin_end_sequence()
 	elif _engine_hp <= 0 and _speed <= 0.0:
-		# Engine dead and bike has completely stopped — the forest won.
-		_begin_end_sequence()
+		# Engine dead before completing the ride → game over, NOT dismount.
+		# The "[E] Walk" prompt must only appear on a SUCCESSFUL run.
+		_begin_game_over()
 
 func _tick_end(delta: float) -> void:
 	_end_timer += delta
@@ -1220,6 +1222,102 @@ func _finish() -> void:
 
 	# SceneManager handles fade-to-black and reset_status_effects
 	SceneManager.go_to(NEXT_SCENE)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Game over — engine died before completing the ride
+# ─────────────────────────────────────────────────────────────────────────────
+
+## Engine stalled before the forest edge — show game-over screen, NOT the dismount prompt.
+## The "[E] Walk" option is earned by completing the ride, not handed out for free.
+func _begin_game_over() -> void:
+	if _phase == "game_over" or _phase == "done": return
+	_phase = "game_over"
+
+	# Brief dramatic pause while the last scroll dust settles
+	await get_tree().create_timer(0.85).timeout
+
+	# Full-screen overlay — dark red tint
+	var cl        := CanvasLayer.new()
+	cl.layer       = 20
+	add_child(cl)
+
+	var cover     := ColorRect.new()
+	cover.color    = Color(0.0, 0.0, 0.0, 0.0)
+	cover.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cl.add_child(cover)
+	var ctw := cover.create_tween()
+	ctw.tween_property(cover, "color", Color(0.06, 0.01, 0.01, 0.84), 0.55)
+
+	await get_tree().create_timer(0.40).timeout
+
+	# Title
+	var title     := Label.new()
+	title.text     = "ENGINE DEAD"
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", Color(0.92, 0.18, 0.10, 1.0))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.size     = Vector2(VIEWPORT_W, 28.0)
+	title.position = Vector2(0.0, VIEWPORT_H * 0.26)
+	cl.add_child(title)
+	# Fade the title in
+	title.modulate.a = 0.0
+	title.create_tween().tween_property(title, "modulate:a", 1.0, 0.30)
+
+	# Flavour line
+	var flavour   := Label.new()
+	flavour.text   = "Kanjiravanam pushed back.\nThe forest will not be rushed."
+	flavour.add_theme_font_size_override("font_size", 9)
+	flavour.add_theme_color_override("font_color", Color(0.85, 0.76, 0.55, 0.90))
+	flavour.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	flavour.autowrap_mode         = TextServer.AUTOWRAP_WORD
+	flavour.size     = Vector2(VIEWPORT_W - 48.0, 36.0)
+	flavour.position = Vector2(24.0, VIEWPORT_H * 0.44)
+	cl.add_child(flavour)
+
+	# Distance reached — how far did they get?
+	var pct       := int((_scroll_x / RIDE_DIST) * 100.0)
+	var dist_lbl  := Label.new()
+	dist_lbl.text  = "Reached %d%% of the ride" % pct
+	dist_lbl.add_theme_font_size_override("font_size", 8)
+	dist_lbl.add_theme_color_override("font_color", Color(0.65, 0.65, 0.60, 0.80))
+	dist_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	dist_lbl.size     = Vector2(VIEWPORT_W, 14.0)
+	dist_lbl.position = Vector2(0.0, VIEWPORT_H * 0.60)
+	cl.add_child(dist_lbl)
+
+	# Restart prompt — centred [R] key box + label
+	var key_bg    := ColorRect.new()
+	key_bg.color   = Color(0.82, 0.18, 0.10, 1.0)
+	key_bg.size    = Vector2(16.0, 13.0)
+	key_bg.position = Vector2(VIEWPORT_W * 0.5 - 48.0, VIEWPORT_H * 0.73)
+	cl.add_child(key_bg)
+
+	var key_lbl   := Label.new()
+	key_lbl.text   = "R"
+	key_lbl.add_theme_font_size_override("font_size", 9)
+	key_lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+	key_lbl.position = Vector2(key_bg.position.x + 4.0, key_bg.position.y + 1.0)
+	cl.add_child(key_lbl)
+
+	var try_lbl   := Label.new()
+	try_lbl.text   = "Try again"
+	try_lbl.add_theme_font_size_override("font_size", 9)
+	try_lbl.add_theme_color_override("font_color", Color(1.00, 0.88, 0.60, 1.0))
+	try_lbl.position = Vector2(key_bg.position.x + 22.0, key_bg.position.y + 1.0)
+	cl.add_child(try_lbl)
+
+	# Pulse the key box to draw the eye
+	var pulse := key_bg.create_tween().set_loops()
+	pulse.tween_property(key_bg, "modulate:a", 0.38, 0.50).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(key_bg, "modulate:a", 1.00, 0.50).set_trans(Tween.TRANS_SINE)
+
+## Watches for restart input while the game-over screen is visible.
+## Any confirm input restarts the scene — phone tap, spacebar, or R key.
+func _tick_game_over(_delta: float) -> void:
+	if (Input.is_action_just_pressed("ui_accept")
+			or Input.is_action_just_pressed("jump")
+			or Input.is_key_just_pressed(KEY_R)):
+		get_tree().reload_current_scene()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Mobile jump button — BtnUp / ui_accept
