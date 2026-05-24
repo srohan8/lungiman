@@ -78,20 +78,6 @@ jobs:
           sed -i '/godot_mcp/d' project.godot
           sed -i '/\[editor_plugins\]/{ n; /^$/d }' project.godot
 
-      # ── 6. Install Android build template into project ───────────────────────
-      # use_gradle_build=true requires android_source.zip extracted into
-      # the project at android/build/ — equivalent to Project → Install
-      # Android Build Template in the editor.
-      - name: Install Android build template
-        run: |
-          TEMPLATE_DIR="${HOME}/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}"
-          mkdir -p android/build
-          unzip -q "$TEMPLATE_DIR/android_source.zip" -d android/build
-          # Mark the build dir so Godot's scanner ignores it
-          touch android/build/.gdignore
-          echo "=== android/build contents ==="
-          ls android/build/ | head -10
-
       # ── 7. Import project assets ─────────────────────────────────────────────
       - name: Import project assets
         run: godot --headless --editor --quit 2>&1 || true
