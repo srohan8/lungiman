@@ -6,16 +6,25 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 env:
   GODOT_VERSION: "4.6"
   GODOT_RELEASE: "stable"
 
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   export-web:
     name: Export & Deploy Web Build
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
 
     steps:
       # ── 1. Checkout ──────────────────────────────────────────────────────────
@@ -85,10 +94,14 @@ jobs:
       - name: Add .nojekyll
         run: touch build/web/.nojekyll
 
-      # ── 9. Deploy ────────────────────────────────────────────────────────────
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      # ── 9. Upload artifact ───────────────────────────────────────────────────
+      # Uploads directly to GitHub Pages storage — no git commit, no 100 MB limit.
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: build/web
-          force_orphan: true
+          path: build/web
+
+      # ── 10. Deploy ───────────────────────────────────────────────────────────
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
