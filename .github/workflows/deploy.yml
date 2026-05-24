@@ -66,6 +66,10 @@ jobs:
             '[resource]' \
             "export/android/android_sdk_path = \"$ANDROID_HOME\"" \
             > ~/.config/godot/editor_settings-4.tres
+          echo "=== editor_settings-4.tres ==="
+          cat ~/.config/godot/editor_settings-4.tres
+          echo "=== ANDROID_HOME contents ==="
+          ls "$ANDROID_HOME" || echo "ANDROID_HOME not found: $ANDROID_HOME"
 
       # ── 6. Disable MCP plugin for CI ─────────────────────────────────────────
       - name: Disable MCP plugin for CI
