@@ -1334,31 +1334,26 @@ func _begin_game_over() -> void:
 	dist_lbl.position = Vector2(0.0, VIEWPORT_H * 0.60)
 	cl.add_child(dist_lbl)
 
-	# Restart prompt — centred [R] key box + label
-	var key_bg    := ColorRect.new()
-	key_bg.color   = Color(0.82, 0.18, 0.10, 1.0)
-	key_bg.size    = Vector2(16.0, 13.0)
-	key_bg.position = Vector2(VIEWPORT_W * 0.5 - 48.0, VIEWPORT_H * 0.73)
-	cl.add_child(key_bg)
+	# Restart button — full-width tap target (mobile-friendly 420 × 44 px)
+	var retry_btn     := ColorRect.new()
+	retry_btn.color    = Color(0.78, 0.14, 0.08, 1.0)
+	retry_btn.size     = Vector2(420.0, 44.0)
+	retry_btn.position = Vector2(VIEWPORT_W * 0.5 - 210.0, VIEWPORT_H * 0.72)
+	cl.add_child(retry_btn)
 
-	var key_lbl   := Label.new()
-	key_lbl.text   = "R"
-	key_lbl.add_theme_font_size_override("font_size", 9)
-	key_lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
-	key_lbl.position = Vector2(key_bg.position.x + 4.0, key_bg.position.y + 1.0)
-	cl.add_child(key_lbl)
+	var retry_lbl     := Label.new()
+	retry_lbl.text     = "▶  Try Again   (tap · R · Space)"
+	retry_lbl.add_theme_font_size_override("font_size", 13)
+	retry_lbl.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+	retry_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	retry_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	retry_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	retry_btn.add_child(retry_lbl)
 
-	var try_lbl   := Label.new()
-	try_lbl.text   = "Try again"
-	try_lbl.add_theme_font_size_override("font_size", 9)
-	try_lbl.add_theme_color_override("font_color", Color(1.00, 0.88, 0.60, 1.0))
-	try_lbl.position = Vector2(key_bg.position.x + 22.0, key_bg.position.y + 1.0)
-	cl.add_child(try_lbl)
-
-	# Pulse the key box to draw the eye
-	var pulse := key_bg.create_tween().set_loops()
-	pulse.tween_property(key_bg, "modulate:a", 0.38, 0.50).set_trans(Tween.TRANS_SINE)
-	pulse.tween_property(key_bg, "modulate:a", 1.00, 0.50).set_trans(Tween.TRANS_SINE)
+	# Pulse the button to draw the eye
+	var pulse := retry_btn.create_tween().set_loops()
+	pulse.tween_property(retry_btn, "modulate:a", 0.50, 0.55).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(retry_btn, "modulate:a", 1.00, 0.55).set_trans(Tween.TRANS_SINE)
 
 ## Watches for restart input while the game-over screen is visible.
 ## Any confirm input restarts the scene — phone tap, spacebar, or R key.
@@ -1375,9 +1370,12 @@ func _tick_game_over(_delta: float) -> void:
 ## Each finger tracked by its index so both actions can fire simultaneously.
 ## Left half is intentionally inactive (grip / observation area).
 func _input(event: InputEvent) -> void:
-	# Desktop: R key restarts during game over
-	if _phase == "game_over" and event is InputEventKey:
-		if event.pressed and not event.echo and event.keycode == KEY_R:
+	# Any input restarts during game over: R key, spacebar (via _tick_game_over), or any screen tap
+	if _phase == "game_over":
+		if event is InputEventKey:
+			if event.pressed and not event.echo and event.keycode == KEY_R:
+				get_tree().reload_current_scene()
+		elif event is InputEventScreenTouch and event.pressed:
 			get_tree().reload_current_scene()
 		return
 

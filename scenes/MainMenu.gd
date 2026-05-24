@@ -67,9 +67,9 @@ func _build_main_panel() -> Control:
 	vbox.custom_minimum_size = Vector2(360, 0)
 	vbox.offset_left   = -180
 	vbox.offset_right  =  180
-	vbox.offset_top    = -160
-	vbox.offset_bottom =  160
-	vbox.add_theme_constant_override("separation", 14)
+	vbox.offset_top    = -130
+	vbox.offset_bottom =  130
+	vbox.add_theme_constant_override("separation", 8)
 
 	# Title
 	var title := Label.new()
@@ -97,7 +97,7 @@ func _build_main_panel() -> Control:
 		vbox.add_child(hs)
 
 	# Spacer
-	var sp := Control.new(); sp.custom_minimum_size = Vector2(0, 22)
+	var sp := Control.new(); sp.custom_minimum_size = Vector2(0, 6)
 	vbox.add_child(sp)
 
 	# Buttons
@@ -145,51 +145,84 @@ func _build_main_panel() -> Control:
 # ── Level Select (inline) ─────────────────────────────────────────────────────
 
 func _open_level_select() -> void:
-	# Build on first open (or rebuild to refresh lock state)
+	# Rebuild to refresh unlock + quest state every open
 	var existing := get_node_or_null("LevelSelectPanel")
-	if existing:
-		existing.queue_free()
+	if existing: existing.queue_free()
 
 	var root := Control.new()
 	root.name = "LevelSelectPanel"
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
-	var vbox := VBoxContainer.new()
-	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	vbox.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	vbox.custom_minimum_size = Vector2(440, 0)
-	vbox.offset_left   = -220
-	vbox.offset_right  =  220
-	vbox.offset_top    = -200
-	vbox.offset_bottom =  200
-	vbox.add_theme_constant_override("separation", 10)
+	# Dim backdrop
+	var overlay := ColorRect.new()
+	overlay.color = Color(0.0, 0.0, 0.0, 0.55)
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.add_child(overlay)
 
+	# ── Outer panel — fixed size, centred ────────────────────────────────────────
+	var outer := VBoxContainer.new()
+	outer.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	outer.custom_minimum_size = Vector2(456, 0)
+	outer.offset_left   = -228
+	outer.offset_right  =  228
+	outer.offset_top    = -120
+	outer.offset_bottom =  120
+	outer.add_theme_constant_override("separation", 8)
+
+	var panel_bg := ColorRect.new()
+	panel_bg.color = COL_PANEL
+	panel_bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	panel_bg.z_index = -1
+	root.add_child(panel_bg)
+	panel_bg.offset_left   = outer.offset_left   - 10
+	panel_bg.offset_right  = outer.offset_right  + 10
+	panel_bg.offset_top    = outer.offset_top    - 10
+	panel_bg.offset_bottom = outer.offset_bottom + 10
+
+	# Header (outside scroll — always visible)
 	var hdr := Label.new()
 	hdr.text = "🗺  Select Level"
 	hdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hdr.add_theme_color_override("font_color", COL_GOLD)
 	hdr.add_theme_font_size_override("font_size", 18)
-	vbox.add_child(hdr)
+	outer.add_child(hdr)
 
-	var sp := Control.new(); sp.custom_minimum_size = Vector2(0, 10)
-	vbox.add_child(sp)
+	# ── ScrollContainer holds all the cards ──────────────────────────────────────
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	outer.add_child(scroll)
 
-	# Grid 2 columns
+	var content := VBoxContainer.new()
+	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	content.add_theme_constant_override("separation", 8)
+	scroll.add_child(content)
+
+	# ── Acts section ─────────────────────────────────────────────────────────────
+	var acts_lbl := Label.new()
+	acts_lbl.text = "─── Acts ───"
+	acts_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	acts_lbl.add_theme_color_override("font_color", Color(COL_GOLD, 0.60))
+	acts_lbl.add_theme_font_size_override("font_size", 11)
+	content.add_child(acts_lbl)
+
 	var grid := GridContainer.new()
 	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 12)
-	grid.add_theme_constant_override("v_separation", 10)
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 7)
 
-	const LEVELS := [
-		["🌅  Prologue",     "res://scenes/World.tscn",  0],
-		["🌿  Act I — Yakshi's Hollow",    "res://scenes/Act1.tscn", 1],
-		["🔥  Act II — Kuttichathan's Carnival", "res://scenes/Act2.tscn", 2],
-		["🌫  Act III — Odiyan's Hunt",    "res://scenes/Act3.tscn", 3],
-		["🌧  Act IV — Karinkanni's Curse","res://scenes/Act4.tscn", 4],
-		["🌑  Act V — Pey Komban's Rampage","res://scenes/Act5.tscn",5],
+	const LEVELS: Array = [
+		["🌅  Prologue",               "res://scenes/World.tscn",     0],
+		["🏍  Bike Ride",               "res://scenes/BikeRide.tscn",  1],
+		["🌿  Act I — Yakshi",          "res://scenes/Act1.tscn",      1],
+		["🔥  Act II — Kuttichathan",   "res://scenes/Act2.tscn",      2],
+		["🌫  Act III — Odiyan",        "res://scenes/Act3.tscn",      3],
+		["🌧  Act IV — Karinkanni",     "res://scenes/Act4.tscn",      4],
+		["🌑  Act V — Pey Komban",      "res://scenes/Act5.tscn",      5],
+		["🏚  Houseboat",               "res://scenes/Houseboat.tscn", 4],
 	]
 
-	var unlocked: int = 99   # DEV: all acts unlocked for testing
+	var unlocked: int = 99   # DEV: all unlocked — swap for GameManager.acts_cleared in prod
 
 	for level_data: Array in LEVELS:
 		var label_text: String = level_data[0]
@@ -198,9 +231,10 @@ func _open_level_select() -> void:
 		var is_unlocked: bool  = (required <= unlocked)
 
 		var btn := Button.new()
-		btn.text                    = label_text if is_unlocked else "🔒  " + label_text.substr(4)
-		btn.custom_minimum_size     = Vector2(200, 38)
-		btn.disabled                = not is_unlocked
+		btn.text = label_text if is_unlocked else "🔒  " + label_text.substr(4)
+		btn.custom_minimum_size = Vector2(218, 32)
+		btn.disabled = not is_unlocked
+		btn.add_theme_font_size_override("font_size", 11)
 		btn.add_theme_color_override("font_color",
 				COL_MUTED if is_unlocked else COL_LOCKED)
 		btn.add_theme_color_override("font_color_disabled", COL_LOCKED)
@@ -208,7 +242,6 @@ func _open_level_select() -> void:
 				_make_stylebox(COL_BTN if is_unlocked else Color(0.10, 0.10, 0.10)))
 		btn.add_theme_stylebox_override("hover",
 				_make_stylebox(COL_BTN_HOV if is_unlocked else Color(0.10, 0.10, 0.10)))
-
 		if is_unlocked:
 			var path := scene_path
 			btn.pressed.connect(func() -> void:
@@ -217,15 +250,105 @@ func _open_level_select() -> void:
 			)
 		grid.add_child(btn)
 
-	vbox.add_child(grid)
+	content.add_child(grid)
 
-	var sp2 := Control.new(); sp2.custom_minimum_size = Vector2(0, 16)
-	vbox.add_child(sp2)
+	# ── Side Quests section ───────────────────────────────────────────────────────
+	var div := ColorRect.new()
+	div.color = Color(COL_GOLD, 0.22)
+	div.custom_minimum_size = Vector2(0, 1)
+	content.add_child(div)
 
+	var quests_lbl := Label.new()
+	quests_lbl.text = "─── Side Quests ───"
+	quests_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	quests_lbl.add_theme_color_override("font_color", Color(COL_GOLD, 0.60))
+	quests_lbl.add_theme_font_size_override("font_size", 11)
+	content.add_child(quests_lbl)
+
+	# quest_id → scene the NPC / activity lives in
+	const QUEST_SCENES: Dictionary = {
+		"fish_fry_for_gods":   "res://scenes/World.tscn",
+		"swing_off_race":      "res://scenes/Act1.tscn",
+		"chaya_kada_showdown": "res://scenes/Act1.tscn",
+		"odiyan_tracks":       "res://scenes/Act3.tscn",
+		"bell_of_bhadrakali":  "res://scenes/Houseboat.tscn",
+	}
+
+	for quest_id: String in QUEST_SCENES:
+		var state:  int    = _qm.get_state(quest_id)   if _qm != null else _QS_LOCKED
+		var title:  String = _qm.get_title(quest_id)   if _qm != null else quest_id
+		var reward: String = _qm.get_reward(quest_id)  if _qm != null else ""
+		var dest:   String = QUEST_SCENES[quest_id]
+
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+
+		# State badge
+		var badge := Label.new()
+		badge.text = _quest_icon(state)
+		badge.custom_minimum_size = Vector2(22, 0)
+		badge.add_theme_font_size_override("font_size", 14)
+		badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		row.add_child(badge)
+
+		# Text block
+		var tbox := VBoxContainer.new()
+		tbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tbox.add_theme_constant_override("separation", 2)
+
+		var tlabel := Label.new()
+		tlabel.text = title
+		tlabel.add_theme_font_size_override("font_size", 12)
+		tlabel.add_theme_color_override("font_color", _quest_color(state))
+		tbox.add_child(tlabel)
+
+		var sub_lbl := Label.new()
+		sub_lbl.add_theme_font_size_override("font_size", 10)
+		match state:
+			_QS_DONE:
+				sub_lbl.text = "✔  " + reward
+				sub_lbl.add_theme_color_override("font_color", COL_DONE)
+			_QS_ACTIVE:
+				var prog: int = _qm.get_progress(quest_id) if _qm != null else 0
+				var tot: int  = _qm.get_total(quest_id)    if _qm != null else 1
+				sub_lbl.text = "In progress  %d / %d" % [prog, tot]
+				sub_lbl.add_theme_color_override("font_color", COL_ACTIVE)
+			_:
+				var act_n: int = _qm.QUEST_DATA[quest_id]["act"] if _qm != null else 0
+				sub_lbl.text = "Available in %s" % ("Prologue" if act_n == 0 else "Act %d" % act_n)
+				sub_lbl.add_theme_color_override("font_color", COL_MUTED)
+		tbox.add_child(sub_lbl)
+		row.add_child(tbox)
+
+		# DEV: all quests playable regardless of lock state
+		if true:
+			var qbtn := Button.new()
+			qbtn.text = "▶  Play"
+			qbtn.custom_minimum_size = Vector2(72, 28)
+			qbtn.add_theme_font_size_override("font_size", 11)
+			qbtn.add_theme_color_override("font_color", COL_MUTED)
+			qbtn.add_theme_stylebox_override("normal", _make_stylebox(COL_BTN))
+			qbtn.add_theme_stylebox_override("hover",  _make_stylebox(COL_BTN_HOV))
+			var path := dest
+			qbtn.pressed.connect(func() -> void:
+				GameManager.reset()
+				SceneManager.go_to(path)
+			)
+			row.add_child(qbtn)
+
+		content.add_child(row)
+
+		var sep := ColorRect.new()
+		sep.color = Color(1.0, 1.0, 1.0, 0.05)
+		sep.custom_minimum_size = Vector2(0, 1)
+		content.add_child(sep)
+
+	# ── Back button (outside scroll — always at bottom) ───────────────────────────
 	var back := _make_button("← Back")
 	back.pressed.connect(func() -> void: root.queue_free())
-	vbox.add_child(back)
-	root.add_child(vbox)
+	outer.add_child(back)
+
+	root.add_child(outer)
 	add_child(root)
 
 
@@ -241,25 +364,32 @@ func _build_quest_panel() -> Control:
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(overlay)
 
+	# Panel — fits within 480 × 270 viewport (256 px tall)
 	var panel := ColorRect.new()
 	panel.color = COL_PANEL
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(480, 340)
-	panel.offset_left   = -240
-	panel.offset_right  =  240
-	panel.offset_top    = -180
-	panel.offset_bottom =  180
+	panel.custom_minimum_size = Vector2(460, 0)
+	panel.offset_left   = -230
+	panel.offset_right  =  230
+	panel.offset_top    = -128
+	panel.offset_bottom =  128
 	root.add_child(panel)
 
+	# ScrollContainer — quest rows scroll inside the fixed panel
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	scroll.custom_minimum_size = Vector2(440, 0)
+	scroll.offset_left   = -220
+	scroll.offset_right  =  220
+	scroll.offset_top    = -120
+	scroll.offset_bottom =  120
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	root.add_child(scroll)
+
 	var vbox := VBoxContainer.new()
-	vbox.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	vbox.custom_minimum_size = Vector2(440, 0)
-	vbox.offset_left   = -220
-	vbox.offset_right  =  220
-	vbox.offset_top    = -160
-	vbox.offset_bottom =  160
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox.add_theme_constant_override("separation", 10)
-	root.add_child(vbox)
+	scroll.add_child(vbox)
 	root.set_meta("quest_vbox", vbox)
 
 	return root
@@ -377,7 +507,7 @@ func _quest_color(state: int) -> Color:
 func _make_button(label: String) -> Button:
 	var btn := Button.new()
 	btn.text                = label
-	btn.custom_minimum_size = Vector2(200, 38)
+	btn.custom_minimum_size = Vector2(200, 32)
 	btn.add_theme_color_override("font_color", COL_MUTED)
 	btn.add_theme_stylebox_override("normal", _make_stylebox(COL_BTN))
 	btn.add_theme_stylebox_override("hover",  _make_stylebox(COL_BTN_HOV))
