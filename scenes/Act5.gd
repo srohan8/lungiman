@@ -10,6 +10,9 @@ const ACT_TRIGGER_X := 7800.0   # fallback only — game_won fires first
 var _thoma_ref:          Node2D = null
 var _cinematic_running:  bool   = false
 var _reveal_done:        bool   = false   # Pey Komban opening reveal (fires once)
+var _arena_locked:       bool   = false   # fires once when player crosses ARENA_LOCK_X
+
+const ARENA_LOCK_X := 3000.0   # commit point — past this, no retreat
 
 const ZONE_TREES   := 24
 const ZONE_X_FROM  := 150.0
@@ -41,6 +44,19 @@ func _ready() -> void:
 	_queue_hint("⚠️ STAY OFF THE GROUND — one charge and you're done!", 1.5, 7.0)
 	_start_footstep_shakes()
 	_begin_peykomban_reveal()   # async — 3-second 3rd-person reveal, then normal gameplay
+
+func _process(delta: float) -> void:
+	super._process(delta)
+	if _arena_locked: return
+	var player := _get_player()
+	if not is_instance_valid(player): return
+	if player.global_position.x >= ARENA_LOCK_X:
+		_arena_locked = true
+		var cam := player.get_node_or_null("Camera2D") as Camera2D
+		_lock_arena(player, cam)
+		var hud := _get_hud()
+		if hud and hud.has_method("show_hint"):
+			hud.show_hint("⚠️ No retreat — face Pey Komban!", 3.0)
 
 ## Periodic ground-shake — Pey Komban's distant footsteps felt every 8s.
 func _start_footstep_shakes() -> void:
@@ -262,11 +278,11 @@ func _begin_peykomban_reveal() -> void:
 		back_tw.tween_property(cam, "offset", Vector2(0.0, 0.0), 0.32)
 		await back_tw.finished
 
-	# ── Step 5: Resume gameplay + lock the arena ─────────────────────────────
+	# ── Step 5: Resume gameplay ─────────────────────────────────────────────
 	if is_instance_valid(player):
 		player.set_physics_process(true)
 		player.set_process(true)
-		_lock_arena(player, cam)
+		# Arena lock fires later via _process when player crosses ARENA_LOCK_X
 
 # ─────────────────────────────────────────────────────────────────────────────
 ## ARENA LOCK — called once the reveal cinematic ends.
