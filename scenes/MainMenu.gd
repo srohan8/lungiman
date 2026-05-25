@@ -67,16 +67,16 @@ func _build_main_panel() -> Control:
 	vbox.custom_minimum_size = Vector2(360, 0)
 	vbox.offset_left   = -180
 	vbox.offset_right  =  180
-	vbox.offset_top    = -130
-	vbox.offset_bottom =  130
-	vbox.add_theme_constant_override("separation", 8)
+	vbox.offset_top    = -132
+	vbox.offset_bottom =  132
+	vbox.add_theme_constant_override("separation", 4)   # tight stack so all 5 buttons fit
 
 	# Title
 	var title := Label.new()
 	title.text = "🌴 Kanjiravanam Chronicles"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_color_override("font_color", COL_GOLD)
-	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_font_size_override("font_size", 18)
 	vbox.add_child(title)
 
 	# Subtitle
@@ -84,7 +84,7 @@ func _build_main_panel() -> Control:
 	sub.text = "A Kerala Mythology Platformer"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_color_override("font_color", COL_MUTED)
-	sub.add_theme_font_size_override("font_size", 11)
+	sub.add_theme_font_size_override("font_size", 10)
 	vbox.add_child(sub)
 
 	# High score
@@ -149,6 +149,9 @@ func _open_level_select() -> void:
 	var existing := get_node_or_null("LevelSelectPanel")
 	if existing: existing.queue_free()
 
+	# Hide the main panel so the level-select overlay doesn't bleed visually into it
+	_main_panel.visible = false
+
 	var root := Control.new()
 	root.name = "LevelSelectPanel"
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -159,15 +162,17 @@ func _open_level_select() -> void:
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(overlay)
 
-	# ── Outer panel — fixed size, centred ────────────────────────────────────────
+	# ── Outer panel — uses nearly the full 480×270 viewport so both Acts AND
+	# Side Quests fit on-screen without scrolling. (Previously offset_bottom=120
+	# made the panel 240 tall, hiding the Side Quests section below the fold.)
 	var outer := VBoxContainer.new()
 	outer.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	outer.custom_minimum_size = Vector2(456, 0)
-	outer.offset_left   = -228
-	outer.offset_right  =  228
-	outer.offset_top    = -120
-	outer.offset_bottom =  120
-	outer.add_theme_constant_override("separation", 8)
+	outer.offset_left   = -232
+	outer.offset_right  =  232
+	outer.offset_top    = -134
+	outer.offset_bottom =  134
+	outer.add_theme_constant_override("separation", 2)
 
 	var panel_bg := ColorRect.new()
 	panel_bg.color = COL_PANEL
@@ -189,35 +194,35 @@ func _open_level_select() -> void:
 
 	# ── ScrollContainer holds all the cards ──────────────────────────────────────
 	var scroll := ScrollContainer.new()
+	scroll.name = "ScrollContainer"
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = false   # don't auto-scroll when a button gains focus
 	outer.add_child(scroll)
 
 	var content := VBoxContainer.new()
 	content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	content.add_theme_constant_override("separation", 8)
+	content.add_theme_constant_override("separation", 2)   # tight: every row counts
 	scroll.add_child(content)
 
-	# ── Acts section ─────────────────────────────────────────────────────────────
-	var acts_lbl := Label.new()
-	acts_lbl.text = "─── Acts ───"
-	acts_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	acts_lbl.add_theme_color_override("font_color", Color(COL_GOLD, 0.60))
-	acts_lbl.add_theme_font_size_override("font_size", 11)
-	content.add_child(acts_lbl)
+	# ── Acts section (no section header — the grid layout itself separates from
+	# the Side Quests list visually via the gold divider line below it).
 
+	# 4 columns × 2 rows packs 8 acts into ~half the vertical space of a 2-col grid,
+	# freeing up room for the Side Quests section below the divider.
 	var grid := GridContainer.new()
-	grid.columns = 2
-	grid.add_theme_constant_override("h_separation", 8)
-	grid.add_theme_constant_override("v_separation", 7)
+	grid.columns = 4
+	grid.add_theme_constant_override("h_separation", 4)
+	grid.add_theme_constant_override("v_separation", 4)
 
 	const LEVELS: Array = [
 		["🌅  Prologue",               "res://scenes/World.tscn",     0],
 		["🏍  Bike Ride",               "res://scenes/BikeRide.tscn",  1],
 		["🌿  Act I — Yakshi",          "res://scenes/Act1.tscn",      1],
 		["🔥  Act II — Kuttichathan",   "res://scenes/Act2.tscn",      2],
-		["🌫  Act III — Odiyan",        "res://scenes/Act3.tscn",      3],
-		["🌧  Act IV — Karinkanni",     "res://scenes/Act4.tscn",      4],
+		["🌫  Act III — Odiyan",        "res://scenes/Act3.tscn",           3],
+		["✨  Disco Hallucination",     "res://scenes/DiscoHallucination.tscn", 3],
+		["🌧  Act IV — Karinkanni",     "res://scenes/Act4.tscn",           4],
 		["🌑  Act V — Pey Komban",      "res://scenes/Act5.tscn",      5],
 		["🏚  Houseboat",               "res://scenes/Houseboat.tscn", 4],
 	]
@@ -232,9 +237,10 @@ func _open_level_select() -> void:
 
 		var btn := Button.new()
 		btn.text = label_text if is_unlocked else "🔒  " + label_text.substr(4)
-		btn.custom_minimum_size = Vector2(218, 32)
+		btn.custom_minimum_size = Vector2(105, 28)   # 4-col grid → 4×105+3×4 = 432 px fits inside 464-px panel
 		btn.disabled = not is_unlocked
-		btn.add_theme_font_size_override("font_size", 11)
+		btn.add_theme_font_size_override("font_size", 9)
+		btn.clip_text = true
 		btn.add_theme_color_override("font_color",
 				COL_MUTED if is_unlocked else COL_LOCKED)
 		btn.add_theme_color_override("font_color_disabled", COL_LOCKED)
@@ -277,55 +283,36 @@ func _open_level_select() -> void:
 	for quest_id: String in QUEST_SCENES:
 		var state:  int    = _qm.get_state(quest_id)   if _qm != null else _QS_LOCKED
 		var title:  String = _qm.get_title(quest_id)   if _qm != null else quest_id
-		var reward: String = _qm.get_reward(quest_id)  if _qm != null else ""
+		var _reward: String = _qm.get_reward(quest_id)  if _qm != null else ""   # kept for future tooltip
 		var dest:   String = QUEST_SCENES[quest_id]
 
 		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 8)
+		row.add_theme_constant_override("separation", 6)
+		row.custom_minimum_size = Vector2(0, 18)
 
 		# State badge
 		var badge := Label.new()
 		badge.text = _quest_icon(state)
-		badge.custom_minimum_size = Vector2(22, 0)
-		badge.add_theme_font_size_override("font_size", 14)
+		badge.custom_minimum_size = Vector2(16, 18)
+		badge.add_theme_font_size_override("font_size", 11)
 		badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		row.add_child(badge)
 
-		# Text block
-		var tbox := VBoxContainer.new()
-		tbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		tbox.add_theme_constant_override("separation", 2)
-
+		# Single-line title (no sub-label — quest state is implied by the badge colour)
 		var tlabel := Label.new()
 		tlabel.text = title
-		tlabel.add_theme_font_size_override("font_size", 12)
+		tlabel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tlabel.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		tlabel.add_theme_font_size_override("font_size", 10)
 		tlabel.add_theme_color_override("font_color", _quest_color(state))
-		tbox.add_child(tlabel)
-
-		var sub_lbl := Label.new()
-		sub_lbl.add_theme_font_size_override("font_size", 10)
-		match state:
-			_QS_DONE:
-				sub_lbl.text = "✔  " + reward
-				sub_lbl.add_theme_color_override("font_color", COL_DONE)
-			_QS_ACTIVE:
-				var prog: int = _qm.get_progress(quest_id) if _qm != null else 0
-				var tot: int  = _qm.get_total(quest_id)    if _qm != null else 1
-				sub_lbl.text = "In progress  %d / %d" % [prog, tot]
-				sub_lbl.add_theme_color_override("font_color", COL_ACTIVE)
-			_:
-				var act_n: int = _qm.QUEST_DATA[quest_id]["act"] if _qm != null else 0
-				sub_lbl.text = "Available in %s" % ("Prologue" if act_n == 0 else "Act %d" % act_n)
-				sub_lbl.add_theme_color_override("font_color", COL_MUTED)
-		tbox.add_child(sub_lbl)
-		row.add_child(tbox)
+		row.add_child(tlabel)
 
 		# DEV: all quests playable regardless of lock state
 		if true:
 			var qbtn := Button.new()
-			qbtn.text = "▶  Play"
-			qbtn.custom_minimum_size = Vector2(72, 28)
-			qbtn.add_theme_font_size_override("font_size", 11)
+			qbtn.text = "▶"
+			qbtn.custom_minimum_size = Vector2(32, 18)
+			qbtn.add_theme_font_size_override("font_size", 10)
 			qbtn.add_theme_color_override("font_color", COL_MUTED)
 			qbtn.add_theme_stylebox_override("normal", _make_stylebox(COL_BTN))
 			qbtn.add_theme_stylebox_override("hover",  _make_stylebox(COL_BTN_HOV))
@@ -337,19 +324,34 @@ func _open_level_select() -> void:
 			row.add_child(qbtn)
 
 		content.add_child(row)
-
-		var sep := ColorRect.new()
-		sep.color = Color(1.0, 1.0, 1.0, 0.05)
-		sep.custom_minimum_size = Vector2(0, 1)
-		content.add_child(sep)
+		# Note: VBoxContainer.separation handles inter-row spacing — no ColorRect
+		# divider needed. Removing it frees ~5 px per quest, enough to show all 5.
 
 	# ── Back button (outside scroll — always at bottom) ───────────────────────────
 	var back := _make_button("← Back")
-	back.pressed.connect(func() -> void: root.queue_free())
+	back.pressed.connect(func() -> void:
+		root.queue_free()
+		_main_panel.visible = true   # restore the main menu underneath
+	)
 	outer.add_child(back)
 
 	root.add_child(outer)
 	add_child(root)
+
+	# Strip keyboard focus from every button in this panel and reset scroll to 0
+	# next frame. Without this, the last-created button (often "← Back" or a
+	# quest "▶") grabs focus and the ScrollContainer auto-scrolls to it,
+	# pushing the Acts section off the top of the panel.
+	_disable_focus_recursive(root)
+	scroll.set_deferred("scroll_vertical", 0)
+
+
+## Recursively flip focus_mode → NONE on every Control descendant of `node`.
+func _disable_focus_recursive(node: Node) -> void:
+	if node is Control:
+		(node as Control).focus_mode = Control.FOCUS_NONE
+	for child in node.get_children():
+		_disable_focus_recursive(child)
 
 
 # ── Quest Panel ───────────────────────────────────────────────────────────────
@@ -507,7 +509,8 @@ func _quest_color(state: int) -> Color:
 func _make_button(label: String) -> Button:
 	var btn := Button.new()
 	btn.text                = label
-	btn.custom_minimum_size = Vector2(200, 32)
+	btn.custom_minimum_size = Vector2(200, 26)   # compact — 5 buttons need to fit in 270 px viewport
+	btn.add_theme_font_size_override("font_size", 12)
 	btn.add_theme_color_override("font_color", COL_MUTED)
 	btn.add_theme_stylebox_override("normal", _make_stylebox(COL_BTN))
 	btn.add_theme_stylebox_override("hover",  _make_stylebox(COL_BTN_HOV))
