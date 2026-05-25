@@ -30,8 +30,6 @@ func _ready() -> void:
 			"res://assets/backgrounds/bg_act3_trees.png")   # atmospheric blue-purple forest clearing
 	# No parallax layers — bg_act3_props at alpha 0.50 was too opaque (muddy).
 	# bg_act3_sky/clouds have characters, mountains has an animal. Single base is cleanest.
-	var qm := get_node_or_null("/root/QuestManager")
-	if qm != null: qm.activate_quest("odiyan_tracks")
 	_spawn_trees()
 	_spawn_odiyan()
 	_spawn_tracks()
@@ -40,7 +38,8 @@ func _ready() -> void:
 	_spawn_props()
 	_spawn_fog()
 	_connect_player_to_hud()
-	_queue_hint("⚡ Attack Odiyan ONLY during the transform flash!", 1.5, 6.0)
+	# Opening hint — atmospheric, not mechanical (mechanic is revealed by bull chase)
+	_queue_hint("🌫️ Something stalks these hills...\nTalk to the elder.", 1.5, 5.0)
 
 func _spawn_trees() -> void:
 	var tint := Color(0.7, 0.7, 0.65, 1.0)   # foggy grey-green
@@ -308,14 +307,16 @@ func _finish_bull_chase(vaulted: bool) -> void:
 	if is_instance_valid(player):
 		player.set_physics_process(true)
 		player.set_process(true)
-	# Reveal Odiyan's vulnerability window (0.6 s → 0.9 s)
+	# Reveal Odiyan's vulnerability window (2.5s → 3.5s)
 	if is_instance_valid(_odiyan_ref) and _odiyan_ref.has_method("reveal_weakness"):
 		_odiyan_ref.reveal_weakness()
 	var hud := _get_hud()
 	if hud:
-		var msg := "💡 Odiyan's weakness revealed! Attack window extended!" if not vaulted \
-				else "💡 Odiyan's weakness revealed — attack window EXTENDED!"
-		hud.show_hint(msg, 4.5)
+		var vault_line := "💡 Odiyan's weakness revealed — attack window EXTENDED!" if vaulted \
+				else "💡 Odiyan's weakness revealed! Attack window extended!"
+		hud.show_hint(vault_line, 4.5)
+	# NOW tell the player HOW to fight — earned after the reveal, not spoiled at scene start
+	_queue_hint("⚡ Attack Odiyan ONLY during the transform flash!", 5.5, 6.0)
 
 ## Atmospheric fog overlay — dark vignette that deepens as player moves right.
 func _spawn_fog() -> void:
