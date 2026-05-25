@@ -23,8 +23,15 @@ func _ready() -> void:
 	_player = get_tree().get_first_node_in_group("player")
 	if _player:
 		_player.global_position = Vector2(60.0, 280.0)
-		# Disable world gravity/movement — handled by houseboat platform
-	_queue_hint_local("🔔 Find the temple bell...", 1.0, 4.0)
+
+	# ── Pause menu — Houseboat is a plain Node2D (not BaseAct), so we add it manually ──
+	var pause_menu: CanvasLayer = preload("res://scenes/PauseMenu.tscn").instantiate()
+	add_child(pause_menu)
+
+	# ── Instructions — three spaced hints giving the player everything they need ──
+	_queue_hint_local("🔔 Find the Bell of Bhadrakali — it's inside the cabin.", 0.8, 5.0)
+	_queue_hint_local("👻 Guards deal 12 damage on contact — press [Z] to fight them.", 6.0, 5.5)
+	_queue_hint_local("← Walk off the LEFT edge of the boat to escape.", 12.0, 5.0)
 
 func _build_scene() -> void:
 	# Sky/water background — CanvasLayer so camera scroll never reveals black void
@@ -85,26 +92,30 @@ func _build_scene() -> void:
 	# Ghostly guards (2 patrolling inside)
 	_spawn_ghost_guards()
 
-	# Exit trigger (left edge of boat)
+	# Exit trigger (left edge of boat) — 60px wide so it can't be walked through
 	var exit := Area2D.new()
 	exit.collision_layer = 0
 	exit.collision_mask  = 2
 	var ecol := CollisionShape2D.new()
 	var eshape := RectangleShape2D.new()
-	eshape.size = Vector2(30, 200)
+	eshape.size = Vector2(60, 280)   # wider + taller than before — impossible to miss
 	ecol.shape  = eshape
 	exit.position = Vector2(30, 200)
 	exit.add_child(ecol)
 	exit.body_entered.connect(_on_exit_entered)
 	add_child(exit)
 
-	# Exit sign
+	# Exit sign — pulsing arrow so the player can find it
 	var exit_lbl := Label.new()
-	exit_lbl.text     = "← Exit"
-	exit_lbl.position = Vector2(8, 240)
-	exit_lbl.add_theme_font_size_override("font_size", 13)
-	exit_lbl.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0))
+	exit_lbl.text     = "← EXIT"
+	exit_lbl.position = Vector2(4, 230)
+	exit_lbl.add_theme_font_size_override("font_size", 14)
+	exit_lbl.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0))
 	add_child(exit_lbl)
+	# Gentle alpha pulse so the sign is noticeable
+	var sign_tw := create_tween().set_loops()
+	sign_tw.tween_property(exit_lbl, "modulate:a", 0.4, 1.1)
+	sign_tw.tween_property(exit_lbl, "modulate:a", 1.0, 1.1)
 
 func _build_cabin() -> void:
 	# Left wall
@@ -231,8 +242,8 @@ func _on_exit_entered(body: Node) -> void:
 		var qm := get_node_or_null("/root/QuestManager")
 		if qm != null: qm.complete_quest("bell_of_bhadrakali")
 		GameManager.has_resurrection = true   # Totem Revival reward
-		_queue_hint_local("✝️ Totem Revival granted! Sr. Devi thanks you.", 0.0, 5.0)
-	# Return to Act4
+	# Tell Act4 to re-spawn the player at Sr. Devi's position, not the scene start
+	GameManager.warp_return_x = 1400.0
 	SceneManager.go_to("res://scenes/Act4.tscn")
 
 func _queue_hint_local(text: String, delay: float, duration: float) -> void:

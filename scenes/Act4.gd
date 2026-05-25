@@ -34,8 +34,16 @@ func _ready() -> void:
 	_spawn_rising_water()
 	_spawn_rain()
 	_connect_player_to_hud()
-	# Karinkanni hint fires early so players know BEFORE they waste ammo from ground
-	_queue_hint("🥥 CLIMB a tree — Karinkanni floats too high to hit from the ground!", 1.5, 7.0)
+	# Restore player position if returning from the Houseboat sub-scene
+	if GameManager.warp_return_x > 0.0:
+		var player := _get_player()
+		if is_instance_valid(player):
+			player.global_position.x = GameManager.warp_return_x
+		GameManager.warp_return_x = -1.0
+		_queue_hint("✝️ Totem Revival granted — Sr. Devi thanks you.", 1.0, 5.0)
+	else:
+		# Karinkanni hint fires early so players know BEFORE they waste ammo from ground
+		_queue_hint("🥥 CLIMB a tree — Karinkanni floats too high to hit from the ground!", 1.5, 7.0)
 
 func _spawn_trees() -> void:
 	var tint := Color(0.3, 0.5, 0.4, 1.0)   # dark rain-soaked green

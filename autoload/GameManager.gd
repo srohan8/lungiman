@@ -51,6 +51,11 @@ var grit: int = 100
 var bike_undamaged: bool = false   ## True if the player cleared the Act II bike ride without any hits → Ravi's Act V callback
 var disco_score:    int  = 0       ## DDR score from the Disco Hallucination dance phase — saved for wake-up quip and Victory tally
 
+# ── Warp / sub-scene return ───────────────────────────────────────────────────
+## Set before go_to() in any sub-scene; the destination _ready() reads and clears it.
+## -1.0 = use default spawn. Houseboat → Act4 uses 1400.0 (Sr. Devi position).
+var warp_return_x: float = -1.0
+
 # ── Mobile input ──────────────────────────────────────────────────────────────
 var climb_press_pending: bool = false
 

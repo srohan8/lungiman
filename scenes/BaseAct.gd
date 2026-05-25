@@ -88,12 +88,12 @@ func _spawn_exit_wall() -> void:
 		wall.add_child(stripe)
 
 	# Sign: arrow pointing left toward boss
-	var sign := ColorRect.new()
-	sign.color    = Color(0.12, 0.08, 0.04, 0.92)
-	sign.size     = Vector2(90.0, 26.0)
-	sign.position = Vector2(-95.0, -320.0)
-	sign.z_index  = 9
-	wall.add_child(sign)
+	var sign_board := ColorRect.new()
+	sign_board.color    = Color(0.12, 0.08, 0.04, 0.92)
+	sign_board.size     = Vector2(90.0, 26.0)
+	sign_board.position = Vector2(-95.0, -320.0)
+	sign_board.z_index  = 9
+	wall.add_child(sign_board)
 	var sign_label := ColorRect.new()   # amber arrow strip inside sign
 	sign_label.color    = Color(1.0, 0.70, 0.10, 0.90)
 	sign_label.size     = Vector2(70.0, 6.0)
