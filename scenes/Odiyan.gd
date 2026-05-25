@@ -185,6 +185,10 @@ func _die() -> void:
 	GameManager.score += 220
 	GameManager.show_score_popup(position + Vector2(0, -50), 220, Color(0.5, 0.8, 0.3))
 	_drop_powerup()
+	# 2-second beat before the venom takes hold — player walks a few steps, then collapses.
+	get_tree().create_timer(2.0).timeout.connect(func() -> void:
+		GameManager.trigger_hallucination()
+	)
 	queue_free()
 
 func _drop_powerup() -> void:

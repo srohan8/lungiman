@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://d1ctrlbx8rm4p"]
+
+[ext_resource type="Script" path="res://scenes/DiscoHallucination.gd" id="1_4ir0o"]
+
+[node name="DiscoHallucination" type="Node2D" unique_id=1750675244]
+script = ExtResource("1_4ir0o")

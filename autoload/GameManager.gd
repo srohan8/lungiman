@@ -49,6 +49,7 @@ var high_score:    int = 0   # best score ever, never reset
 ##             → Pathalam: Maveli restores 100 + sets maveli_blessed → Act V (stays gold)
 var grit: int = 100
 var bike_undamaged: bool = false   ## True if the player cleared the Act II bike ride without any hits → Ravi's Act V callback
+var disco_score:    int  = 0       ## DDR score from the Disco Hallucination dance phase — saved for wake-up quip and Victory tally
 
 # ── Mobile input ──────────────────────────────────────────────────────────────
 var climb_press_pending: bool = false
@@ -193,6 +194,11 @@ func show_score_popup(world_pos: Vector2, points: int, color: Color = Color(1.0,
 	var tree    := Engine.get_main_loop() as SceneTree
 	if tree and tree.current_scene:
 		tree.current_scene.add_child(ft)
+
+## Triggered by Odiyan._die() after a 2 s delay. Transitions to the
+## Disco Hallucination interlude (poison dream — not a real act).
+func trigger_hallucination() -> void:
+	SceneManager.go_to("res://scenes/DiscoHallucination.tscn")
 
 func win_game() -> void:
 	if score > high_score:
