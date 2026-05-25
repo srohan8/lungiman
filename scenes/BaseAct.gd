@@ -10,10 +10,11 @@ extends Node2D
 
 const GROUND_Y := 700.0   # swing room: trunks 80px longer so the pendulum arc bottoms out mid-trunk, never clips ground
 
-var _act_triggered := false
-var _next_scene    := ""
-var _trigger_x     := 7800.0
-var _unlocks_act   := 0     # set by each Act: completing this act unlocks _unlocks_act in LevelSelect
+var _act_triggered     := false
+var _next_scene        := ""
+var _trigger_x         := 7800.0
+var _unlocks_act       := 0     # set by each Act: completing this act unlocks _unlocks_act in LevelSelect
+var _boss_block_hinted := false  # fires the "boss still alive" hint at most once
 
 # ── Auto-transition ──────────────────────────────────────────────────────────
 
@@ -30,6 +31,14 @@ func _process(_delta: float) -> void:
 		GameManager.take_damage(999)
 		return
 	if player.global_position.x >= _trigger_x:
+		# Gate: if a boss is still alive, block the exit and hint the player once.
+		if GameManager.boss_max_hp > 0:
+			if not _boss_block_hinted:
+				_boss_block_hinted = true
+				var hud := _get_hud()
+				if hud and hud.has_method("show_hint"):
+					hud.show_hint("⚠️ Defeat the boss before you can leave!", 3.5)
+			return
 		_act_triggered = true
 		if _unlocks_act > 0:
 			GameManager.unlock_act(_unlocks_act)

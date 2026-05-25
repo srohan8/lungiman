@@ -96,7 +96,7 @@ func _fire_ray() -> void:
 	tw.tween_property(ray, "modulate:a", 0.0, 0.5)
 	tw.chain().tween_callback(ray.queue_free)
 
-func take_damage(dmg: int) -> void:
+func take_damage(_dmg: int) -> void:
 	if not _eye_open: return
 	if hit_cooldown > 0.0: return
 	hp -= 1   # hit-count system: 1 HP per hit

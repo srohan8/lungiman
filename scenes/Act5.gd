@@ -262,10 +262,48 @@ func _begin_peykomban_reveal() -> void:
 		back_tw.tween_property(cam, "offset", Vector2(0.0, 0.0), 0.32)
 		await back_tw.finished
 
-	# ── Step 5: Resume gameplay ───────────────────────────────────────────────
+	# ── Step 5: Resume gameplay + lock the arena ─────────────────────────────
 	if is_instance_valid(player):
 		player.set_physics_process(true)
 		player.set_process(true)
+		_lock_arena(player, cam)
+
+# ─────────────────────────────────────────────────────────────────────────────
+## ARENA LOCK — called once the reveal cinematic ends.
+## Clamps the camera's left scroll limit and drops an invisible wall so the
+## player can no longer retreat out of the boss arena.
+# ─────────────────────────────────────────────────────────────────────────────
+
+func _lock_arena(player: Node2D, cam: Camera2D) -> void:
+	# ── Camera left scroll clamp ─────────────────────────────────────────────
+	# Viewport is 480px wide; half = 240px.  Locking limit_left to the player's
+	# spawn X means the camera can never pull left of scene start.
+	if is_instance_valid(cam):
+		cam.limit_left = int(player.global_position.x) - 240   # allow current view, no further
+
+	# ── Physical retreat barrier ─────────────────────────────────────────────
+	# A thin StaticBody2D wall placed 30px behind the player.  Tall enough to
+	# block at any jump height.  Collision layer 1 (world), mask 0 (player hits it).
+	var wall := StaticBody2D.new()
+	wall.name             = "ArenaWall"
+	wall.collision_layer  = 1
+	wall.collision_mask   = 0
+	wall.global_position  = Vector2(player.global_position.x - 30.0, GROUND_Y - 400.0)
+
+	var shape := CollisionShape2D.new()
+	var rect  := RectangleShape2D.new()
+	rect.size             = Vector2(10.0, 900.0)   # 10px wide, 900px tall
+	shape.shape           = rect
+	shape.position        = Vector2.ZERO
+	wall.add_child(shape)
+	add_child(wall)
+
+	# Tiny visual indicator (thin dark line) — optional, shows in debug builds
+	var vis := ColorRect.new()
+	vis.color    = Color(0.0, 0.0, 0.0, 0.0)   # invisible in-game
+	vis.size     = Vector2(4.0, 900.0)
+	vis.position = Vector2(-2.0, -450.0)
+	wall.add_child(vis)
 
 # ─────────────────────────────────────────────────────────────────────────────
 ## MUNDU CINEMATIC — fires on Pey Komban defeat instead of instant win_game().

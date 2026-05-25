@@ -343,7 +343,7 @@ func _direction_just_pressed(dir: String) -> bool:
 	match dir:
 		"left":  return Input.is_action_just_pressed("ui_left")  or Input.is_action_just_pressed("move_left")
 		"right": return Input.is_action_just_pressed("ui_right") or Input.is_action_just_pressed("move_right")
-		"up":    return Input.is_action_just_pressed("ui_up")    or Input.is_action_just_pressed("move_up")
+		"up":    return Input.is_action_just_pressed("ui_up")    or Input.is_action_just_pressed("jump")
 		"down":  return Input.is_action_just_pressed("ui_down")  or Input.is_action_just_pressed("move_down")
 		"jump":  return Input.is_action_just_pressed("jump")     or Input.is_action_just_pressed("ui_accept")
 	return false
