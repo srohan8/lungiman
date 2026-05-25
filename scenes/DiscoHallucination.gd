@@ -28,9 +28,9 @@ const CLARITY_PER_KILL := 3.0
 const ENEMY_SPAWN_INTERVAL := 5.0
 const MAX_ENEMIES := 6
 
-# ── Screen dimensions (820×460 viewport) ─────────────────────────────────────
-const VP_W := 820.0
-const VP_H := 460.0
+# ── Screen dimensions (480×270 viewport — matches project.godot) ─────────────
+const VP_W := 480.0
+const VP_H := 270.0
 
 # ── State ──────────────────────────────────────────────────────────────────────
 var _clarity:         float = CLARITY_START
@@ -133,7 +133,7 @@ func _build_scene() -> void:
 	var target_line := ColorRect.new()
 	target_line.color    = Color(0.9, 0.8, 0.1, 0.65)
 	target_line.size     = Vector2(VP_W, 3.0)
-	target_line.position = Vector2(0.0, 310.0)
+	target_line.position = Vector2(0.0, _DancePromptScript.TARGET_Y)   # must match DancePrompt.TARGET_Y
 	add_child(target_line)
 
 	# Hint label (centre screen)
@@ -174,8 +174,7 @@ func _build_scene() -> void:
 	_chroma_layer.layer = 15
 	add_child(_chroma_layer)
 	_chroma_rect = ColorRect.new()
-	_chroma_rect.size         = Vector2(VP_W, VP_H)
-	_chroma_rect.position     = Vector2.ZERO
+	_chroma_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # always covers full screen
 	_chroma_rect.color        = Color(1, 1, 1, 1)
 	_chroma_rect.visible      = false
 	var mat := ShaderMaterial.new()

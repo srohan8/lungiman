@@ -9,7 +9,7 @@ class_name DancePrompt
 signal resolved(quality: String)   # "perfect" | "good" | "ok" | "miss"
 
 const TOP_Y      := -40.0
-const TARGET_Y   := 310.0    # glowing target line y (screen-space)
+const TARGET_Y   := 200.0    # glowing target line y — ~74% down 270px viewport
 const FALL_DUR   := 1.20     # seconds to fall
 
 const WINDOW_PERFECT := 0.10

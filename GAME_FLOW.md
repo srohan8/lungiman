@@ -255,4 +255,4 @@ MAIN MENU
 
 ---
 
-*Engine: Godot 4.6 · Viewport: 820×460 (dev) / 1280×720 (release) · Mobile-first*
+*Engine: Godot 4.6 · Viewport: 480×270 (canvas_items stretch, expand aspect) · Scales to any resolution · Mobile-first*

@@ -352,9 +352,9 @@ func _mundu_cinematic(tusk_pos: Vector2) -> void:
 	flash_layer.layer = 20
 	add_child(flash_layer)
 	var flash := ColorRect.new()
-	flash.color    = Color(1.0, 0.85, 0.25, 0.0)
-	flash.size     = Vector2(820.0, 460.0)
-	flash.position = Vector2.ZERO
+	flash.color        = Color(1.0, 0.85, 0.25, 0.0)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	flash_layer.add_child(flash)
 	var flash_tw := create_tween()
 	flash_tw.tween_property(flash, "color:a", 0.88, 0.10)
