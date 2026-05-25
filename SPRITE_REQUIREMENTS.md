@@ -237,6 +237,21 @@ These are `modulate` tints applied in `Player.gd` as HP drops. No new sprite fra
 
 ## 👹 Enemies & Bosses (hero sheet = style ref, no separate base image)
 
+### TempleCrow *(Act V pre-boss — possessed temple crows)*
+> **Style ref:** Hero sheet for line/colour · dark near-black body · glowing amber eye (possession) · perched vs dive-bomb poses
+
+| Sheet | Animations | Grid | Frame size |
+|---|---|---|---|
+| `temple_crow_sheet.png` | perch · dive | 2 cols × 1 row | 96×80 |
+
+- **Perch** (1 fr): crow sitting on branch, wings folded tight, amber eye visible, very dark silhouette
+- **Dive** (1 fr): wings swept fully back, body angled downward, beak forward, eye blazing bright amber
+- Color: near-black body `#0D0505`, wing edge highlight `#1A0A0A`, amber eye `#F27300`
+- Scale: small (~30px in-game) — they are birds, not bosses
+- Procedural fallback currently active in code (ColorRect body + wings); this sheet replaces it when ready
+
+---
+
 ### CoconutCrab *(already has crab_sheet.png — may update to match new style)*
 | Sheet | Animations | Grid | Frame size |
 |---|---|---|---|
@@ -343,6 +358,7 @@ These are `modulate` tints applied in `Player.gd` as HP drops. No new sprite fra
 | Prop | Sheet | Frames | Frame size | Notes |
 |---|---|---|---|---|
 | Fire Hazard Patch | `fire_hazard_sheet.png` | 3 (flicker loop) | 280×88 | Glowing ember ground zone |
+| Cursed Ground Zone | `cursed_ground_sheet.png` | 3 (pulse loop) | 280×32 | Act V only — deep blood-red ground glow with faint rune marks; procedural ColorRect active until this ships |
 | Hoof Print Marker | `hoof_marker_sheet.png` | 2 (glow pulse) | 112×112 | Spirit smoke amber glow |
 | Broken Ferris Wheel | `ferris_wheel_sheet.png` | 1 static | 480×480 | Act II background silhouette |
 | Fallen Toddy Cart | `fallen_cart_sheet.png` | 1 static | 320×200 | Overturned cart, pots scattered |

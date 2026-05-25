@@ -262,7 +262,7 @@ x=800                  dark backwater        2 guards    +2 guards
 ## ACT V — "Pey Komban's Rampage" *(FINALE)*
 *Sacred grove, near-black sky, fireflies · Boss: PEY KOMBAN*
 
-**NEW: Opening 3rd-person reveal:**
+**Opening 3rd-person reveal:**
 ```
   ┌──────────────────────────────────────────────────────────┐
   │  CAMERA PULLS BEHIND PLAYER at temple gate               │
@@ -280,20 +280,44 @@ x=800                  dark backwater        2 guards    +2 guards
 ```
 
 ```
-START                                                                        x=7800
-  │                                                                            │
-  ▼                                                                            ▼
-──┬──────────┬──────────┬──────────────────────┬──────────────────────────►VICTORY
-  │          │          │                      │
-x=100       x=700      x=500–7500             x=4000
-THOMA       SONIYA     SACRED GROVE           ★ BOSS
-Auto ✝️✝️   Full       24 massive trees       PEY KOMBAN
-"Stay. On.  powerup    height=260             giant demon
-The. Trees. spread     Ground shakes          3-phase fight
-Promise me."           every 8s
-           ❤️🥥🍺🍛  Pey Komban patrols
-                       THE ENTIRE LEVEL
-                       from the start
+START                                                                              x=7800
+  │                                                                                  │
+  ▼                                                                                  ▼
+──┬──────┬──────┬────┬──────┬───┬────┬─────┬────┬──┬──────────────────────────►VICTORY
+  │      │      │    │      │   │    │     │    │  │
+x=100  x=700  x=1100 x=1300 x=1850 x=1900 x=2200 x=2400 x=2600 x=3000           x=4000
+THOMA  SONIYA CROW#1 CURSE#1 STUMPS CROW#2 CURSE#2 PRE-  CROW#3 ARENA           ★ BOSS
+Auto   Full          180px   begin         220px   SIGHT  🐦    LOCK            PEY
+✝️✝️   pwr          ground  4 snapped           Pey K          cam+wall        KOMBAN
+       spread        zone    stumps              charges       no retreat
+                                                 BG R→L
+                     🌑dmg          🌑dmg        🐘💨
+```
+
+**Pre-boss gauntlet detail (x=0 → x=3000):**
+```
+                              ┌ CURSE ZONE 1 ┐       ┌── CURSE ZONE 2 ──┐
+CROWN  🌴  🌴  🐦  🌴  🌴  🌴│🌴  🌴  🌴  🌴│🌴  🌴  🌴│🌴  🌴  🐦  🌴  🌴│🌴 🐦 🌴 ┃
+       ░░░░░░░░░░░░░░░░░░░░░░░│░░░░░░░░░░░░░│░░░░░░░░░│░░░░░░░░░░░░░░░░░│░░░░░░░░
+GROUND ══════════════════════ ▓▓▓▓▓▓▓▓▓▓▓▓▓ ═══════════▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ ════════┃
+                              red glow 12HP/s           red glow 12HP/s         WALL
+🐦 = TempleCrow — dives from crown when player on ground · 18dmg · 3s cooldown
+▓ = Cursed ground — 12 HP/s while standing · "GET OFF IT" hint on first entry
+┃ = Arena wall (x=3000) — spawns when player crosses; camera locks; no retreat
+```
+
+**NEW: Background Pre-Sighting (x=2400):**
+```
+  ┌────────────────────────────────────────────────────────────┐
+  │  Pey Komban's semi-transparent silhouette charges           │
+  │  across the FAR BACKGROUND right → left over 1.55 seconds  │
+  │                                                             │
+  │  🌲  🌲  [🐘💨💨💨💨💨💨💨💨💨💨💨]  🌲  🌲             │
+  │                                                             │
+  │  Two camera shakes (0s and 0.55s). No damage.               │
+  │  HUD after 2.1s: "🐘 That was Pey Komban."                  │
+  └────────────────────────────────────────────────────────────┘
+  Emotional register: DREAD — player sees the scale before the arena
 ```
 
 **The ground rule:**
@@ -352,8 +376,9 @@ Pey Komban dissolves ──► Golden light at banyan roots
 | Ghost Clone 👻 | Prologue, Act I, II | spread | 10 | 15 (wrong hit) |
 | Crocodile 🐊 | Prologue, Act I | river zones | 60 | 22 lunge |
 | Houseboat Ghost | Houseboat only | patrol | 2 | — |
+| Temple Crow 🐦 | Act V pre-boss | x=1100,1900,2600 | — | 18 dive · 3s cooldown |
 | Yakshi 🌙 | Act I boss | x=6800 | 3 | hypnosis |
 | Kuttichathan 🔥 | Act II boss | x=5500 | 3 | fireball 20 |
 | Odiyan 🐂 | Act III boss | x=4500 | 3 | charge/bite |
 | Karinkanni 👁️ | Act IV boss | drifting | 3 | paralysis ray |
-| Pey Komban 🐘 | Act V boss | x=4000 | 5 | charge = fatal |
+| Pey Komban 🐘 | Act V boss | x=4000 | 12 | charge = fatal (999) · contact 28 |

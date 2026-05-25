@@ -11,19 +11,37 @@ var _thoma_ref:          Node2D = null
 var _cinematic_running:  bool   = false
 var _reveal_done:        bool   = false   # Pey Komban opening reveal (fires once)
 var _arena_locked:       bool   = false   # fires once when player crosses ARENA_LOCK_X
+var _presighting_done:   bool   = false   # PeyKomban background charge sighting (fires once)
+var _cursed_zone_warned: bool   = false   # first-entry ground-zone hint (fires once)
 
-const ARENA_LOCK_X := 3000.0   # commit point — past this, no retreat
+# Pre-boss encounter state
+var _crows:              Array[Node2D] = []   # TempleCrow Area2D nodes
+var _cursed_zone_timers: Dictionary   = {}   # Area2D → float secs_until_next_tick
+
+const ARENA_LOCK_X  := 3000.0   # commit point — past this, no retreat
+const PRESIGHTING_X := 2400.0   # Pey Komban charges across background, fires once
 
 const ZONE_TREES   := 24
 const ZONE_X_FROM  := 150.0
 const ZONE_X_TO    := 7650.0
 const ZONE_H       := 365.0   # crown y≈335 (GROUND_Y now 700, trunk longer)
 
+# Temple crow tuning
+const CROW_DMG          := 18
+const CROW_COOLDOWN     := 3.0
+const CROW_SENSE_X      := 100.0   # horizontal trigger radius
+const CROW_DIVE_DUR     := 0.28    # seconds to reach target
+const CROW_RISE_DUR     := 0.55    # seconds to return to perch
+
+# Cursed zone tuning
+const ZONE_TICK_INTERVAL := 0.5    # damage tick frequency (seconds)
+const ZONE_DMG_PER_TICK  := 6      # 12 HP/s at 0.5s interval
+
 func _ready() -> void:
 	_trigger_x   = ACT_TRIGGER_X
 	_unlocks_act = 0
 	_init_sprite_parallax(Color(0.04, 0.10, 0.04),   # sacred banyan grove deep forest night
-			"res://assets/backgrounds/bg_act5.png")   # ancient banyan grove with temple gate — perfect finale backdrop
+			"res://assets/backgrounds/bg_act5.png")   # ancient banyan grove with temple gate
 	_add_parallax_layers([
 		# Full-colour scenes: MAX alpha 0.18 — any higher = muddy colour soup over the base
 		{"path": "res://assets/backgrounds/bg_act5_mountains.png",
@@ -36,6 +54,8 @@ func _ready() -> void:
 	_spawn_trees()
 	_spawn_trail_stumps()
 	_spawn_fireflies()
+	_spawn_temple_crows()
+	_spawn_cursed_zones()
 	_spawn_pey_komban()
 	_spawn_powerups()
 	_spawn_npcs()
@@ -47,16 +67,26 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	super._process(delta)
-	if _arena_locked: return
 	var player := _get_player()
 	if not is_instance_valid(player): return
-	if player.global_position.x >= ARENA_LOCK_X:
+
+	# Arena lock — fires once when player crosses ARENA_LOCK_X
+	if not _arena_locked and player.global_position.x >= ARENA_LOCK_X:
 		_arena_locked = true
 		var cam := player.get_node_or_null("Camera2D") as Camera2D
 		_lock_arena(player, cam)
 		var hud := _get_hud()
 		if hud and hud.has_method("show_hint"):
 			hud.show_hint("⚠️ No retreat — face Pey Komban!", 3.0)
+
+	# Pre-sighting — fires once when player crosses PRESIGHTING_X
+	if not _presighting_done and player.global_position.x >= PRESIGHTING_X:
+		_presighting_done = true
+		_do_presighting(player.global_position.x)
+
+	# Pre-boss encounter ticks
+	_tick_crows(delta)
+	_tick_cursed_zones(delta)
 
 ## Periodic ground-shake — Pey Komban's distant footsteps felt every 8s.
 func _start_footstep_shakes() -> void:
@@ -115,6 +145,268 @@ func _spawn_trees() -> void:
 	var xs   := _linspace(ZONE_X_FROM, ZONE_X_TO, ZONE_TREES)
 	for i: int in xs.size():
 		_add_tree($Trees, xs[i], ZONE_H, 0.05 * (1 if i % 2 == 0 else -1), tint)
+
+# ─────────────────────────────────────────────────────────────────────────────
+## OPTION A — TEMPLE CROWS
+## Three possessed temple crows perch at crown level and dive-bomb the player
+## when they linger on the ground below. They TEACH the "stay elevated" mechanic
+## in the 4000px run-up before Pey Komban enforces it with a 999-damage charge.
+## Visual: dark silhouette with a glowing amber eye (possession glow).
+## Positions: x=1100 (mid-grove), x=1900 (stump zone), x=2600 (pre-arena).
+# ─────────────────────────────────────────────────────────────────────────────
+
+func _spawn_temple_crows() -> void:
+	for data: Array in [
+		[1100.0, 0.0],    # mid-grove entrance — first crow encounter
+		[1900.0, 0.8],    # stump zone — second encounter, slightly staggered start
+		[2600.0, 0.4],    # pre-arena — final crow warning before lock
+	]:
+		var cx: float = data[0]
+		var cd: float = data[1]   # initial cooldown stagger
+		_make_temple_crow(cx, cd)
+
+func _make_temple_crow(cx: float, initial_cooldown: float) -> void:
+	var perch := Vector2(cx, ZONE_H - 15.0)
+
+	var area := Area2D.new()
+	area.name            = "TempleCrow"
+	area.position        = perch
+	area.collision_layer = 0
+	area.collision_mask  = 2   # player layer
+	area.z_index         = 6   # above trees, visible game layer
+	area.set_meta("perch",    perch)
+	area.set_meta("diving",   false)
+	area.set_meta("cooldown", initial_cooldown)
+
+	# Hit zone
+	var col   := CollisionShape2D.new()
+	var shape := CircleShape2D.new()
+	shape.radius = 16.0
+	col.shape    = shape
+	area.add_child(col)
+
+	# Body silhouette
+	var body := ColorRect.new()
+	body.color    = Color(0.05, 0.02, 0.02, 0.92)
+	body.size     = Vector2(10.0, 8.0)
+	body.position = Vector2(-5.0, -4.0)
+	area.add_child(body)
+
+	# Left wing
+	var wl := ColorRect.new()
+	wl.name     = "WingL"
+	wl.color    = Color(0.06, 0.03, 0.03, 0.88)
+	wl.size     = Vector2(12.0, 3.0)
+	wl.position = Vector2(-15.0, -1.0)
+	wl.rotation = -0.45
+	area.add_child(wl)
+
+	# Right wing
+	var wr := ColorRect.new()
+	wr.name     = "WingR"
+	wr.color    = Color(0.06, 0.03, 0.03, 0.88)
+	wr.size     = Vector2(12.0, 3.0)
+	wr.position = Vector2(3.0, -1.0)
+	wr.rotation = 0.45
+	area.add_child(wr)
+
+	# Glowing amber eye — possession marker
+	var eye := ColorRect.new()
+	eye.color    = Color(0.95, 0.45, 0.05, 1.0)
+	eye.size     = Vector2(3.0, 3.0)
+	eye.position = Vector2(1.0, -3.0)
+	area.add_child(eye)
+
+	add_child(area)
+	_crows.append(area)
+
+	# Deal damage on body contact, but ONLY during an active dive
+	area.body_entered.connect(func(body: Node) -> void:
+		if not body.is_in_group("player"): return
+		if not area.get_meta("diving"): return
+		if area.get_meta("cooldown") > 0.0: return
+		if body.has_method("take_damage"):
+			body.take_damage(CROW_DMG)
+		area.set_meta("cooldown", CROW_COOLDOWN)
+	)
+
+func _tick_crows(delta: float) -> void:
+	var player := _get_player()
+	for crow: Node2D in _crows:
+		if not is_instance_valid(crow): continue
+
+		# Tick cooldown
+		var cd: float = (crow.get_meta("cooldown") as float) - delta
+		crow.set_meta("cooldown", maxf(0.0, cd))
+		if (crow.get_meta("cooldown") as float) > 0.0: continue
+		if crow.get_meta("diving") as bool: continue
+
+		if not is_instance_valid(player): continue
+		var dx := absf(player.global_position.x - crow.global_position.x)
+		if dx > CROW_SENSE_X: continue
+		# Only dive at players who are on or near the ground (not perched)
+		if player.global_position.y < ZONE_H + 30.0: continue
+
+		# ── DIVE ─────────────────────────────────────────────────────────────
+		crow.set_meta("diving", true)
+		var perch: Vector2 = crow.get_meta("perch") as Vector2
+		var dive_target := Vector2(
+			player.global_position.x,
+			minf(player.global_position.y - 10.0, GROUND_Y - 40.0)
+		)
+
+		# Wing-fold during dive, unfold on rise
+		var wl: ColorRect = crow.get_node_or_null("WingL") as ColorRect
+		var wr: ColorRect = crow.get_node_or_null("WingR") as ColorRect
+		if wl and wr:
+			var fold_tw := create_tween()
+			fold_tw.tween_property(wl, "rotation", 0.10, CROW_DIVE_DUR)
+			fold_tw.tween_property(wl, "rotation", -0.45, CROW_RISE_DUR)
+			var fold_twr := create_tween()
+			fold_twr.tween_property(wr, "rotation", -0.10, CROW_DIVE_DUR)
+			fold_twr.tween_property(wr, "rotation", 0.45, CROW_RISE_DUR)
+
+		# Body movement
+		var tw := create_tween()
+		tw.tween_property(crow, "position", dive_target, CROW_DIVE_DUR).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		tw.tween_property(crow, "position", perch,       CROW_RISE_DUR).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tw.tween_callback(func() -> void:
+			crow.set_meta("diving",   false)
+			crow.set_meta("cooldown", CROW_COOLDOWN)
+		)
+
+# ─────────────────────────────────────────────────────────────────────────────
+## OPTION B — CURSED GROUND ZONES
+## Two sections of temple floor cursed by Pey Komban's footsteps.
+## Standing here deals 12 HP/s (6 HP per 0.5s tick).
+## Visual: deep red pulsing glow + faint rune marks at ground level.
+## Positions: x=1300 (180px wide) and x=2200 (220px wide).
+# ─────────────────────────────────────────────────────────────────────────────
+
+func _spawn_cursed_zones() -> void:
+	for data: Array in [
+		[1300.0, 180.0],   # between first crow and stump zone
+		[2200.0, 220.0],   # deeper into the pre-arena approach
+	]:
+		_make_cursed_zone(data[0], data[1])
+
+func _make_cursed_zone(cx: float, width: float) -> void:
+	# Ground glow
+	var glow := ColorRect.new()
+	glow.color    = Color(0.55, 0.0, 0.0, 0.14)
+	glow.size     = Vector2(width, 22.0)
+	glow.position = Vector2(cx - width * 0.5, GROUND_Y - 18.0)
+	glow.z_index  = 1
+	add_child(glow)
+
+	# Subtle rune marks — 3 thin vertical lines
+	for rx: float in [-0.30, 0.0, 0.30]:
+		var rune := ColorRect.new()
+		rune.color    = Color(0.85, 0.10, 0.05, 0.28)
+		rune.size     = Vector2(2.0, 14.0)
+		rune.position = Vector2(cx + rx * width - 1.0, GROUND_Y - 17.0)
+		rune.z_index  = 2
+		add_child(rune)
+
+	# Alpha pulse on the glow (slow, ominous)
+	var tw := create_tween().set_loops()
+	tw.tween_property(glow, "color:a", 0.28, 1.5).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(glow, "color:a", 0.08, 1.5).set_trans(Tween.TRANS_SINE)
+
+	# Area2D for player detection
+	var area := Area2D.new()
+	area.position        = Vector2(cx, GROUND_Y - 8.0)
+	area.collision_layer = 0
+	area.collision_mask  = 2
+	var col   := CollisionShape2D.new()
+	var rect  := RectangleShape2D.new()
+	rect.size = Vector2(width, 36.0)
+	col.shape = rect
+	area.add_child(col)
+	add_child(area)
+
+	area.body_entered.connect(func(body: Node) -> void:
+		if not body.is_in_group("player"): return
+		_cursed_zone_timers[area] = 0.0   # tick immediately on entry
+		if not _cursed_zone_warned:
+			_cursed_zone_warned = true
+			var hud := _get_hud()
+			if hud and hud.has_method("show_hint"):
+				hud.show_hint("🌑 Cursed ground — GET OFF IT!", 2.5)
+	)
+	area.body_exited.connect(func(body: Node) -> void:
+		if not body.is_in_group("player"): return
+		_cursed_zone_timers.erase(area)
+	)
+
+func _tick_cursed_zones(delta: float) -> void:
+	if _cursed_zone_timers.is_empty(): return
+	var player := _get_player()
+	if not is_instance_valid(player): return
+	for area: Area2D in _cursed_zone_timers.keys().duplicate():
+		if not is_instance_valid(area):
+			_cursed_zone_timers.erase(area)
+			continue
+		var t: float = (_cursed_zone_timers[area] as float) - delta
+		_cursed_zone_timers[area] = t
+		if t <= 0.0:
+			_cursed_zone_timers[area] = ZONE_TICK_INTERVAL
+			if player.has_method("take_damage"):
+				player.take_damage(ZONE_DMG_PER_TICK)
+
+# ─────────────────────────────────────────────────────────────────────────────
+## OPTION C — PEY KOMBAN PRE-SIGHTING
+## At x=2400, Pey Komban's massive silhouette charges across the far background
+## right → left. No damage. Pure dread — the player sees the scale before the
+## arena. Emotional beat: "I just saw that thing. It is incomprehensibly large."
+## Silhouette is semi-transparent (feels like distance), tusks faintly ivory.
+# ─────────────────────────────────────────────────────────────────────────────
+
+func _do_presighting(player_x: float) -> void:
+	# Spawn off the right edge of the visible screen, charge off the left
+	var start_x := player_x + 420.0
+	var end_x   := player_x - 520.0
+
+	# Main silhouette — dark, semi-transparent, slightly below crown level
+	var sil := ColorRect.new()
+	sil.color    = Color(0.04, 0.06, 0.03, 0.52)
+	sil.size     = Vector2(190.0, 220.0)
+	sil.position = Vector2(start_x, GROUND_Y - 220.0)
+	sil.z_index  = 1   # visible behind stumps (z=1 shares layer — fine)
+	add_child(sil)
+
+	# Tusks as children of sil — move for free during the charge tween
+	for tx: float in [-38.0, 38.0]:
+		var tusk := ColorRect.new()
+		tusk.color    = Color(0.65, 0.58, 0.42, 0.48)
+		tusk.size     = Vector2(16.0, 48.0)
+		tusk.position = Vector2(95.0 + tx - 8.0, 68.0)
+		tusk.rotation = tx * 0.045
+		sil.add_child(tusk)
+
+	# Two camera shakes — first on entry, second as it thunders past
+	var player := _get_player()
+	if is_instance_valid(player) and player.has_method("add_trauma"):
+		player.add_trauma(0.48)
+	get_tree().create_timer(0.55).timeout.connect(func() -> void:
+		var p := _get_player()
+		if is_instance_valid(p) and p.has_method("add_trauma"):
+			p.add_trauma(0.75)
+	)
+
+	# Charge: accelerates (EASE_IN) — unstoppable force feel
+	var tw := create_tween()
+	tw.tween_property(sil, "position:x", end_x, 1.55).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	tw.tween_callback(sil.queue_free)
+
+	# Hint fires after the sighting passes — give the player a beat of silence first
+	get_tree().create_timer(2.1).timeout.connect(func() -> void:
+		var hud := _get_hud()
+		if hud and hud.has_method("show_hint"):
+			hud.show_hint("🐘 That was Pey Komban.", 3.0)
+	)
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 func _spawn_pey_komban() -> void:
 	var boss: Node2D = preload("res://scenes/PeyKomban.tscn").instantiate()
@@ -306,12 +598,12 @@ func _lock_arena(player: Node2D, cam: Camera2D) -> void:
 	wall.collision_mask   = 0
 	wall.global_position  = Vector2(player.global_position.x - 30.0, GROUND_Y - 400.0)
 
-	var shape := CollisionShape2D.new()
-	var rect  := RectangleShape2D.new()
+	var shape_node := CollisionShape2D.new()
+	var rect       := RectangleShape2D.new()
 	rect.size             = Vector2(10.0, 900.0)   # 10px wide, 900px tall
-	shape.shape           = rect
-	shape.position        = Vector2.ZERO
-	wall.add_child(shape)
+	shape_node.shape      = rect
+	shape_node.position   = Vector2.ZERO
+	wall.add_child(shape_node)
 	add_child(wall)
 
 	# Tiny visual indicator (thin dark line) — optional, shows in debug builds
