@@ -306,6 +306,7 @@ func _mundu_cinematic(tusk_pos: Vector2) -> void:
 	var cloth := ColorRect.new()        # white mundu strip
 	cloth.color          = Color(0.95, 0.95, 0.85, 0.92)
 	cloth.size           = Vector2(52.0, 10.0)
+	cloth.z_index        = 12   # above trees (z=6), player (z=7), boss (z=0)
 	cloth.pivot_offset   = Vector2(0.0, 5.0)
 	cloth.global_position = cloth_start
 	add_child(cloth)

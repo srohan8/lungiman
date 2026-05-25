@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 ## Yakshi — Act I Boss. Hypnotises player at range, vulnerable when stunned.
 
-const MAX_HP         := 3
+const MAX_HP         := 9   # 9 hits to kill; phases trigger at 3 and 1 HP remaining
 const SPEED          := 60.0
 const GRAVITY        := 1800.0
 const HYPNO_RANGE    := 280.0
@@ -62,6 +62,7 @@ func _physics_process(delta: float) -> void:
 		_hypno_pulse_t -= delta
 		if _hypno_pulse_t <= 0.0:
 			_hypno_pulse_t = 5.0
+			AudioManager.play_clip("magic_spell")
 			GameManager.activate_hypnosis(6.0)
 
 	match phase:
@@ -75,6 +76,7 @@ func _physics_process(delta: float) -> void:
 			if is_instance_valid(_player):
 				if global_position.distance_to(_player.global_position) < HYPNO_RANGE:
 					phase = 1
+					AudioManager.play_clip("magic_spell")
 					GameManager.activate_hypnosis(8.0)
 		1:   # Hypnotising
 			velocity.x = 0.0
@@ -93,19 +95,19 @@ func _physics_process(delta: float) -> void:
 
 func take_damage(dmg: int) -> void:
 	if phase == 1 or phase == 2:
-		hp -= dmg
-		GameManager.boss_take_damage(dmg)
+		hp -= 1   # hit-count system: each hit costs exactly 1 HP regardless of weapon
+		GameManager.boss_take_damage(1)
 		_flash_timer = FLASH_DURATION
 		modulate     = Color(1.0, 0.3, 0.3, 0.9)
 		phase        = 2
 		stun_timer   = STUN_DURATION
 		# Phase 2 (<2 HP): spawn 2 ghost clones mid-fight
-		if hp <= 1 and not _clones_p2:
+		if hp <= 3 and not _clones_p2:
 			_clones_p2 = true
 			_spawn_fight_clones(2)
 			_show_hint("🧙‍♀️ Yakshi summons her mirrors!")
 		# Phase 3 (<1 HP): enable repeating hypnosis pulse
-		if hp <= 0 and not _clones_p3:
+		if hp <= 1 and not _clones_p3:
 			_clones_p3 = true
 			_spawn_fight_clones(2)
 			_hypno_pulse_t = 5.0

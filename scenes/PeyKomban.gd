@@ -1,11 +1,11 @@
 extends CharacterBody2D
 
 ## Pey Komban — Act V Finale Boss. Ground charge is fatal. Safe only on trees.
-## Phase 2 (hp <= 3): faster charge. Rage (hp <= 1): alternating L+R charges.
+## Phase 2 (hp <= 4): faster charge. Rage (hp <= 1): alternating L+R charges.
 
 signal defeat   ## Emitted just before queue_free — Act5.gd intercepts to run mundu cinematic.
 
-const MAX_HP           := 5
+const MAX_HP           := 12   # 12 hits; phase 2 at ≤4 HP, rage at ≤1 HP
 const GRAVITY          := 1800.0
 const PATROL_SPEED     := 55.0
 const CHARGE_SPEED_P1  := 420.0
@@ -96,7 +96,7 @@ func _physics_process(delta: float) -> void:
 					_player.add_trauma(SHAKE_ON_CHARGE)
 
 		State.CHARGE:
-			var spd := CHARGE_SPEED_P2 if hp <= 3 else CHARGE_SPEED_P1
+			var spd := CHARGE_SPEED_P2 if hp <= 4 else CHARGE_SPEED_P1
 			velocity.x   = spd * dir
 			if _spr != null: _spr.flip_h = (dir < 0)
 			state_timer -= delta
@@ -106,7 +106,7 @@ func _physics_process(delta: float) -> void:
 				_player.add_trauma(0.85)
 			if state_timer <= 0.0 or is_on_wall():
 				state       = State.RECOVER
-				state_timer = RECOVER_DURATION_P2 if hp <= 3 else RECOVER_DURATION_P1
+				state_timer = RECOVER_DURATION_P2 if hp <= 4 else RECOVER_DURATION_P1
 				if _spr != null: _spr.play("patrol")
 			# Rage phase: reverse on edge
 			if hp <= 1 and (position.x < 500.0 or position.x > 7400.0):
@@ -123,8 +123,8 @@ func _physics_process(delta: float) -> void:
 
 func take_damage(dmg: int) -> void:
 	if state == State.CHARGE: return   # immune during charge
-	hp -= dmg
-	GameManager.boss_take_damage(dmg)
+	hp -= 1   # hit-count system: 1 HP per hit
+	GameManager.boss_take_damage(1)
 	_flash_timer = FLASH_DURATION
 	modulate     = Color(1.0, 0.3, 0.3, 0.9)
 	if hp <= 0: _die()

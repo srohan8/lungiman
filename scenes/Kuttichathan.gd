@@ -2,7 +2,7 @@ extends CharacterBody2D
 
 ## Kuttichathan — Act II Boss. Spawns decoy clones. Vulnerable during landing stun.
 
-const MAX_HP           := 4
+const MAX_HP           := 10   # 10 hits; phase 2 (faster clones) kicks in at 4 HP remaining
 const SPEED            := 72.0
 const GRAVITY          := 1800.0
 const CLONE_RANGE      := 500.0
@@ -80,7 +80,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if _lunging:
-		var spd := LUNGE_SPEED * (1.6 if hp <= 2 else 1.0)
+		var spd := LUNGE_SPEED * (1.6 if hp <= 4 else 1.0)
 		velocity.x = spd * dir
 		_lunge_t  -= delta
 		if _lunge_t <= 0.0:
@@ -105,7 +105,7 @@ func _physics_process(delta: float) -> void:
 				dir      = int(sign(dx))
 				_lunging = true
 				_lunge_t = LUNGE_DURATION
-				if hp <= 2 and _spr != null: _spr.play("ride")
+				if hp <= 4 and _spr != null: _spr.play("ride")
 
 	move_and_slide()
 	# Blink the eye open/closed — visual cue that this is the real one
@@ -122,11 +122,11 @@ func _spawn_clone() -> void:
 
 func take_damage(dmg: int) -> void:
 	if not _stunned: return
-	hp -= dmg
-	GameManager.boss_take_damage(dmg)
+	hp -= 1   # hit-count system: 1 HP per hit
+	GameManager.boss_take_damage(1)
 	_flash_timer = FLASH_DURATION
 	modulate     = Color(1.0, 1.0, 0.2, 1.0)
-	if hp <= 2 and hp > 0:
+	if hp <= 4 and hp > 0:
 		# Phase 2: shorter clone interval
 		clone_timer = minf(clone_timer, 3.5)
 		var hud := get_tree().get_first_node_in_group("hud")

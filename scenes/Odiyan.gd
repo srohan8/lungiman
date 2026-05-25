@@ -3,7 +3,7 @@ extends CharacterBody2D
 ## Odiyan — Act III Boss. Shapeshifter. Only vulnerable during transform flash.
 ## weakness_revealed (from Tracks quest) extends the flash window 0.6s → 0.9s.
 
-const MAX_HP           := 4
+const MAX_HP           := 10   # 10 transform windows to close the fight
 const GRAVITY          := 1800.0
 const HUMAN_SPEED      := 0.0
 const BULL_SPEED       := 200.0
@@ -171,8 +171,8 @@ func lunge_tease(target_pos: Vector2) -> void:
 
 func take_damage(dmg: int) -> void:
 	if form != Form.TRANSFORM: return
-	hp -= dmg
-	GameManager.boss_take_damage(dmg)
+	hp -= 1   # hit-count system: 1 HP per hit
+	GameManager.boss_take_damage(1)
 	_flash_timer = FLASH_DURATION
 	# Pause the pulse tween briefly while showing the hit-flash (red)
 	if _pulse_tween != null: _pulse_tween.pause()

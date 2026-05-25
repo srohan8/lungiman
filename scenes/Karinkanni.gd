@@ -3,7 +3,7 @@ extends Node2D
 ## Karinkanni — Act IV Boss. Floating eye. Only hittable from tree crowns.
 ## Eye opens briefly → fire paralysis ray → close. 3 coconut hits to kill.
 
-const MAX_HP          := 3
+const MAX_HP          := 9   # 9 hits; eye interval drops to 3s when ≤3 HP remaining
 const FLOAT_Y         := 150.0
 const BOB_AMPLITUDE   := 12.0
 const BOB_SPEED       := 1.8
@@ -68,7 +68,7 @@ func _process(delta: float) -> void:
 		if _interval_timer <= 0.0:
 			_eye_open       = true
 			_open_timer     = OPEN_DURATION
-			_interval_timer = OPEN_INTERVAL if hp > 1 else 3.0
+			_interval_timer = OPEN_INTERVAL if hp > 3 else 3.0
 			if _spr != null: _spr.play("opening")
 			_fire_ray()
 	else:
@@ -99,8 +99,8 @@ func _fire_ray() -> void:
 func take_damage(dmg: int) -> void:
 	if not _eye_open: return
 	if hit_cooldown > 0.0: return
-	hp -= dmg
-	GameManager.boss_take_damage(dmg)
+	hp -= 1   # hit-count system: 1 HP per hit
+	GameManager.boss_take_damage(1)
 	_flash_timer = FLASH_DURATION
 	modulate     = Color(1.0, 1.0, 1.0, 1.0)
 	hit_cooldown = 0.4
