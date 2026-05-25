@@ -40,7 +40,7 @@ func _ready() -> void:
 	position.y = TOP_Y
 	_label = Label.new()
 	_label.text = ARROW_ICONS.get(direction, "?")
-	_label.add_theme_font_size_override("font_size", 36)
+	_label.add_theme_font_size_override("font_size", 22)
 	_label.add_theme_color_override("font_color", ARROW_COLORS.get(direction, Color.WHITE))
 	_label.position = Vector2(-18, -22)
 	add_child(_label)

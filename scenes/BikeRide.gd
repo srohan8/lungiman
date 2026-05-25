@@ -512,7 +512,7 @@ func _build_ravi_handover() -> void:
 	_ravi_pieces.append(lbl)
 
 ## Ravi stays behind — bike rides away to the right, Ravi slides LEFT off screen.
-## The arm raises briefly first (goodbye wave), then everything scrolls out left.
+## The arm raises briefly fir"gradle_build/min_sdk"st (goodbye wave), then everything scrolls out left.
 func _dismiss_ravi() -> void:
 	# Wave: arm raises upward while the rest of the slide begins
 	if is_instance_valid(_arm_piece):
@@ -615,7 +615,7 @@ func _tick_ride(delta: float) -> void:
 	# Jump: space / X (jump action) + up arrow as extra keyboard binding
 	var jump_just := (Input.is_action_just_pressed("ui_accept")
 				or  Input.is_action_just_pressed("jump")
-				or  Input.is_key_just_pressed(KEY_UP))
+				or  Input.is_action_just_pressed("ui_up"))
 
 	# Duck: down arrow / S — crouch to avoid low branches; blocks jumping while held
 	_ducking = Input.is_action_pressed("move_down") and _on_ground

@@ -119,9 +119,10 @@ func _build_scene() -> void:
 		facet.position = Vector2(cos(angle) * 12.0 - 2.5, sin(angle) * 12.0 - 2.5)
 		_disco_ball.add_child(facet)
 
-	# Crowd NPCs (7 figures at bottom)
+	# Crowd NPCs — 7 dancers spread evenly across the full viewport width
 	for i: int in 7:
-		_spawn_npc_dancer(Vector2(80.0 + i * 100.0, VP_H - 80.0),
+		_spawn_npc_dancer(
+				Vector2(VP_W * (float(i) + 0.5) / 7.0, VP_H - 80.0),
 				Color(randf_range(0.4,1.0), randf_range(0.2,0.7), randf_range(0.5,1.0)))
 
 	# Dance prompt layer (prompts fall through this node)
@@ -174,9 +175,8 @@ func _build_scene() -> void:
 	_chroma_layer.layer = 15
 	add_child(_chroma_layer)
 	_chroma_rect = ColorRect.new()
-	_chroma_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)   # always covers full screen
-	_chroma_rect.color        = Color(1, 1, 1, 1)
-	_chroma_rect.visible      = false
+	_chroma_rect.color   = Color(1, 1, 1, 1)
+	_chroma_rect.visible = false
 	var mat := ShaderMaterial.new()
 	var shader := load("res://shaders/chromatic_aberration.gdshader") as Shader
 	if shader:
@@ -184,6 +184,8 @@ func _build_scene() -> void:
 		mat.set_shader_parameter("aberration", 0.006)
 		_chroma_rect.material = mat
 	_chroma_layer.add_child(_chroma_rect)
+	# PRESET_FULL_RECT must be called after add_child so the CanvasLayer parent is set
+	_chroma_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 func _spawn_npc_dancer(pos: Vector2, col: Color) -> Node2D:
 	var npc := Node2D.new()
