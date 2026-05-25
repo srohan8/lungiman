@@ -12,12 +12,17 @@ const BOSS_FADE_OUT  := 1.5    # restore act music after boss dies
 
 # ── Track map — act key → music file ──────────────────────────────────────────
 const ACT_TRACKS := {
-	"World": "res://assets/audio/music_prologue.ogg",
-	"Act1":  "res://assets/audio/music_act1.ogg",
-	"Act2":  "res://assets/audio/music_act2.ogg",
-	"Act3":  "res://assets/audio/music_act3.ogg",
-	"Act4":  "res://assets/audio/music_act4.ogg",
-	"Act5":  "res://assets/audio/music_act5.ogg",
+	"MainMenu":           "res://assets/audio/music_menu.ogg",
+	"World":              "res://assets/audio/music_prologue.ogg",
+	"BikeRide":           "res://assets/audio/music_bikeride.ogg",
+	"Act1":               "res://assets/audio/music_act1.ogg",
+	"Act2":               "res://assets/audio/music_act2.ogg",
+	"Act3":               "res://assets/audio/music_act3.ogg",
+	"DiscoHallucination": "res://assets/audio/music_disco.ogg",
+	"Act4":               "res://assets/audio/music_act4.ogg",
+	"Pathalam":           "res://assets/audio/music_pathalam.ogg",
+	"Act5":               "res://assets/audio/music_act5.ogg",
+	"Houseboat":          "res://assets/audio/music_houseboat.ogg",
 }
 
 const BOSS_TRACKS := {
@@ -46,9 +51,17 @@ const STINGS := {
 }
 
 const CINEMATICS := {
-	"bike_ride":       "res://assets/audio/music_bike_ride.ogg",
+	"bike_ride":       "res://assets/audio/ride-scene.wav",
 	"bull_chase":      "res://assets/audio/music_bull_chase.ogg",
 	"peykomban_reveal":"res://assets/audio/music_peykomban_reveal.ogg",
+}
+
+## Short SFX clips wired to in-game actions.
+## Files live in res://assets/audio/ — safe to call even when a file is missing.
+const SFX_CLIPS := {
+	"sword_swing": "res://assets/audio/swing-sword-small.wav",
+	"magic_spell": "res://assets/audio/magic-spell.wav",
+	"bike_start":  "res://assets/audio/bullet-start-sound.mp3",
 }
 
 # ── Volume settings ───────────────────────────────────────────────────────────
@@ -60,6 +73,7 @@ var ambient_volume: float = 0.5
 var _current_act:   String = ""
 var _boss_active:   bool   = false
 var _cinematic_on:  bool   = false
+var _cinematic_loop: bool  = false   # true = restart cinematic when it finishes
 
 var _music_a:   AudioStreamPlayer   # crossfade player A
 var _music_b:   AudioStreamPlayer   # crossfade player B
@@ -114,11 +128,20 @@ func _set_bus_vol(bus_name: String, vol: float) -> void:
 # ── Scene detection ───────────────────────────────────────────────────────────
 func _on_scene_added(node: Node) -> void:
 	var scene_name := node.name as String
-	if ACT_TRACKS.has(scene_name) and scene_name != _current_act:
-		_current_act  = scene_name
-		_boss_active  = false
-		_cinematic_on = false
-		play_act_music(scene_name)
+	if not ACT_TRACKS.has(scene_name):
+		return
+	_current_act    = scene_name
+	_boss_active    = false    # clear boss state from previous run (e.g. died during boss fight)
+	_cinematic_on   = false    # clear cinematic state from previous run
+	_cinematic_loop = false
+	# Stop a still-running cinematic (bike ride loop doesn't stop itself on scene exit)
+	if _cinematic != null and _cinematic.playing:
+		_cinematic.stop()
+	# Restore active player to full volume — a mid-crossfade interrupted by death/reload
+	# leaves _active at near-zero. Without this, the new scene starts in near-silence.
+	if _active != null:
+		_active.volume_db = linear_to_db(music_volume)
+	play_act_music(scene_name)
 
 # ── Act music ─────────────────────────────────────────────────────────────────
 func play_act_music(act_key: String) -> void:
@@ -140,12 +163,14 @@ func restore_act_music() -> void:
 # ── Cinematic one-shots ───────────────────────────────────────────────────────
 ## Plays a cinematic track (bike ride, bull chase, etc.) on the cinematic player.
 ## Act music is ducked while it plays. Auto-restores when done.
-func play_cinematic(key: String) -> void:
+## Pass loop=true for tracks that must repeat until stop_cinematic() is called (e.g. bike ride).
+func play_cinematic(key: String, loop: bool = false) -> void:
 	if not CINEMATICS.has(key): return
 	var path: String = CINEMATICS[key]
 	if not ResourceLoader.exists(path): return
-	_cinematic_on = true
-	# Duck music
+	_cinematic_on   = true
+	_cinematic_loop = loop
+	# Duck act music
 	var tw := create_tween()
 	tw.tween_property(_active, "volume_db", linear_to_db(0.05), 0.5)
 	_cinematic.stream = load(path)
@@ -153,13 +178,21 @@ func play_cinematic(key: String) -> void:
 	_cinematic.finished.connect(_on_cinematic_finished, CONNECT_ONE_SHOT)
 
 func _on_cinematic_finished() -> void:
-	_cinematic_on = false
+	if _cinematic_loop and _cinematic_on:
+		# Loop: restart the same track
+		_cinematic.play()
+		_cinematic.finished.connect(_on_cinematic_finished, CONNECT_ONE_SHOT)
+		return
+	_cinematic_on   = false
+	_cinematic_loop = false
 	if not _boss_active:
 		var tw := create_tween()
 		tw.tween_property(_active, "volume_db", linear_to_db(music_volume), 1.0)
 
-## Stop cinematic early (e.g. scene transition mid-bike-ride)
+## Stop cinematic early (e.g. scene transition mid-bike-ride).
+## Clears the loop flag first so the track doesn't restart.
 func stop_cinematic() -> void:
+	_cinematic_loop = false
 	if not _cinematic.playing: return
 	_cinematic.stop()
 	_on_cinematic_finished()
@@ -187,6 +220,20 @@ func play_sting(key: String) -> void:
 	p.stream = load(path)
 	p.bus    = "SFX"
 	p.autoplay = true
+	p.finished.connect(p.queue_free)
+	add_child(p)
+
+## Named clip player — sword_swing, magic_spell, bike_start, etc.
+## No-op if the file hasn't been added yet.
+func play_clip(key: String, pitch: float = 1.0) -> void:
+	if not SFX_CLIPS.has(key): return
+	var path: String = SFX_CLIPS[key]
+	if not ResourceLoader.exists(path): return
+	var p := AudioStreamPlayer.new()
+	p.stream      = load(path)
+	p.bus         = "SFX"
+	p.pitch_scale = pitch
+	p.autoplay    = true
 	p.finished.connect(p.queue_free)
 	add_child(p)
 
