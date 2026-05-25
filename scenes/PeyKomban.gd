@@ -76,10 +76,12 @@ func _physics_process(delta: float) -> void:
 			if _spr != null:
 				_spr.flip_h = (dir < 0)
 				if _spr.animation != "patrol": _spr.play("patrol")
-			# Wind up when player is on ground in facing direction
+			# Wind up whenever player is on the ground within charge range.
+			# Turn to face them first — don't require them to already be ahead.
 			if is_instance_valid(_player) and not _player.is_safe_from_charge():
 				var dx := _player.global_position.x - global_position.x
-				if int(sign(dx)) == dir and absf(dx) < 800.0:
+				if absf(dx) < 1200.0:
+					dir         = int(sign(dx))   # pivot to face the player
 					state       = State.WINDUP
 					state_timer = WINDUP_DURATION
 					modulate    = Color(1.0, 0.55, 0.05, 1.0)   # orange glow
