@@ -121,7 +121,7 @@ func _physics_process(delta: float) -> void:
 	hit_cooldown = maxf(0.0, hit_cooldown - delta)
 	move_and_slide()
 
-func take_damage(dmg: int) -> void:
+func take_damage(_dmg: int) -> void:
 	if state == State.CHARGE: return   # immune during charge
 	hp -= 1   # hit-count system: 1 HP per hit
 	GameManager.boss_take_damage(1)

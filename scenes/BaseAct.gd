@@ -15,6 +15,8 @@ var _next_scene        := ""
 var _trigger_x         := 7800.0
 var _unlocks_act       := 0     # set by each Act: completing this act unlocks _unlocks_act in LevelSelect
 var _boss_block_hinted := false  # fires the "boss still alive" hint at most once
+var _exit_wall:  Node2D = null   # physical barrier at _trigger_x — removed on boss death
+var _exit_pulse: Tween  = null   # looping pulse tween on the barrier visual
 
 # ── Auto-transition ──────────────────────────────────────────────────────────
 
@@ -30,6 +32,12 @@ func _process(_delta: float) -> void:
 	if player.global_position.y > KILL_ZONE_Y or player.global_position.x < -100.0:
 		GameManager.take_damage(999)
 		return
+	# Spawn the exit barrier early — when boss is alive and player is within 400px of the exit.
+	# This prevents the player reaching the world edge before the wall appears.
+	if GameManager.boss_max_hp > 0 and _exit_wall == null \
+			and player.global_position.x >= _trigger_x - 400.0:
+		_spawn_exit_wall()
+
 	if player.global_position.x >= _trigger_x:
 		# Gate: if a boss is still alive, block the exit and hint the player once.
 		if GameManager.boss_max_hp > 0:
@@ -37,12 +45,98 @@ func _process(_delta: float) -> void:
 				_boss_block_hinted = true
 				var hud := _get_hud()
 				if hud and hud.has_method("show_hint"):
-					hud.show_hint("⚠️ Defeat the boss before you can leave!", 3.5)
+					hud.show_hint("⚠️ Defeat the boss to proceed!", 4.0)
 			return
 		_act_triggered = true
 		if _unlocks_act > 0:
 			GameManager.unlock_act(_unlocks_act)
 		SceneManager.go_to(_next_scene)
+
+# ── Boss exit barrier ────────────────────────────────────────────────────────
+
+## Spawns a visible physical wall at the right exit while the boss is alive.
+## Pulsing red stripe + sign; dissolves with a flash when the boss is defeated.
+func _spawn_exit_wall() -> void:
+	if _exit_wall != null or _next_scene.is_empty(): return
+
+	var wall := StaticBody2D.new()
+	wall.name            = "ExitWall"
+	wall.collision_layer = 1
+	wall.collision_mask  = 0
+	wall.position        = Vector2(_trigger_x - 40.0, GROUND_Y - 350.0)
+
+	var shape_node := CollisionShape2D.new()
+	var rect       := RectangleShape2D.new()
+	rect.size       = Vector2(18.0, 800.0)
+	shape_node.shape = rect
+	wall.add_child(shape_node)
+
+	# Pulsing red barrier strip
+	var bar := ColorRect.new()
+	bar.color    = Color(0.88, 0.18, 0.08, 0.82)
+	bar.size     = Vector2(10.0, 800.0)
+	bar.position = Vector2(-5.0, -400.0)
+	bar.z_index  = 8
+	wall.add_child(bar)
+
+	# Warning stripe pattern — alternating dark bands
+	for i: int in 8:
+		var stripe := ColorRect.new()
+		stripe.color    = Color(0.0, 0.0, 0.0, 0.30)
+		stripe.size     = Vector2(10.0, 40.0)
+		stripe.position = Vector2(-5.0, -400.0 + i * 100.0 + 30.0)
+		wall.add_child(stripe)
+
+	# Sign: arrow pointing left toward boss
+	var sign := ColorRect.new()
+	sign.color    = Color(0.12, 0.08, 0.04, 0.92)
+	sign.size     = Vector2(90.0, 26.0)
+	sign.position = Vector2(-95.0, -320.0)
+	sign.z_index  = 9
+	wall.add_child(sign)
+	var sign_label := ColorRect.new()   # amber arrow strip inside sign
+	sign_label.color    = Color(1.0, 0.70, 0.10, 0.90)
+	sign_label.size     = Vector2(70.0, 6.0)
+	sign_label.position = Vector2(-85.0, -307.0)
+	sign_label.z_index  = 10
+	wall.add_child(sign_label)
+	# Arrow tip (triangle-ish via small square rotated)
+	var arrow := ColorRect.new()
+	arrow.color    = Color(1.0, 0.70, 0.10, 0.90)
+	arrow.size     = Vector2(10.0, 10.0)
+	arrow.position = Vector2(-88.0, -310.0)
+	arrow.z_index  = 10
+	wall.add_child(arrow)
+
+	add_child(wall)
+	_exit_wall = wall
+
+	# Pulse the barrier — slow red throb
+	_exit_pulse = create_tween().set_loops()
+	_exit_pulse.tween_property(bar, "modulate:a", 0.35, 0.7)
+	_exit_pulse.tween_property(bar, "modulate:a", 1.00, 0.7)
+
+	# Listen for boss death to dissolve the wall
+	if not GameManager.boss_hp_changed.is_connected(_on_boss_hp_changed):
+		GameManager.boss_hp_changed.connect(_on_boss_hp_changed)
+
+func _on_boss_hp_changed(new_hp: int) -> void:
+	if new_hp > 0 or _exit_wall == null: return
+	# Boss is dead — dissolve the wall
+	if _exit_pulse != null:
+		_exit_pulse.kill()
+		_exit_pulse = null
+	if GameManager.boss_hp_changed.is_connected(_on_boss_hp_changed):
+		GameManager.boss_hp_changed.disconnect(_on_boss_hp_changed)
+	# Flash white then fade out
+	var tw := create_tween()
+	tw.tween_property(_exit_wall, "modulate", Color(1.5, 1.5, 1.5, 1.0), 0.08)
+	tw.tween_property(_exit_wall, "modulate", Color(1.0, 1.0, 1.0, 0.0), 0.35)
+	tw.tween_callback(_exit_wall.queue_free)
+	_exit_wall = null
+	var hud := _get_hud()
+	if hud and hud.has_method("show_hint"):
+		hud.show_hint("✅ Path clear — keep going!", 2.5)
 
 # ── HUD wiring ───────────────────────────────────────────────────────────────
 
