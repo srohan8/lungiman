@@ -223,7 +223,8 @@ func _open_level_select() -> void:
 		["🌫  Act III — Odiyan",        "res://scenes/Act3.tscn",           3],
 		["✨  Disco Hallucination",     "res://scenes/DiscoHallucination.tscn", 3],
 		["🌧  Act IV — Karinkanni",     "res://scenes/Act4.tscn",           4],
-		["🌑  Act V — Pey Komban",      "res://scenes/Act5.tscn",      5],
+		["🕯  Pathalam — Maveli",       "res://scenes/Pathalam.tscn",       4],
+		["🌑  Act V — Pey Komban",      "res://scenes/Act5.tscn",           5],
 		["🏚  Houseboat",               "res://scenes/Houseboat.tscn", 4],
 	]
 
